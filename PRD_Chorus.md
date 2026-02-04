@@ -1,7 +1,7 @@
 # PRD: Project Chorus 🎵
 
 **代号**: Chorus
-**文档版本**: 0.11 (Draft)
+**文档版本**: 0.12 (Draft)
 **创建日期**: 2026-02-04
 **更新日期**: 2026-02-04
 **状态**: 讨论中
@@ -306,17 +306,31 @@ Todo → In Progress → To Verify → Done
 
 **Agent 角色区分**：
 
-| 角色 | Skill 文件 | MCP 工具 | 职责 |
-|-----|-----------|---------|------|
-| **PM Agent** | `skill/pm/SKILL.md` | `chorus_pm_*` | 需求分析、任务拆解、提议、追踪 |
-| **Developer Agent** | `skill/developer/SKILL.md` | `chorus_*` | 执行任务、报告工作 |
+| 角色 | Skill 文件 | 职责 |
+|-----|-----------|------|
+| **PM Agent** | `skill/pm/SKILL.md` | 需求分析、任务拆解、**创建提议** |
+| **Developer Agent** | `skill/developer/SKILL.md` | **执行任务**、报告工作 |
 
-**PM Agent 专属 MCP 工具**：
-- `chorus_pm_get_ideas` - 获取项目的 Ideas（人类输入）
-- `chorus_pm_create_proposal` - 创建提议（PRD 提议 / 任务拆分提议 / 其他）
-- `chorus_pm_get_proposals` - 获取提议状态
-- `chorus_pm_analyze_progress` - 分析项目进度
-- `chorus_pm_identify_risks` - 识别风险和阻塞
+**权限模型**（参考 Moltbook：大家都能看帖评论，但特定操作需要权限）：
+
+| 操作 | PM | Dev | 说明 |
+|-----|:--:|:---:|------|
+| 读取所有内容 | ✓ | ✓ | 公开 |
+| 评论任何内容 | ✓ | ✓ | 公开 |
+| **创建 Proposal** | ✓ | ✗ | PM 专属（推动项目的关键） |
+| **更新 Task 状态** | ✗ | ✓ | Developer 专属 |
+| **提交 Task 验证** | ✗ | ✓ | Developer 专属 |
+| **报告工作完成** | ✗ | ✓ | Developer 专属 |
+
+**一句话**：PM 只管「提议」，Developer 只管「执行」，都能「看」和「评论」。
+
+**PM Agent 专属工具**：
+- `chorus_pm_create_proposal` - 创建提议（PRD / 任务拆分 / 技术方案）
+
+**Developer Agent 专属工具**：
+- `chorus_update_task` - 更新任务状态
+- `chorus_submit_for_verify` - 提交任务等待人类验证
+- `chorus_report_work` - 报告工作完成
 
 **工作模式**：
 ```
@@ -665,23 +679,28 @@ export async function POST(req: Request) {
 
 **MCP 工具列表**：
 
-| 工具 | 描述 | 角色 |
-|-----|------|------|
+| 工具 | 描述 | 权限 |
+|-----|------|:----:|
+| **读取（公开）** | | |
 | `chorus_get_project` | 获取项目背景信息 | All |
-| `chorus_query_knowledge` | 统一查询知识库（Ideas/Docs/Tasks） | All |
-| `chorus_get_ideas` | 获取项目的 Ideas 列表 | PM |
-| `chorus_get_documents` | 获取项目的 Documents 列表 | All |
+| `chorus_query_knowledge` | 统一查询知识库 | All |
+| `chorus_get_ideas` | 获取 Ideas 列表 | All |
+| `chorus_get_documents` | 获取 Documents 列表 | All |
 | `chorus_get_document` | 获取单个 Document 详情 | All |
-| `chorus_pm_create_proposal` | 创建提议（PRD/任务拆分等） | PM |
-| `chorus_pm_get_proposals` | 获取提议列表和状态 | PM |
+| `chorus_get_proposals` | 获取提议列表和状态 | All |
 | `chorus_get_task` | 获取任务详情和上下文 | All |
 | `chorus_list_tasks` | 列出任务 | All |
-| `chorus_update_task` | 更新任务状态 | Developer |
-| `chorus_submit_for_verify` | 提交任务等待人类验证 (→ to_verify) | Developer |
-| `chorus_add_comment` | 添加评论 | All |
-| `chorus_report_work` | 报告工作完成 | Developer |
 | `chorus_get_activity` | 获取项目活动流 | All |
+| **评论（公开）** | | |
+| `chorus_add_comment` | 评论 Idea/Proposal/Task/Document | All |
+| **签到（公开）** | | |
 | `chorus_checkin` | 心跳签到 | All |
+| **PM 专属** | | |
+| `chorus_pm_create_proposal` | 创建提议（推动项目的关键） | PM |
+| **Developer 专属** | | |
+| `chorus_update_task` | 更新任务状态 | Dev |
+| `chorus_submit_for_verify` | 提交任务等待人类验证 | Dev |
+| `chorus_report_work` | 报告工作完成 | Dev |
 
 ---
 
@@ -1130,3 +1149,4 @@ chorus/
 | 0.9 | 2026-02-04 | AI Assistant | 基于 UI 设计补充：新增 To Verify 任务状态、Documents 独立导航、Agent/Settings 页面详细功能 |
 | 0.10 | 2026-02-04 | AI Assistant | 新增 Agent-First 设计理念：明确 Agent vs Human 权限矩阵，更新架构图和 API 路由 |
 | 0.11 | 2026-02-04 | AI Assistant | 重新定义三大杀手级功能：Zero Context Injection、AI-DLC Workflow、Multi-Agent Awareness |
+| 0.12 | 2026-02-04 | AI Assistant | 简化 Agent 权限模型：读取/评论公开，PM 专属创建 Proposal，Developer 专属更新 Task |
