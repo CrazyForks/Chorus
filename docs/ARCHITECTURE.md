@@ -1,6 +1,6 @@
 # Project Chorus - 技术架构文档
 
-**版本**: 1.2
+**版本**: 1.3
 **更新日期**: 2026-02-05
 
 ---
@@ -48,7 +48,7 @@ Chorus 是一个 AI Agent 与人类协作的平台，实现 AI-DLC（AI-Driven D
 |---|------|------|---------|
 | **框架** | Next.js | 15.x | 全栈统一，App Router，RSC 支持 |
 | **语言** | TypeScript | 5.x | 类型安全，前后端一致 |
-| **ORM** | Prisma | 6.x | 类型安全，迁移管理，良好 DX |
+| **ORM** | Prisma | 7.x | 类型安全，迁移管理，良好 DX，无外键约束设计 |
 | **数据库** | PostgreSQL | 16 | 可靠，JSON 支持，后续可扩展 pgvector |
 | **UI 组件** | shadcn/ui | - | 基于 Radix，可定制，美观 |
 | **样式** | Tailwind CSS | 4.x | 原子化 CSS，快速开发 |
@@ -296,6 +296,65 @@ chorus/
 ---
 
 ## 4. 数据模型
+
+### 4.0 数据库设计原则：无外键约束
+
+**设计决策**：Chorus 采用 **Prisma 关系模式（relationMode = "prisma"）**，不在数据库层面创建外键约束，所有关系由 Prisma Client 在应用层管理。
+
+**配置方式**：
+
+```prisma
+// prisma/schema.prisma
+datasource db {
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"  // 关系由 Prisma 管理，不创建数据库 FK
+}
+```
+
+**为什么这样设计**：
+
+| 优势 | 说明 |
+|-----|------|
+| **迁移灵活性** | 无 FK 约束意味着可以更自由地修改表结构，无需处理级联删除顺序 |
+| **数据库兼容性** | 支持不原生支持 FK 的数据库（如 PlanetScale），便于未来迁移 |
+| **性能优化** | 避免数据库层面的 FK 检查开销，批量操作更高效 |
+| **应用层控制** | 引用完整性在 Prisma Client 层面维护，逻辑更清晰 |
+
+**关系定义示例**：
+
+```prisma
+model Project {
+  id        Int      @id @default(autoincrement())
+  companyId Int
+  company   Company  @relation(fields: [companyId], references: [id])
+  tasks     Task[]
+  // 关系在 Prisma 层面定义，数据库不创建 FK 约束
+}
+
+model Task {
+  id        Int      @id @default(autoincrement())
+  projectId Int
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  // onDelete: Cascade 由 Prisma Client 模拟执行，非数据库级联
+}
+```
+
+**注意事项**：
+
+1. **引用完整性**：Prisma Client 会在查询时模拟 FK 行为，确保关系完整性
+2. **级联操作**：`onDelete: Cascade` 等操作由 Prisma 在应用层执行，需要额外数据库查询
+3. **原始 SQL**：使用 `$queryRaw` 时不受 Prisma 关系管理，需自行确保数据一致性
+4. **索引建议**：虽然无 FK，仍建议在关系字段上创建索引以优化查询性能
+
+```prisma
+model Task {
+  projectId Int
+  project   Project @relation(fields: [projectId], references: [id])
+
+  @@index([projectId])  // 手动添加索引
+}
+```
 
 ### 4.1 ER 图
 

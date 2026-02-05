@@ -6,7 +6,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider     = "postgresql"
+  relationMode = "prisma"  // 关系由 Prisma 管理，不创建数据库外键约束
 }
 
 // 租户
@@ -41,6 +42,8 @@ model User {
   createdAt DateTime @default(now())
 
   ownedAgents Agent[]
+
+  @@index([companyId])
 }
 
 // Agent（Claude Code 等）
@@ -57,6 +60,9 @@ model Agent {
   createdAt    DateTime  @default(now())
 
   apiKeys ApiKey[]
+
+  @@index([companyId])
+  @@index([ownerId])
 }
 
 // API Key（独立管理，支持轮换和撤销）
@@ -74,6 +80,9 @@ model ApiKey {
   expiresAt DateTime?
   revokedAt DateTime?
   createdAt DateTime  @default(now())
+
+  @@index([companyId])
+  @@index([agentId])
 }
 
 // 项目
@@ -92,6 +101,8 @@ model Project {
   tasks      Task[]
   proposals  Proposal[]
   activities Activity[]
+
+  @@index([companyId])
 }
 
 // 想法（人类原始输入）
@@ -108,6 +119,9 @@ model Idea {
   createdBy   Int      // User ID
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([projectId])
 }
 
 // 文档（PRD、技术设计等，Proposal 产物）
@@ -126,6 +140,10 @@ model Document {
   createdBy   Int       // User ID 或 Agent ID
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([projectId])
+  @@index([proposalId])
 }
 
 // 任务（Proposal 产物或人工创建）
@@ -148,6 +166,12 @@ model Task {
   updatedAt    DateTime @updatedAt
 
   activities Activity[]
+
+  @@index([companyId])
+  @@index([projectId])
+  @@index([proposalId])
+  @@index([assigneeId])
+  @@index([status])
 }
 
 // 提议（Agent 创建，人类审批，连接输入和输出）
@@ -177,6 +201,10 @@ model Proposal {
   reviewedAt  DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([projectId])
+  @@index([status])
 }
 
 // 评论（可以评论 Idea、Proposal、Task、Document）
@@ -192,6 +220,9 @@ model Comment {
   authorId    Int
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([targetType, targetId])
 }
 
 // 活动流（项目级）
@@ -214,4 +245,9 @@ model Activity {
   action     String   // idea_created | proposal_created | proposal_approved | document_created | task_created | task_updated | comment_added | ...
   payload    Json?    // 额外数据
   createdAt  DateTime @default(now())
+
+  @@index([companyId])
+  @@index([projectId])
+  @@index([taskId])
+  @@index([createdAt])
 }
