@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Key, Check, X, Copy } from "lucide-react";
+import { Plus, Key, Check, X, Copy, Globe } from "lucide-react";
 import { authFetch } from "@/lib/auth-client";
+import { useLocale } from "@/contexts/locale-context";
+import { locales, localeNames, type Locale } from "@/i18n/config";
 
 interface ApiKey {
   uuid: string;
@@ -63,6 +66,8 @@ const DEV_PERSONAS = [
 ];
 
 export default function SettingsPage() {
+  const t = useTranslations();
+  const { locale, setLocale } = useLocale();
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -203,7 +208,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="text-[#6B6B6B]">Loading settings...</div>
+        <div className="text-[#6B6B6B]">{t("common.loading")}</div>
       </div>
     );
   }
@@ -211,29 +216,54 @@ export default function SettingsPage() {
   return (
     <div className="p-8">
       {/* Breadcrumb */}
-      <div className="mb-6 text-xs text-[#9A9A9A]">Chorus / Settings</div>
+      <div className="mb-6 text-xs text-[#9A9A9A]">{t("settings.breadcrumb")}</div>
 
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-[#2C2C2C]">Settings</h1>
+        <h1 className="text-2xl font-semibold text-[#2C2C2C]">{t("settings.title")}</h1>
         <p className="mt-1 text-[13px] text-[#6B6B6B]">
-          Manage your account and agent configurations
+          {t("settings.subtitle")}
         </p>
       </div>
+
+      {/* Language Section */}
+      <div className="mb-8 space-y-4">
+        <div className="flex items-center gap-2">
+          <Globe className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-base font-semibold text-foreground">{t("settings.language")}</h2>
+        </div>
+        <p className="text-[13px] text-muted-foreground">
+          {t("settings.languageDesc")}
+        </p>
+        <div className="flex gap-3">
+          {locales.map((loc) => (
+            <Button
+              key={loc}
+              variant={locale === loc ? "default" : "outline"}
+              size="sm"
+              onClick={() => setLocale(loc as Locale)}
+              className="min-w-[100px]"
+            >
+              {localeNames[loc]}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mb-8 border-t border-border" />
 
       {/* Agents Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-foreground">Agents</h2>
+          <h2 className="text-base font-semibold text-foreground">{t("settings.agents")}</h2>
           <Button onClick={() => setShowModal(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Create API Key
+            {t("settings.createApiKey")}
           </Button>
         </div>
 
         <p className="text-[13px] text-muted-foreground">
-          Create API keys to allow your personal agents to access Chorus. Each
-          key can be assigned different roles.
+          {t("settings.agentsDesc")}
         </p>
 
         {/* API Keys List */}
@@ -243,7 +273,7 @@ export default function SettingsPage() {
               <Key className="h-6 w-6 text-muted-foreground" />
             </div>
             <p className="text-sm text-muted-foreground">
-              No API keys yet. Create one to get started.
+              {t("settings.noApiKeys")}
             </p>
           </div>
         ) : (
@@ -276,7 +306,7 @@ export default function SettingsPage() {
                         {key.name || key.keyPrefix + "..."}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {key.keyPrefix}... · Created{" "}
+                        {key.keyPrefix}... · {t("settings.created")}{" "}
                         {new Date(key.createdAt).toLocaleDateString()}
                       </div>
                     </div>
@@ -288,7 +318,7 @@ export default function SettingsPage() {
                       onClick={() => copyToClipboard(key.keyPrefix + "...")}
                     >
                       <Copy className="mr-1.5 h-3 w-3" />
-                      Copy
+                      {t("common.copy")}
                     </Button>
                     <Button
                       variant="outline"
@@ -296,14 +326,14 @@ export default function SettingsPage() {
                       onClick={() => handleDeleteKey(key.uuid)}
                       className="text-destructive hover:text-destructive"
                     >
-                      Delete
+                      {t("common.delete")}
                     </Button>
                   </div>
                 </div>
 
                 {/* Roles Row */}
                 <div className="mt-4 flex items-center gap-4">
-                  <span className="text-xs text-muted-foreground">Roles:</span>
+                  <span className="text-xs text-muted-foreground">{t("settings.roles")}</span>
                   <div className="flex items-center gap-2">
                     <div
                       className={`flex h-[18px] w-[18px] items-center justify-center rounded ${
@@ -319,7 +349,7 @@ export default function SettingsPage() {
                     <span
                       className={`text-xs ${key.roles.includes("developer_agent") ? "text-foreground" : "text-muted-foreground"}`}
                     >
-                      Developer Agent
+                      {t("settings.developerAgent")}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -337,7 +367,7 @@ export default function SettingsPage() {
                     <span
                       className={`text-xs ${key.roles.includes("pm_agent") ? "text-foreground" : "text-muted-foreground"}`}
                     >
-                      PM Agent
+                      {t("settings.pmAgent")}
                     </span>
                   </div>
                 </div>
@@ -356,10 +386,10 @@ export default function SettingsPage() {
               <div className="p-6">
                 <div className="mb-4 flex items-center gap-2 text-green-600">
                   <Check className="h-5 w-5" />
-                  <span className="font-medium">API Key Created</span>
+                  <span className="font-medium">{t("settings.apiKeyCreated")}</span>
                 </div>
                 <p className="mb-4 text-sm text-muted-foreground">
-                  Copy this key now. You won&apos;t be able to see it again!
+                  {t("settings.apiKeyCreatedDesc")}
                 </p>
                 <div className="mb-4 flex items-center gap-2">
                   <code className="flex-1 rounded bg-foreground px-3 py-2 font-mono text-sm text-background">
@@ -370,11 +400,11 @@ export default function SettingsPage() {
                     size="sm"
                     onClick={() => copyToClipboard(createdKey)}
                   >
-                    {copied ? "Copied!" : "Copy"}
+                    {copied ? t("common.copied") : t("common.copy")}
                   </Button>
                 </div>
                 <Button onClick={closeModal} className="w-full">
-                  Done
+                  {t("common.done")}
                 </Button>
               </div>
             ) : (
@@ -383,7 +413,7 @@ export default function SettingsPage() {
                 {/* Modal Header */}
                 <div className="flex items-center justify-between border-b border-border px-6 py-5">
                   <h3 className="text-lg font-semibold text-foreground">
-                    Create API Key
+                    {t("settings.createApiKey")}
                   </h3>
                   <Button
                     type="button"
@@ -401,13 +431,13 @@ export default function SettingsPage() {
                   {/* Name Field */}
                   <div className="space-y-2">
                     <Label htmlFor="keyName" className="text-[13px]">
-                      Name
+                      {t("settings.name")}
                     </Label>
                     <Input
                       id="keyName"
                       value={newKeyName}
                       onChange={(e) => setNewKeyName(e.target.value)}
-                      placeholder="My Agent Key"
+                      placeholder={t("settings.namePlaceholder")}
                       className="border-[#E5E0D8]"
                       required
                     />
@@ -415,9 +445,9 @@ export default function SettingsPage() {
 
                   {/* Agent Roles */}
                   <div className="space-y-3">
-                    <Label className="text-[13px]">Agent Roles</Label>
+                    <Label className="text-[13px]">{t("settings.agentRoles")}</Label>
                     <p className="text-xs text-muted-foreground">
-                      Select the roles this API key has access to.
+                      {t("settings.agentRolesDesc")}
                     </p>
                     <div className="space-y-2">
                       <button
@@ -442,10 +472,10 @@ export default function SettingsPage() {
                         </div>
                         <div>
                           <div className="text-sm font-medium text-foreground">
-                            Developer Agent
+                            {t("settings.developerAgent")}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            Execute tasks, write code, report issues, commits
+                            {t("settings.developerAgentDesc")}
                           </div>
                         </div>
                       </button>
@@ -471,10 +501,10 @@ export default function SettingsPage() {
                         </div>
                         <div>
                           <div className="text-sm font-medium text-foreground">
-                            PM Agent
+                            {t("settings.pmAgent")}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            Analyze requirements, write proposals, manage tasks
+                            {t("settings.pmAgentDesc")}
                           </div>
                         </div>
                       </button>
@@ -483,11 +513,11 @@ export default function SettingsPage() {
 
                   {/* Agent Persona - Always visible */}
                   <div className="space-y-3">
-                    <Label className="text-[13px]">Agent Persona</Label>
+                    <Label className="text-[13px]">{t("settings.agentPersona")}</Label>
                     <p className="text-xs text-muted-foreground">
                       {selectedRoles.length > 0
-                        ? "Select a preset or write your own persona. This defines how the agent behaves in all interactions."
-                        : "Define how this agent should behave in all interactions."}
+                        ? t("settings.agentPersonaDesc")
+                        : t("settings.agentPersonaDescNoRoles")}
                     </p>
 
                     {/* Persona Presets - Only show when roles are selected */}
@@ -514,13 +544,13 @@ export default function SettingsPage() {
                     <Textarea
                       value={customPersona}
                       onChange={(e) => setCustomPersona(e.target.value)}
-                      placeholder="Describe how this agent should behave. For example: 'You are a helpful assistant that focuses on clarity and simplicity...'"
+                      placeholder={t("settings.personaPlaceholder")}
                       rows={4}
                     />
                     <p className="text-[11px] text-muted-foreground">
                       {selectedRoles.length > 0
-                        ? "You can edit the text above or write your own custom persona."
-                        : "Write a custom persona for your agent."}
+                        ? t("settings.personaHint")
+                        : t("settings.personaHintNoRoles")}
                     </p>
                   </div>
                 </div>
@@ -532,7 +562,7 @@ export default function SettingsPage() {
                     variant="outline"
                     onClick={closeModal}
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                   <Button
                     type="submit"
@@ -540,7 +570,7 @@ export default function SettingsPage() {
                       !newKeyName || selectedRoles.length === 0 || submitting
                     }
                   >
-                    {submitting ? "Creating..." : "Create API Key"}
+                    {submitting ? t("settings.creating") : t("settings.createApiKey")}
                   </Button>
                 </div>
               </form>

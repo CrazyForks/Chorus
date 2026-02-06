@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -20,6 +21,7 @@ interface Project {
 }
 
 export default function ProjectsPage() {
+  const t = useTranslations();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -57,7 +59,7 @@ export default function ProjectsPage() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="text-[#6B6B6B]">Loading projects...</div>
+        <div className="text-[#6B6B6B]">{t("common.loading")}</div>
       </div>
     );
   }
@@ -67,9 +69,9 @@ export default function ProjectsPage() {
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-[#2C2C2C]">Projects</h1>
+          <h1 className="text-2xl font-semibold text-[#2C2C2C]">{t("projects.title")}</h1>
           <p className="mt-1 text-sm text-[#6B6B6B]">
-            Manage your projects and track progress
+            {t("projects.subtitle")}
           </p>
         </div>
         <Link href="/projects/new">
@@ -87,7 +89,7 @@ export default function ProjectsPage() {
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
-            New Project
+            {t("projects.newProject")}
           </Button>
         </Link>
       </div>
@@ -112,14 +114,14 @@ export default function ProjectsPage() {
             </svg>
           </div>
           <h3 className="mb-2 text-lg font-medium text-[#2C2C2C]">
-            No projects yet
+            {t("projects.noProjects")}
           </h3>
           <p className="mb-6 max-w-sm text-sm text-[#6B6B6B]">
-            Create your first project to start collaborating with AI agents.
+            {t("projects.noProjectsDesc")}
           </p>
           <Link href="/projects/new">
             <Button className="bg-[#C67A52] hover:bg-[#B56A42] text-white">
-              Create First Project
+              {t("projects.createFirst")}
             </Button>
           </Link>
         </Card>
@@ -158,9 +160,9 @@ export default function ProjectsPage() {
                   </p>
                 )}
                 <div className="flex gap-4 text-xs text-[#9A9A9A]">
-                  <span>{project._count?.ideas || 0} ideas</span>
-                  <span>{project._count?.tasks || 0} tasks</span>
-                  <span>{project._count?.documents || 0} docs</span>
+                  <span>{project._count?.ideas || 0} {t("projects.ideas")}</span>
+                  <span>{project._count?.tasks || 0} {t("projects.tasks")}</span>
+                  <span>{project._count?.documents || 0} {t("projects.docs")}</span>
                 </div>
               </Card>
             </Link>

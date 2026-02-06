@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +40,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const t = useTranslations();
   const [user, setUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
@@ -168,25 +170,25 @@ export default function DashboardLayout({
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-muted-foreground">Loading...</div>
+        <div className="text-muted-foreground">{t("common.loading")}</div>
       </div>
     );
   }
 
   // Project navigation items (shown when inside a project)
   const projectNavItems = [
-    { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-    { href: "/ideas", label: "Ideas", icon: Lightbulb },
-    { href: "/documents", label: "Documents", icon: FileText },
-    { href: "/proposals", label: "Proposals", icon: Tags },
-    { href: "/tasks", label: "Tasks", icon: CheckSquare },
-    { href: "/activity", label: "Activity", icon: Activity },
+    { href: "/dashboard", label: t("nav.overview"), icon: LayoutDashboard },
+    { href: "/ideas", label: t("nav.ideas"), icon: Lightbulb },
+    { href: "/documents", label: t("nav.documents"), icon: FileText },
+    { href: "/proposals", label: t("nav.proposals"), icon: Tags },
+    { href: "/tasks", label: t("nav.tasks"), icon: CheckSquare },
+    { href: "/activity", label: t("nav.activity"), icon: Activity },
   ];
 
   // Global navigation items (shown when NOT in a project)
   const globalNavItems = [
-    { href: "/projects", label: "Projects", icon: FolderKanban },
-    { href: "/settings", label: "Settings", icon: Settings },
+    { href: "/projects", label: t("nav.projects"), icon: FolderKanban },
+    { href: "/settings", label: t("nav.settings"), icon: Settings },
   ];
 
   const isNavActive = (href: string) => {
@@ -224,7 +226,7 @@ export default function DashboardLayout({
                     className="w-full justify-start gap-2.5 text-muted-foreground hover:text-foreground"
                   >
                     <ArrowLeft className="h-3 w-3" />
-                    Projects
+                    {t("nav.backToProjects")}
                   </Button>
                 </Link>
 
@@ -272,7 +274,7 @@ export default function DashboardLayout({
                             className="w-full justify-start gap-2 px-3 py-2 text-[13px] text-primary"
                           >
                             <Plus className="h-3 w-3" />
-                            New Project
+                            {t("nav.newProject")}
                           </Button>
                         </Link>
                       </div>

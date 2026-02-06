@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { createUserManager, storeOidcConfig, type OidcConfig } from "@/lib/oidc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { Music } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
+  const t = useTranslations();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -62,7 +64,7 @@ export default function LoginPage() {
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError("Network error. Please try again.");
+      setError(t("login.networkError"));
     } finally {
       setLoading(false);
     }
@@ -75,20 +77,20 @@ export default function LoginPage() {
           {/* Logo Section */}
           <div className="mb-8 flex flex-col items-center gap-2">
             <Music className="h-12 w-12 text-foreground" />
-            <h1 className="text-[28px] font-semibold text-foreground">Chorus</h1>
+            <h1 className="text-[28px] font-semibold text-foreground">{t("login.title")}</h1>
             <p className="text-sm text-muted-foreground">
-              AI-Human Collaboration Platform
+              {t("login.subtitle")}
             </p>
           </div>
 
           {/* Form Section */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("login.email")}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@company.com"
+                placeholder={t("login.emailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -103,13 +105,13 @@ export default function LoginPage() {
             )}
 
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Checking..." : "Continue"}
+              {loading ? t("login.checking") : t("login.continue")}
             </Button>
           </form>
 
           {/* Help Text */}
           <p className="mt-8 text-center text-xs text-muted-foreground">
-            Enter your email to sign in or create an account
+            {t("login.helpText")}
           </p>
         </CardContent>
       </Card>
