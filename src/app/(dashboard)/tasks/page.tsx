@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { authFetch } from "@/lib/auth-client";
 
 interface Task {
   uuid: string;
@@ -57,12 +58,7 @@ export default function TasksPage() {
     }
 
     try {
-      const response = await fetch(`/api/projects/${projectUuid}/tasks`, {
-        headers: {
-          "x-user-id": "1",
-          "x-company-id": "1",
-        },
-      });
+      const response = await authFetch(`/api/projects/${projectUuid}/tasks`);
       const data = await response.json();
       if (data.success) {
         setTasks(data.data);

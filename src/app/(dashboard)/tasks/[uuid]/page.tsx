@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { authFetch } from "@/lib/auth-client";
 
 interface Task {
   uuid: string;
@@ -72,12 +73,7 @@ export default function TaskDetailPage() {
     }
 
     try {
-      const response = await fetch(`/api/projects/${projectUuid}/tasks/${uuid}`, {
-        headers: {
-          "x-user-id": "1",
-          "x-company-id": "1",
-        },
-      });
+      const response = await authFetch(`/api/projects/${projectUuid}/tasks/${uuid}`);
       const data = await response.json();
       if (data.success) {
         setTask(data.data);
@@ -95,13 +91,9 @@ export default function TaskDetailPage() {
 
     setUpdatingStatus(true);
     try {
-      const response = await fetch(`/api/projects/${projectUuid}/tasks/${uuid}`, {
+      const response = await authFetch(`/api/projects/${projectUuid}/tasks/${uuid}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": "1",
-          "x-company-id": "1",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
       const data = await response.json();
@@ -121,12 +113,8 @@ export default function TaskDetailPage() {
 
     setUpdatingStatus(true);
     try {
-      const response = await fetch(`/api/projects/${projectUuid}/tasks/${uuid}/claim`, {
+      const response = await authFetch(`/api/projects/${projectUuid}/tasks/${uuid}/claim`, {
         method: "POST",
-        headers: {
-          "x-user-id": "1",
-          "x-company-id": "1",
-        },
       });
       const data = await response.json();
       if (data.success) {

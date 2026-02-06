@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
+import { authFetch } from "@/lib/auth-client";
 
 interface Activity {
   uuid: string;
@@ -111,12 +112,7 @@ export default function ActivityPage() {
     }
 
     try {
-      const response = await fetch(`/api/projects/${projectUuid}/activities`, {
-        headers: {
-          "x-user-id": "1",
-          "x-company-id": "1",
-        },
-      });
+      const response = await authFetch(`/api/projects/${projectUuid}/activities`);
       const data = await response.json();
       if (data.success) {
         setActivities(data.data);

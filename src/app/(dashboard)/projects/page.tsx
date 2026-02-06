@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { authFetch } from "@/lib/auth-client";
 
 interface Project {
   uuid: string;
@@ -28,12 +29,7 @@ export default function ProjectsPage() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch("/api/projects", {
-        headers: {
-          "x-user-id": "1",
-          "x-company-id": "1",
-        },
-      });
+      const response = await authFetch("/api/projects");
       const data = await response.json();
       if (data.success) {
         setProjects(data.data);

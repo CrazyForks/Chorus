@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { authFetch } from "@/lib/auth-client";
 
 interface Project {
   uuid: string;
@@ -38,12 +39,7 @@ export default function ProjectOverviewPage() {
 
   const fetchProject = async () => {
     try {
-      const response = await fetch(`/api/projects/${uuid}`, {
-        headers: {
-          "x-user-id": "1",
-          "x-company-id": "1",
-        },
-      });
+      const response = await authFetch(`/api/projects/${uuid}`);
       const data = await response.json();
 
       if (data.success) {
@@ -66,18 +62,10 @@ export default function ProjectOverviewPage() {
     try {
       // Fetch ideas, tasks, documents, proposals counts
       const [ideasRes, tasksRes, docsRes, proposalsRes] = await Promise.all([
-        fetch(`/api/projects/${uuid}/ideas`, {
-          headers: { "x-user-id": "1", "x-company-id": "1" },
-        }),
-        fetch(`/api/projects/${uuid}/tasks`, {
-          headers: { "x-user-id": "1", "x-company-id": "1" },
-        }),
-        fetch(`/api/projects/${uuid}/documents`, {
-          headers: { "x-user-id": "1", "x-company-id": "1" },
-        }),
-        fetch(`/api/projects/${uuid}/proposals`, {
-          headers: { "x-user-id": "1", "x-company-id": "1" },
-        }),
+        authFetch(`/api/projects/${uuid}/ideas`),
+        authFetch(`/api/projects/${uuid}/tasks`),
+        authFetch(`/api/projects/${uuid}/documents`),
+        authFetch(`/api/projects/${uuid}/proposals`),
       ]);
 
       const [ideas, tasks, docs, proposals] = await Promise.all([

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { authFetch } from "@/lib/auth-client";
 
 interface Proposal {
   uuid: string;
@@ -66,12 +67,7 @@ export default function ProposalDetailPage() {
     }
 
     try {
-      const response = await fetch(`/api/projects/${projectUuid}/proposals/${uuid}`, {
-        headers: {
-          "x-user-id": "1",
-          "x-company-id": "1",
-        },
-      });
+      const response = await authFetch(`/api/projects/${projectUuid}/proposals/${uuid}`);
       const data = await response.json();
       if (data.success) {
         setProposal(data.data);
@@ -89,12 +85,8 @@ export default function ProposalDetailPage() {
 
     setSubmitting(true);
     try {
-      const response = await fetch(`/api/projects/${projectUuid}/proposals/${uuid}/approve`, {
+      const response = await authFetch(`/api/projects/${projectUuid}/proposals/${uuid}/approve`, {
         method: "POST",
-        headers: {
-          "x-user-id": "1",
-          "x-company-id": "1",
-        },
       });
       const data = await response.json();
       if (data.success) {
@@ -115,12 +107,8 @@ export default function ProposalDetailPage() {
 
     setSubmitting(true);
     try {
-      const response = await fetch(`/api/projects/${projectUuid}/proposals/${uuid}/reject`, {
+      const response = await authFetch(`/api/projects/${projectUuid}/proposals/${uuid}/reject`, {
         method: "POST",
-        headers: {
-          "x-user-id": "1",
-          "x-company-id": "1",
-        },
       });
       const data = await response.json();
       if (data.success) {

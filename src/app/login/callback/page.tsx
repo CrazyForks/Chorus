@@ -9,6 +9,9 @@ import {
   extractUserInfo,
 } from "@/lib/oidc";
 import { storeAccessToken } from "@/lib/auth-client";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Music, Loader2 } from "lucide-react";
 
 export default function OidcCallbackPage() {
   const router = useRouter();
@@ -46,7 +49,7 @@ export default function OidcCallbackPage() {
       // Extract user info from OIDC response
       const userInfo = extractUserInfo(user);
 
-      // Send to backend to create session
+      // Send to backend to register user
       const response = await fetch("/api/auth/callback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -64,21 +67,19 @@ export default function OidcCallbackPage() {
       const data = await response.json();
 
       if (!data.success) {
-        throw new Error(data.error?.message || "Failed to create session");
+        throw new Error(data.error?.message || "Failed to register user");
       }
 
-      // Store access token for Bearer auth
-      if (data.data.accessToken) {
-        storeAccessToken(data.data.accessToken);
-      }
+      // Store our JWT access token for Bearer auth
+      storeAccessToken(data.data.accessToken);
 
       // Clear stored config
       clearOidcConfig();
 
       setStatus("Login successful! Redirecting...");
 
-      // Redirect to dashboard
-      router.push("/");
+      // Redirect to projects page for OIDC users
+      router.push("/projects");
     } catch (err) {
       console.error("OIDC callback error:", err);
       setError(
@@ -89,69 +90,35 @@ export default function OidcCallbackPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#FAF8F4] p-4">
-      <div className="w-full max-w-[400px] rounded-xl border border-[#E5E2DC] bg-white p-10">
-        {/* Logo */}
-        <div className="mb-8 flex flex-col items-center gap-2">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-12 w-12 text-[#171717]"
-          >
-            <path d="M9 18V5l12-2v13" />
-            <circle cx="6" cy="18" r="3" />
-            <circle cx="18" cy="16" r="3" />
-          </svg>
-          <h1 className="text-[28px] font-semibold text-[#171717]">Chorus</h1>
-        </div>
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-[400px]">
+        <CardContent className="p-10">
+          {/* Logo */}
+          <div className="mb-8 flex flex-col items-center gap-2">
+            <Music className="h-12 w-12 text-foreground" />
+            <h1 className="text-[28px] font-semibold text-foreground">Chorus</h1>
+          </div>
 
-        {/* Status */}
-        {error ? (
-          <div className="space-y-4">
-            <div className="rounded-lg bg-red-50 p-4 text-center text-sm text-red-600">
-              {error}
+          {/* Status */}
+          {error ? (
+            <div className="space-y-4">
+              <div className="rounded-lg bg-destructive/10 p-4 text-center text-sm text-destructive">
+                {error}
+              </div>
+              <Button onClick={() => router.push("/login")} className="w-full">
+                Back to Login
+              </Button>
             </div>
-            <button
-              onClick={() => router.push("/login")}
-              className="flex h-11 w-full items-center justify-center rounded-lg bg-[#171717] text-sm font-medium text-white transition-colors hover:bg-[#2C2C2C]"
-            >
-              Back to Login
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="flex items-center justify-center gap-3">
-              {/* Spinner */}
-              <svg
-                className="h-5 w-5 animate-spin text-[#171717]"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
-              <span className="text-sm text-[#737373]">{status}</span>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-center gap-3">
+                <Loader2 className="h-5 w-5 animate-spin text-foreground" />
+                <span className="text-sm text-muted-foreground">{status}</span>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

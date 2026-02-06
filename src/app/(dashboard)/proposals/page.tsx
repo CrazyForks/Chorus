@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { authFetch } from "@/lib/auth-client";
 
 interface Proposal {
   uuid: string;
@@ -53,12 +54,7 @@ export default function ProposalsPage() {
     }
 
     try {
-      const response = await fetch(`/api/projects/${projectUuid}/proposals`, {
-        headers: {
-          "x-user-id": "1",
-          "x-company-id": "1",
-        },
-      });
+      const response = await authFetch(`/api/projects/${projectUuid}/proposals`);
       const data = await response.json();
       if (data.success) {
         setProposals(data.data);
@@ -119,32 +115,26 @@ export default function ProposalsPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="mb-6 flex gap-2 border-b border-[#E5E2DC] pb-4">
-        <button
+      <div className="mb-6 flex gap-2 border-b border-border pb-4">
+        <Button
+          variant={filter === "all" ? "default" : "ghost"}
+          size="sm"
           onClick={() => setFilter("all")}
-          className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-            filter === "all"
-              ? "bg-[#2C2C2C] text-white"
-              : "text-[#6B6B6B] hover:bg-[#F5F2EC]"
-          }`}
         >
           All ({proposals.length})
-        </button>
+        </Button>
         {Object.entries(statusConfig).map(([status, config]) => {
           const count = statusCounts[status] || 0;
           if (count === 0 && status !== "pending") return null;
           return (
-            <button
+            <Button
               key={status}
+              variant={filter === status ? "default" : "ghost"}
+              size="sm"
               onClick={() => setFilter(status)}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                filter === status
-                  ? "bg-[#2C2C2C] text-white"
-                  : "text-[#6B6B6B] hover:bg-[#F5F2EC]"
-              }`}
             >
               {config.label} ({count})
-            </button>
+            </Button>
           );
         })}
       </div>

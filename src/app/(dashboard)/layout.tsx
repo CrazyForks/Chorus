@@ -3,6 +3,23 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Music,
+  ArrowLeft,
+  ChevronDown,
+  Plus,
+  LayoutDashboard,
+  Lightbulb,
+  FileText,
+  Tags,
+  CheckSquare,
+  Activity,
+  FolderKanban,
+  Settings,
+  LogOut,
+} from "lucide-react";
+import { getAccessToken, clearAccessToken, authFetch } from "@/lib/auth-client";
 
 interface User {
   uuid: string;
@@ -62,24 +79,60 @@ export default function DashboardLayout({
   }, [pathname, projects, currentProject?.uuid]);
 
   const checkSession = async () => {
-    // TODO: Implement proper session check
-    // For MVP, we'll use a mock user
-    setUser({
-      uuid: "mock-user",
-      email: "user@example.com",
-      name: "Demo User",
-    });
+    const token = getAccessToken();
+
+    if (!token) {
+      // No token, redirect to login
+      router.push("/login");
+      return;
+    }
+
+    try {
+      // Verify token and get user info from API
+      const response = await fetch("/api/auth/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        // Token invalid, clear and redirect to login
+        clearAccessToken();
+        router.push("/login");
+        return;
+      }
+
+      const data = await response.json();
+      if (data.success && data.data.user) {
+        setUser({
+          uuid: data.data.user.uuid,
+          email: data.data.user.email,
+          name: data.data.user.name || data.data.user.email,
+        });
+      } else {
+        // Invalid response, redirect to login
+        clearAccessToken();
+        router.push("/login");
+        return;
+      }
+    } catch (error) {
+      console.error("Session check failed:", error);
+      clearAccessToken();
+      router.push("/login");
+      return;
+    }
+
     setLoading(false);
   };
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch("/api/projects", {
-        headers: {
-          "x-user-id": "1",
-          "x-company-id": "1",
-        },
-      });
+      // Use authFetch to include Bearer token for proper company filtering
+      const response = await authFetch("/api/projects");
+      if (!response.ok) {
+        console.error("Failed to fetch projects:", response.status);
+        return;
+      }
       const data = await response.json();
       if (data.success && data.data.length > 0) {
         setProjects(data.data);
@@ -107,180 +160,33 @@ export default function DashboardLayout({
   };
 
   const handleLogout = async () => {
+    clearAccessToken();
     localStorage.removeItem("currentProjectUuid");
     router.push("/login");
   };
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#FAF8F4]">
-        <div className="text-[#6B6B6B]">Loading...</div>
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-muted-foreground">Loading...</div>
       </div>
     );
   }
 
   // Project navigation items (shown when inside a project)
   const projectNavItems = [
-    {
-      href: "/dashboard",
-      label: "Overview",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-4 w-4"
-        >
-          <rect width="7" height="9" x="3" y="3" rx="1" />
-          <rect width="7" height="5" x="14" y="3" rx="1" />
-          <rect width="7" height="9" x="14" y="12" rx="1" />
-          <rect width="7" height="5" x="3" y="16" rx="1" />
-        </svg>
-      ),
-    },
-    {
-      href: "/ideas",
-      label: "Ideas",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-4 w-4"
-        >
-          <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
-          <path d="M9 18h6" />
-          <path d="M10 22h4" />
-        </svg>
-      ),
-    },
-    {
-      href: "/documents",
-      label: "Documents",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-4 w-4"
-        >
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-          <line x1="16" y1="13" x2="8" y2="13" />
-          <line x1="16" y1="17" x2="8" y2="17" />
-        </svg>
-      ),
-    },
-    {
-      href: "/proposals",
-      label: "Proposals",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-4 w-4"
-        >
-          <path d="M9 5H2v7l6.29 6.29c.94.94 2.48.94 3.42 0l3.58-3.58c.94-.94.94-2.48 0-3.42L9 5Z" />
-          <path d="M6 9.01V9" />
-          <path d="m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L17 19" />
-        </svg>
-      ),
-    },
-    {
-      href: "/tasks",
-      label: "Tasks",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-4 w-4"
-        >
-          <path d="m9 11 3 3L22 4" />
-          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-        </svg>
-      ),
-    },
-    {
-      href: "/activity",
-      label: "Activity",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-4 w-4"
-        >
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-        </svg>
-      ),
-    },
+    { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+    { href: "/ideas", label: "Ideas", icon: Lightbulb },
+    { href: "/documents", label: "Documents", icon: FileText },
+    { href: "/proposals", label: "Proposals", icon: Tags },
+    { href: "/tasks", label: "Tasks", icon: CheckSquare },
+    { href: "/activity", label: "Activity", icon: Activity },
   ];
 
   // Global navigation items (shown when NOT in a project)
   const globalNavItems = [
-    {
-      href: "/projects",
-      label: "Projects",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-4 w-4"
-        >
-          <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
-        </svg>
-      ),
-    },
-    {
-      href: "/settings",
-      label: "Settings",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-4 w-4"
-        >
-          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-          <circle cx="12" cy="12" r="3" />
-        </svg>
-      ),
-    },
+    { href: "/projects", label: "Projects", icon: FolderKanban },
+    { href: "/settings", label: "Settings", icon: Settings },
   ];
 
   const isNavActive = (href: string) => {
@@ -294,27 +200,14 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="flex min-h-screen bg-[#FAF8F4]">
+    <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
-      <aside className="flex w-[220px] flex-shrink-0 flex-col justify-between border-r border-[#E5E0D8] bg-white">
+      <aside className="flex w-[220px] flex-shrink-0 flex-col justify-between border-r border-border bg-card">
         <div className="flex flex-col gap-8 p-6">
           {/* Logo */}
           <div className="flex items-center gap-2.5">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-7 w-7 text-[#2C2C2C]"
-            >
-              <path d="M9 18V5l12-2v13" />
-              <circle cx="6" cy="18" r="3" />
-              <circle cx="18" cy="16" r="3" />
-            </svg>
-            <span className="text-base font-semibold text-[#2C2C2C]">
+            <Music className="h-7 w-7 text-foreground" />
+            <span className="text-base font-semibold text-foreground">
               Chorus
             </span>
           </div>
@@ -324,84 +217,63 @@ export default function DashboardLayout({
             {isProjectContext ? (
               <>
                 {/* Back to Projects (shown in project context) */}
-                <Link
-                  href="/projects"
-                  className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] text-[#6B6B6B] transition-colors hover:bg-[#F5F2EC] hover:text-[#2C2C2C]"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-3 w-3"
+                <Link href="/projects">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start gap-2.5 text-muted-foreground hover:text-foreground"
                   >
-                    <path d="m12 19-7-7 7-7" />
-                    <path d="M19 12H5" />
-                  </svg>
-                  Projects
+                    <ArrowLeft className="h-3 w-3" />
+                    Projects
+                  </Button>
                 </Link>
 
                 {/* Current Project Selector */}
                 {currentProject && (
                   <div className="relative mt-2">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setProjectMenuOpen(!projectMenuOpen)}
-                      className="flex w-full items-center justify-between px-3 py-1.5 text-left"
+                      className="w-full justify-between px-3 py-1.5"
                     >
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-[#2C2C2C]">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground">
                         {currentProject.name}
                       </span>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className={`h-3 w-3 text-[#6B6B6B] transition-transform ${projectMenuOpen ? "rotate-180" : ""}`}
-                      >
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
-                    </button>
+                      <ChevronDown
+                        className={`h-3 w-3 text-muted-foreground transition-transform ${projectMenuOpen ? "rotate-180" : ""}`}
+                      />
+                    </Button>
                     {projectMenuOpen && (
-                      <div className="absolute left-0 right-0 top-full z-10 mt-1 rounded-lg border border-[#E5E0D8] bg-white py-1 shadow-lg">
+                      <div className="absolute left-0 right-0 top-full z-10 mt-1 rounded-lg border border-border bg-card py-1 shadow-lg">
                         {projects.map((project) => (
-                          <button
+                          <Button
                             key={project.uuid}
+                            variant="ghost"
+                            size="sm"
                             onClick={() => selectProject(project)}
-                            className={`flex w-full px-3 py-2 text-left text-[13px] hover:bg-[#F5F2EC] ${
+                            className={`w-full justify-start px-3 py-2 text-[13px] ${
                               currentProject?.uuid === project.uuid
-                                ? "bg-[#F5F2EC] font-medium text-[#2C2C2C]"
-                                : "text-[#6B6B6B]"
+                                ? "bg-secondary font-medium text-foreground"
+                                : "text-muted-foreground"
                             }`}
                           >
                             {project.name}
-                          </button>
+                          </Button>
                         ))}
-                        <div className="my-1 border-t border-[#E5E0D8]" />
+                        <div className="my-1 border-t border-border" />
                         <Link
                           href="/projects/new"
-                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-[#C67A52] hover:bg-[#F5F2EC]"
                           onClick={() => setProjectMenuOpen(false)}
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="h-3 w-3"
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start gap-2 px-3 py-2 text-[13px] text-primary"
                           >
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                          </svg>
-                          New Project
+                            <Plus className="h-3 w-3" />
+                            New Project
+                          </Button>
                         </Link>
                       </div>
                     )}
@@ -412,20 +284,23 @@ export default function DashboardLayout({
                 <div className="mt-2 flex flex-col gap-1">
                   {projectNavItems.map((item) => {
                     const isActive = isNavActive(item.href);
+                    const Icon = item.icon;
                     return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] transition-colors ${
-                          isActive
-                            ? "bg-[#F5F2EC] font-medium text-[#2C2C2C]"
-                            : "text-[#6B6B6B] hover:bg-[#F5F2EC] hover:text-[#2C2C2C]"
-                        }`}
-                      >
-                        <span className={isActive ? "text-[#C67A52]" : ""}>
-                          {item.icon}
-                        </span>
-                        {item.label}
+                      <Link key={item.href} href={item.href}>
+                        <Button
+                          variant={isActive ? "secondary" : "ghost"}
+                          size="sm"
+                          className={`w-full justify-start gap-2.5 text-[13px] ${
+                            isActive
+                              ? "font-medium text-foreground"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          <Icon
+                            className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
+                          />
+                          {item.label}
+                        </Button>
                       </Link>
                     );
                   })}
@@ -437,20 +312,21 @@ export default function DashboardLayout({
                 <div className="flex flex-col gap-1">
                   {globalNavItems.map((item) => {
                     const isActive = isNavActive(item.href);
+                    const Icon = item.icon;
                     return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] transition-colors ${
-                          isActive
-                            ? "bg-[#F5F2EC] font-medium text-[#2C2C2C]"
-                            : "text-[#6B6B6B] hover:bg-[#F5F2EC] hover:text-[#2C2C2C]"
-                        }`}
-                      >
-                        <span className={isActive ? "text-[#2C2C2C]" : ""}>
-                          {item.icon}
-                        </span>
-                        {item.label}
+                      <Link key={item.href} href={item.href}>
+                        <Button
+                          variant={isActive ? "secondary" : "ghost"}
+                          size="sm"
+                          className={`w-full justify-start gap-2.5 text-[13px] ${
+                            isActive
+                              ? "font-medium text-foreground"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          <Icon className="h-4 w-4" />
+                          {item.label}
+                        </Button>
                       </Link>
                     );
                   })}
@@ -463,37 +339,26 @@ export default function DashboardLayout({
         {/* User Profile */}
         <div className="p-6">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#C67A52] text-sm font-medium text-white">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
               {user?.name?.charAt(0) || "U"}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[13px] font-medium text-[#2C2C2C]">
+              <div className="truncate text-[13px] font-medium text-foreground">
                 {user?.name}
               </div>
-              <div className="truncate text-[11px] text-[#9A9A9A]">
+              <div className="truncate text-[11px] text-muted-foreground">
                 {user?.email}
               </div>
             </div>
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={handleLogout}
-              className="text-[#9A9A9A] hover:text-[#6B6B6B]"
               title="Sign out"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-4 w-4"
-              >
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-            </button>
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </aside>

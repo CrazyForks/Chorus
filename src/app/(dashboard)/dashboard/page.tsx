@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { authFetch } from "@/lib/auth-client";
 
 interface DashboardStats {
   ideas: { total: number; open: number };
@@ -38,12 +39,7 @@ export default function DashboardPage() {
 
     setHasProject(true);
     try {
-      const response = await fetch(`/api/projects/${projectUuid}/stats`, {
-        headers: {
-          "x-user-id": "1",
-          "x-company-id": "1",
-        },
-      });
+      const response = await authFetch(`/api/projects/${projectUuid}/stats`);
       const data = await response.json();
       if (data.success) {
         setStats(data.data);

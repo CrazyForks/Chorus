@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { authFetch } from "@/lib/auth-client";
 
 interface Document {
   uuid: string;
@@ -67,12 +68,7 @@ export default function DocumentDetailPage() {
     }
 
     try {
-      const response = await fetch(`/api/projects/${projectUuid}/documents/${uuid}`, {
-        headers: {
-          "x-user-id": "1",
-          "x-company-id": "1",
-        },
-      });
+      const response = await authFetch(`/api/projects/${projectUuid}/documents/${uuid}`);
       const data = await response.json();
       if (data.success) {
         setDocument(data.data);
@@ -90,13 +86,9 @@ export default function DocumentDetailPage() {
     if (!projectUuid || !document) return;
 
     try {
-      const response = await fetch(`/api/projects/${projectUuid}/documents/${uuid}`, {
+      const response = await authFetch(`/api/projects/${projectUuid}/documents/${uuid}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": "1",
-          "x-company-id": "1",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: editContent }),
       });
       const data = await response.json();

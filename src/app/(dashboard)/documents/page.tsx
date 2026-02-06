@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { authFetch } from "@/lib/auth-client";
 
 interface Document {
   uuid: string;
@@ -48,12 +49,7 @@ export default function DocumentsPage() {
     }
 
     try {
-      const response = await fetch(`/api/projects/${projectUuid}/documents`, {
-        headers: {
-          "x-user-id": "1",
-          "x-company-id": "1",
-        },
-      });
+      const response = await authFetch(`/api/projects/${projectUuid}/documents`);
       const data = await response.json();
       if (data.success) {
         setDocuments(data.data);
@@ -111,32 +107,26 @@ export default function DocumentsPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="mb-6 flex gap-2 border-b border-[#E5E2DC] pb-4">
-        <button
+      <div className="mb-6 flex gap-2 border-b border-border pb-4">
+        <Button
+          variant={filter === "all" ? "default" : "ghost"}
+          size="sm"
           onClick={() => setFilter("all")}
-          className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-            filter === "all"
-              ? "bg-[#2C2C2C] text-white"
-              : "text-[#6B6B6B] hover:bg-[#F5F2EC]"
-          }`}
         >
           All ({documents.length})
-        </button>
+        </Button>
         {Object.entries(docTypeConfig).map(([type, config]) => {
           const count = typeCounts[type] || 0;
           if (count === 0) return null;
           return (
-            <button
+            <Button
               key={type}
+              variant={filter === type ? "default" : "ghost"}
+              size="sm"
               onClick={() => setFilter(type)}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                filter === type
-                  ? "bg-[#2C2C2C] text-white"
-                  : "text-[#6B6B6B] hover:bg-[#F5F2EC]"
-              }`}
             >
               {config.label} ({count})
-            </button>
+            </Button>
           );
         })}
       </div>

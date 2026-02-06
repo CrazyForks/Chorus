@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { authFetch } from "@/lib/auth-client";
 
 interface Idea {
   uuid: string;
@@ -65,12 +66,7 @@ export default function IdeaDetailPage() {
     }
 
     try {
-      const response = await fetch(`/api/projects/${projectUuid}/ideas/${uuid}`, {
-        headers: {
-          "x-user-id": "1",
-          "x-company-id": "1",
-        },
-      });
+      const response = await authFetch(`/api/projects/${projectUuid}/ideas/${uuid}`);
       const data = await response.json();
       if (data.success) {
         setIdea(data.data);
@@ -87,12 +83,8 @@ export default function IdeaDetailPage() {
     if (!projectUuid || !idea) return;
 
     try {
-      const response = await fetch(`/api/projects/${projectUuid}/ideas/${uuid}/claim`, {
+      const response = await authFetch(`/api/projects/${projectUuid}/ideas/${uuid}/claim`, {
         method: "POST",
-        headers: {
-          "x-user-id": "1",
-          "x-company-id": "1",
-        },
       });
       const data = await response.json();
       if (data.success) {

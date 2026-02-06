@@ -1,15 +1,13 @@
 // src/app/api/auth/callback/route.ts
-// OIDC Callback API - Creates user session from OIDC tokens
+// OIDC Callback API - Registers user and creates our own JWT session
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { success, errors } from "@/lib/api-response";
+import { findOrCreateUserByOidc, getCompanyByUuid } from "@/services/user.service";
 import {
   createUserAccessToken,
-  createUserRefreshToken,
-  setUserSessionCookies,
   type UserSessionPayload,
 } from "@/lib/user-session";
-import { findOrCreateUserByOidc, getCompanyByUuid } from "@/services/user.service";
 
 // POST /api/auth/callback
 // Body: { companyUuid, oidcSub, email, name?, accessToken, refreshToken?, expiresAt? }
@@ -33,7 +31,7 @@ export async function POST(request: NextRequest) {
       return errors.badRequest("OIDC is not enabled for this company");
     }
 
-    // Find or create user
+    // Find or create user in database
     const user = await findOrCreateUserByOidc({
       oidcSub,
       email,
@@ -41,48 +39,38 @@ export async function POST(request: NextRequest) {
       companyId: company.id,
     });
 
-    // Create session payload
+    // Create our own JWT session token
     const sessionPayload: UserSessionPayload = {
       type: "user",
       userId: user.id,
       userUuid: user.uuid,
       companyId: user.companyId,
       companyUuid: company.uuid,
-      email: user.email || email, // Use provided email as fallback
+      email: user.email || email,
       name: user.name || undefined,
-      oidcSub: user.oidcSub || oidcSub, // Use provided oidcSub as fallback
+      oidcSub: user.oidcSub || oidcSub,
       oidcAccessToken: accessToken,
       oidcRefreshToken: refreshToken,
       oidcExpiresAt: expiresAt,
     };
 
-    // Create tokens
-    const [userAccessToken, userRefreshToken] = await Promise.all([
-      createUserAccessToken(sessionPayload),
-      createUserRefreshToken(sessionPayload),
-    ]);
+    // Create our JWT access token
+    const jwtAccessToken = await createUserAccessToken(sessionPayload);
 
-    // Build response with cookies and token
-    const response = NextResponse.json(
-      success({
-        user: {
-          uuid: user.uuid,
-          email: user.email,
-          name: user.name,
-        },
-        company: {
-          uuid: company.uuid,
-          name: company.name,
-        },
-        // Return access token for Bearer auth
-        accessToken: userAccessToken,
-      })
-    );
-
-    // Set session cookies
-    setUserSessionCookies(response, userAccessToken, userRefreshToken);
-
-    return response;
+    // Return user info and our JWT token
+    return success({
+      user: {
+        uuid: user.uuid,
+        email: user.email,
+        name: user.name,
+      },
+      company: {
+        uuid: company.uuid,
+        name: company.name,
+      },
+      // Return our JWT for Bearer auth (not the raw OIDC token)
+      accessToken: jwtAccessToken,
+    });
   } catch (error) {
     console.error("OIDC callback error:", error);
     return errors.internal("Failed to process OIDC callback");

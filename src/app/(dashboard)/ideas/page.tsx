@@ -5,6 +5,10 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Lightbulb, Bot } from "lucide-react";
+import { authFetch } from "@/lib/auth-client";
 
 interface Idea {
   uuid: string;
@@ -59,12 +63,7 @@ export default function IdeasPage() {
     }
 
     try {
-      const response = await fetch(`/api/projects/${projectUuid}/ideas`, {
-        headers: {
-          "x-user-id": "1",
-          "x-company-id": "1",
-        },
-      });
+      const response = await authFetch(`/api/projects/${projectUuid}/ideas`);
       const data = await response.json();
       if (data.success) {
         setIdeas(data.data);
@@ -83,13 +82,9 @@ export default function IdeasPage() {
 
     setSubmitting(true);
     try {
-      const response = await fetch(`/api/projects/${projectUuid}/ideas`, {
+      const response = await authFetch(`/api/projects/${projectUuid}/ideas`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": "1",
-          "x-company-id": "1",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newIdea),
       });
       const data = await response.json();
@@ -127,101 +122,78 @@ export default function IdeasPage() {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-[#2C2C2C]">Ideas</h1>
-          <p className="mt-1 text-sm text-[#6B6B6B]">
+          <h1 className="text-2xl font-semibold text-foreground">Ideas</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Capture and track ideas for your project
           </p>
         </div>
-        <Button
-          onClick={() => setShowNewForm(true)}
-          className="bg-[#C67A52] hover:bg-[#B56A42] text-white"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="mr-2 h-4 w-4"
-          >
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
+        <Button onClick={() => setShowNewForm(true)}>
+          <Plus className="mr-2 h-4 w-4" />
           New Idea
         </Button>
       </div>
 
       {/* Filter Tabs */}
-      <div className="mb-6 flex gap-2 border-b border-[#E5E2DC] pb-4">
-        <button
+      <div className="mb-6 flex gap-2 border-b border-border pb-4">
+        <Button
+          variant={filter === "all" ? "default" : "ghost"}
+          size="sm"
           onClick={() => setFilter("all")}
-          className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-            filter === "all"
-              ? "bg-[#2C2C2C] text-white"
-              : "text-[#6B6B6B] hover:bg-[#F5F2EC]"
-          }`}
         >
           All ({ideas.length})
-        </button>
+        </Button>
         {Object.entries(statusConfig).map(([status, config]) => {
           const count = statusCounts[status] || 0;
           if (count === 0 && status !== "open") return null;
           return (
-            <button
+            <Button
               key={status}
+              variant={filter === status ? "default" : "ghost"}
+              size="sm"
               onClick={() => setFilter(status)}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                filter === status
-                  ? "bg-[#2C2C2C] text-white"
-                  : "text-[#6B6B6B] hover:bg-[#F5F2EC]"
-              }`}
             >
               {config.label} ({count})
-            </button>
+            </Button>
           );
         })}
       </div>
 
       {/* New Idea Form */}
       {showNewForm && (
-        <Card className="mb-6 border-[#C67A52] p-5">
+        <Card className="mb-6 border-primary p-5">
           <form onSubmit={handleCreateIdea} className="space-y-4">
             <div>
-              <input
+              <Input
                 type="text"
                 value={newIdea.title}
                 onChange={(e) => setNewIdea({ ...newIdea, title: e.target.value })}
                 placeholder="What's your idea?"
-                className="w-full border-0 bg-transparent text-lg font-medium placeholder:text-[#9A9A9A] focus:outline-none focus:ring-0"
+                className="border-0 bg-transparent text-lg font-medium focus-visible:ring-0"
                 autoFocus
               />
             </div>
             <div>
-              <textarea
+              <Textarea
                 value={newIdea.description}
                 onChange={(e) => setNewIdea({ ...newIdea, description: e.target.value })}
                 placeholder="Add more details..."
                 rows={3}
-                className="w-full resize-none border-0 bg-transparent text-sm placeholder:text-[#9A9A9A] focus:outline-none focus:ring-0"
+                className="resize-none border-0 bg-transparent focus-visible:ring-0"
               />
             </div>
             <div className="flex items-center justify-between">
               <div className="flex gap-2">
                 {["low", "medium", "high"].map((p) => (
-                  <button
+                  <Button
                     key={p}
                     type="button"
+                    variant={newIdea.priority === p ? "default" : "secondary"}
+                    size="sm"
                     onClick={() => setNewIdea({ ...newIdea, priority: p })}
-                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                      newIdea.priority === p
-                        ? "bg-[#2C2C2C] text-white"
-                        : "bg-[#F5F2EC] text-[#6B6B6B] hover:bg-[#EBE8E2]"
-                    }`}
+                    className="rounded-full"
                   >
                     {p.charAt(0).toUpperCase() + p.slice(1)}
-                  </button>
+                  </Button>
                 ))}
               </div>
               <div className="flex gap-2">
@@ -230,7 +202,6 @@ export default function IdeasPage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowNewForm(false)}
-                  className="text-[#6B6B6B]"
                 >
                   Cancel
                 </Button>
@@ -238,7 +209,6 @@ export default function IdeasPage() {
                   type="submit"
                   size="sm"
                   disabled={!newIdea.title.trim() || submitting}
-                  className="bg-[#C67A52] hover:bg-[#B56A42] text-white"
                 >
                   {submitting ? "Creating..." : "Create"}
                 </Button>
@@ -250,36 +220,20 @@ export default function IdeasPage() {
 
       {/* Ideas List */}
       {filteredIdeas.length === 0 ? (
-        <Card className="flex flex-col items-center justify-center p-12 text-center border-[#E5E0D8]">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#FFF3E0]">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-8 w-8 text-[#E65100]"
-            >
-              <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
-              <path d="M9 18h6" />
-              <path d="M10 22h4" />
-            </svg>
+        <Card className="flex flex-col items-center justify-center p-12 text-center">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+            <Lightbulb className="h-8 w-8 text-primary" />
           </div>
-          <h3 className="mb-2 text-lg font-medium text-[#2C2C2C]">
+          <h3 className="mb-2 text-lg font-medium text-foreground">
             {filter === "all" ? "No ideas yet" : `No ${statusConfig[filter]?.label.toLowerCase()} ideas`}
           </h3>
-          <p className="mb-6 max-w-sm text-sm text-[#6B6B6B]">
+          <p className="mb-6 max-w-sm text-sm text-muted-foreground">
             {filter === "all"
               ? "Start by adding your first idea. Ideas can be picked up by AI agents for analysis."
               : "Ideas with this status will appear here."}
           </p>
           {filter === "all" && (
-            <Button
-              onClick={() => setShowNewForm(true)}
-              className="bg-[#C67A52] hover:bg-[#B56A42] text-white"
-            >
+            <Button onClick={() => setShowNewForm(true)}>
               Add First Idea
             </Button>
           )}
@@ -288,11 +242,11 @@ export default function IdeasPage() {
         <div className="space-y-3">
           {filteredIdeas.map((idea) => (
             <Link key={idea.uuid} href={`/ideas/${idea.uuid}`}>
-              <Card className="group cursor-pointer border-[#E5E0D8] p-4 transition-all hover:border-[#C67A52] hover:shadow-sm">
+              <Card className="group cursor-pointer p-4 transition-all hover:border-primary hover:shadow-sm">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="mb-1 flex items-center gap-2">
-                      <h3 className="font-medium text-[#2C2C2C] group-hover:text-[#C67A52]">
+                      <h3 className="font-medium text-foreground group-hover:text-primary">
                         {idea.title}
                       </h3>
                       <Badge className={statusConfig[idea.status]?.color || ""}>
@@ -305,11 +259,11 @@ export default function IdeasPage() {
                       )}
                     </div>
                     {idea.description && (
-                      <p className="line-clamp-2 text-sm text-[#6B6B6B]">
+                      <p className="line-clamp-2 text-sm text-muted-foreground">
                         {idea.description}
                       </p>
                     )}
-                    <div className="mt-2 flex items-center gap-3 text-xs text-[#9A9A9A]">
+                    <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
                       <span>
                         {new Date(idea.createdAt).toLocaleDateString()}
                       </span>
@@ -317,19 +271,7 @@ export default function IdeasPage() {
                         <>
                           <span>·</span>
                           <span className="flex items-center gap-1">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="h-3 w-3"
-                            >
-                              <path d="M12 8V4H8" />
-                              <rect width="16" height="12" x="4" y="8" rx="2" />
-                            </svg>
+                            <Bot className="h-3 w-3" />
                             {idea.assigneeName}
                           </span>
                         </>
@@ -340,7 +282,7 @@ export default function IdeasPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="ml-4 border-[#C67A52] text-[#C67A52] hover:bg-[#FFF3E0]"
+                      className="ml-4"
                       onClick={(e) => {
                         e.preventDefault();
                         // TODO: Open claim modal

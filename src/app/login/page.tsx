@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createUserManager, storeOidcConfig, type OidcConfig } from "@/lib/oidc";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Music } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -64,71 +69,50 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#FAF8F4] p-4">
-      <div className="w-full max-w-[400px] rounded-xl border border-[#E5E2DC] bg-white p-10">
-        {/* Logo Section */}
-        <div className="mb-8 flex flex-col items-center gap-2">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-12 w-12 text-[#171717]"
-          >
-            <path d="M9 18V5l12-2v13" />
-            <circle cx="6" cy="18" r="3" />
-            <circle cx="18" cy="16" r="3" />
-          </svg>
-          <h1 className="text-[28px] font-semibold text-[#171717]">Chorus</h1>
-          <p className="text-sm text-[#737373]">
-            AI-Human Collaboration Platform
-          </p>
-        </div>
-
-        {/* Form Section */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label
-              htmlFor="email"
-              className="text-sm font-medium text-[#171717]"
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              placeholder="you@company.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={loading}
-              className="h-11 w-full rounded-lg border border-[#E5E5E5] bg-white px-3 text-sm text-[#171717] placeholder:text-[#A3A3A3] focus:border-[#171717] focus:outline-none focus:ring-1 focus:ring-[#171717] disabled:opacity-50"
-            />
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-[400px]">
+        <CardContent className="p-10">
+          {/* Logo Section */}
+          <div className="mb-8 flex flex-col items-center gap-2">
+            <Music className="h-12 w-12 text-foreground" />
+            <h1 className="text-[28px] font-semibold text-foreground">Chorus</h1>
+            <p className="text-sm text-muted-foreground">
+              AI-Human Collaboration Platform
+            </p>
           </div>
 
-          {error && (
-            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-              {error}
+          {/* Form Section */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={loading}
+              />
             </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex h-11 w-full items-center justify-center rounded-lg bg-[#171717] text-sm font-medium text-white transition-colors hover:bg-[#2C2C2C] disabled:opacity-50"
-          >
-            {loading ? "Checking..." : "Continue"}
-          </button>
-        </form>
+            {error && (
+              <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                {error}
+              </div>
+            )}
 
-        {/* Help Text */}
-        <p className="mt-8 text-center text-xs text-[#737373]">
-          Enter your email to sign in or create an account
-        </p>
-      </div>
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? "Checking..." : "Continue"}
+            </Button>
+          </form>
+
+          {/* Help Text */}
+          <p className="mt-8 text-center text-xs text-muted-foreground">
+            Enter your email to sign in or create an account
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
