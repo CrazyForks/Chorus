@@ -271,6 +271,7 @@
     "submit": "提交",
     "editIdea": "编辑想法",
     "saveChanges": "保存更改",
+    "completed": "已完成",
     "titleRequired": "标题不能为空",
     "updateFailed": "更新想法失败"
   },
@@ -302,7 +303,7 @@
     "noUsersAvailable": "暂无其他用户"
   },
   "proposals": {
-    "title": "提案",
+    "pageTitle": "提案",
     "subtitle": "审核和批准 AI 生成的提案",
     "all": "全部",
     "pendingReview": "待审核",
@@ -355,7 +356,13 @@
     "draftNotice": "此提案为草稿状态。添加内容后可提交审核。",
     "draftStatus": "草稿",
     "confirmSubmit": "提交此提案进行审核？",
-    "confirmSubmitDesc": "一旦提交，在审核完成前将无法编辑提案内容。"
+    "confirmSubmitDesc": "一旦提交，在审核完成前将无法编辑提案内容。",
+    "completed": "已完成",
+    "typeNewDocument": "新文档",
+    "typeDocumentUpdate": "文档更新",
+    "typeTaskBreakdown": "任务拆分",
+    "typeDocumentAndTasks": "文档 + 任务",
+    "tasksCount": "{count} 个任务"
   },
   "documents": {
     "title": "文档",

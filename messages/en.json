@@ -302,7 +302,7 @@
     "noUsersAvailable": "No other users available"
   },
   "proposals": {
-    "title": "Proposals",
+    "pageTitle": "Proposals",
     "subtitle": "Review and approve AI-generated proposals",
     "all": "All",
     "pendingReview": "pending review",
@@ -355,7 +355,13 @@
     "draftNotice": "This proposal is in draft. Add content and submit for review when ready.",
     "draftStatus": "Draft",
     "confirmSubmit": "Submit this proposal for review?",
-    "confirmSubmitDesc": "Once submitted, the proposal content cannot be edited until reviewed."
+    "confirmSubmitDesc": "Once submitted, the proposal content cannot be edited until reviewed.",
+    "completed": "Completed",
+    "typeNewDocument": "New Document",
+    "typeDocumentUpdate": "Document Update",
+    "typeTaskBreakdown": "Task Breakdown",
+    "typeDocumentAndTasks": "Document + Tasks",
+    "tasksCount": "{count} Tasks"
   },
   "documents": {
     "title": "Documents",
