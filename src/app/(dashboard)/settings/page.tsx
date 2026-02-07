@@ -17,7 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Key, Check, X, Copy, Globe, AlertTriangle, ShieldAlert } from "lucide-react";
+import { Plus, Key, Check, X, Globe, AlertTriangle, ShieldAlert } from "lucide-react";
 import { useLocale } from "@/contexts/locale-context";
 import { getApiKeysAction, createAgentAndKeyAction, deleteApiKeyAction } from "./actions";
 import { locales, localeNames, type Locale } from "@/i18n/config";
@@ -61,7 +61,6 @@ export default function SettingsPage() {
   const [createdKey, setCreatedKey] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [keyToDelete, setKeyToDelete] = useState<string | null>(null);
 
@@ -151,14 +150,10 @@ export default function SettingsPage() {
     }
   };
 
-  const copyToClipboard = async (text: string, keyId?: string) => {
+  const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      if (keyId) {
-        setCopiedKeyId(keyId);
-        setTimeout(() => setCopiedKeyId(null), 2000);
-      }
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error("Failed to copy to clipboard:", error);
@@ -315,14 +310,6 @@ export default function SettingsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => copyToClipboard(key.keyPrefix + "...", key.uuid)}
-                    >
-                      <Copy className="mr-1.5 h-3 w-3" />
-                      {copiedKeyId === key.uuid ? t("common.copied") : t("common.copy")}
-                    </Button>
                     <Button
                       variant="outline"
                       size="sm"

@@ -82,7 +82,7 @@ model ApiKey {
   companyUuid String
   company     Company   @relation(fields: [companyUuid], references: [uuid])
   agentUuid   String    // Agent's UUID
-  agent       Agent     @relation(fields: [agentUuid], references: [uuid])
+  agent       Agent     @relation(fields: [agentUuid], references: [uuid], onDelete: Cascade)
   keyHash     String    @unique    // API Key 哈希存储
   keyPrefix   String               // Key 前缀，用于显示（如 "cho_xxx..."）
   name        String?              // 可选的描述名称
@@ -122,7 +122,7 @@ model Idea {
   companyUuid    String
   company        Company   @relation(fields: [companyUuid], references: [uuid])
   projectUuid    String
-  project        Project   @relation(fields: [projectUuid], references: [uuid])
+  project        Project   @relation(fields: [projectUuid], references: [uuid], onDelete: Cascade)
   title          String
   content        String?   // 文本内容
   attachments    Json?     // 附件列表 [{type, url, name}]
@@ -149,7 +149,7 @@ model Document {
   companyUuid   String
   company       Company   @relation(fields: [companyUuid], references: [uuid])
   projectUuid   String
-  project       Project   @relation(fields: [projectUuid], references: [uuid])
+  project       Project   @relation(fields: [projectUuid], references: [uuid], onDelete: Cascade)
   type          String    // prd | tech_design | adr | ...
   title         String
   content       String?   // Markdown 内容
@@ -171,7 +171,7 @@ model Task {
   companyUuid    String
   company        Company   @relation(fields: [companyUuid], references: [uuid])
   projectUuid    String
-  project        Project   @relation(fields: [projectUuid], references: [uuid])
+  project        Project   @relation(fields: [projectUuid], references: [uuid], onDelete: Cascade)
   title          String
   description    String?
   // 状态和认领 (ARCHITECTURE.md §7.2)
@@ -202,7 +202,7 @@ model Proposal {
   companyUuid     String
   company         Company   @relation(fields: [companyUuid], references: [uuid])
   projectUuid     String
-  project         Project   @relation(fields: [projectUuid], references: [uuid])
+  project         Project   @relation(fields: [projectUuid], references: [uuid], onDelete: Cascade)
   title           String
   description     String?
 
@@ -254,7 +254,7 @@ model Activity {
   companyUuid String
   company     Company  @relation(fields: [companyUuid], references: [uuid])
   projectUuid String
-  project     Project  @relation(fields: [projectUuid], references: [uuid])
+  project     Project  @relation(fields: [projectUuid], references: [uuid], onDelete: Cascade)
   // 目标实体（通用设计）
   targetType  String   // idea | task | proposal | document
   targetUuid  String   // 目标实体 UUID

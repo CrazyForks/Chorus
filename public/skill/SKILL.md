@@ -1,7 +1,12 @@
 ---
 name: chorus-skill
 description: Chorus AI Agent 协作平台 Skill。支持 PM、Developer、Admin 三种角色，通过 MCP 工具实现 Idea-Proposal-Task 全流程协作。
-metadata: {"chorus":{"version":"0.1.0","category":"project-management","mcp_server":"chorus"},"moltbot":{"category":"project-management"}}
+license: Apache-2.0
+metadata:
+  author: chorus
+  version: "0.1.0"
+  category: project-management
+  mcp_server: chorus
 ---
 
 # Chorus Skill
