@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { AssignModal } from "@/components/assign-modal";
-import { UserPlus } from "lucide-react";
+import { UserPlus, FileText } from "lucide-react";
 import { claimIdeaAction, claimIdeaToAgentAction, claimIdeaToUserAction, getPmAgentsAction } from "./actions";
 
 interface Agent {
@@ -26,9 +27,11 @@ interface IdeaActionsProps {
   projectUuid: string;
   status: string;
   currentUserUuid?: string;
+  assigneeUuid?: string;
+  isUsedInProposal?: boolean;
 }
 
-export function IdeaActions({ ideaUuid, status, currentUserUuid }: IdeaActionsProps) {
+export function IdeaActions({ ideaUuid, projectUuid, status, currentUserUuid, assigneeUuid, isUsedInProposal }: IdeaActionsProps) {
   const t = useTranslations();
   const router = useRouter();
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -57,6 +60,11 @@ export function IdeaActions({ ideaUuid, status, currentUserUuid }: IdeaActionsPr
     return claimIdeaToUserAction(ideaUuid, userUuid);
   };
 
+  // Check if current user can create proposal (is the assignee and idea not used)
+  const canCreateProposal = assigneeUuid === currentUserUuid &&
+    (status === "assigned" || status === "in_progress") &&
+    !isUsedInProposal;
+
   return (
     <div className="flex gap-2">
       {status === "open" && (
@@ -80,6 +88,14 @@ export function IdeaActions({ ideaUuid, status, currentUserUuid }: IdeaActionsPr
             onAssignToUser={handleAssignToUser}
           />
         </>
+      )}
+      {canCreateProposal && (
+        <Link href={`/projects/${projectUuid}/proposals/new?ideaUuid=${ideaUuid}`}>
+          <Button className="bg-[#C67A52] hover:bg-[#B56A42] text-white">
+            <FileText className="mr-2 h-4 w-4" />
+            {t("proposals.createProposal")}
+          </Button>
+        </Link>
       )}
       <Button
         variant="outline"

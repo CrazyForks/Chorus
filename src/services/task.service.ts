@@ -23,6 +23,7 @@ export interface TaskCreateParams {
   description?: string | null;
   priority?: string;
   storyPoints?: number | null;
+  acceptanceCriteria?: string | null;  // 验收标准
   proposalUuid?: string | null;
   createdByUuid: string;
 }
@@ -41,6 +42,7 @@ export interface TaskUpdateParams {
   status?: string;
   priority?: string;
   storyPoints?: number | null;
+  acceptanceCriteria?: string | null;  // 验收标准
 }
 
 // API 响应格式
@@ -51,6 +53,7 @@ export interface TaskResponse {
   status: string;
   priority: string;
   storyPoints: number | null;
+  acceptanceCriteria: string | null;  // 验收标准
   assignee: {
     type: string;
     uuid: string;
@@ -92,6 +95,7 @@ async function formatTaskResponse(
     status: string;
     priority: string;
     storyPoints: number | null;
+    acceptanceCriteria: string | null;
     assigneeType: string | null;
     assigneeUuid: string | null;
     assignedAt: Date | null;
@@ -115,6 +119,7 @@ async function formatTaskResponse(
     status: task.status,
     priority: task.priority,
     storyPoints: task.storyPoints,
+    acceptanceCriteria: task.acceptanceCriteria,
     assignee,
     proposalUuid: task.proposalUuid,
     ...(task.project && { project: task.project }),
@@ -155,6 +160,7 @@ export async function listTasks({
         status: true,
         priority: true,
         storyPoints: true,
+        acceptanceCriteria: true,
         assigneeType: true,
         assigneeUuid: true,
         assignedAt: true,
@@ -206,6 +212,7 @@ export async function createTask(params: TaskCreateParams): Promise<TaskResponse
       status: "open",
       priority: params.priority || "medium",
       storyPoints: params.storyPoints,
+      acceptanceCriteria: params.acceptanceCriteria,
       proposalUuid: params.proposalUuid,
       createdByUuid: params.createdByUuid,
     },
@@ -216,6 +223,7 @@ export async function createTask(params: TaskCreateParams): Promise<TaskResponse
       status: true,
       priority: true,
       storyPoints: true,
+      acceptanceCriteria: true,
       assigneeType: true,
       assigneeUuid: true,
       assignedAt: true,
@@ -301,7 +309,7 @@ export async function createTasksFromProposal(
   projectUuid: string,
   proposalUuid: string,
   createdByUuid: string,
-  tasks: Array<{ title: string; description?: string; priority?: string; storyPoints?: number }>
+  tasks: Array<{ title: string; description?: string; priority?: string; storyPoints?: number; acceptanceCriteria?: string }>
 ): Promise<TaskResponse[]> {
   const createPromises = tasks.map((task) =>
     prisma.task.create({
@@ -313,6 +321,7 @@ export async function createTasksFromProposal(
         status: "open",
         priority: task.priority || "medium",
         storyPoints: task.storyPoints || null,
+        acceptanceCriteria: task.acceptanceCriteria || null,
         proposalUuid,
         createdByUuid,
       },
@@ -323,6 +332,7 @@ export async function createTasksFromProposal(
         status: true,
         priority: true,
         storyPoints: true,
+        acceptanceCriteria: true,
         assigneeType: true,
         assigneeUuid: true,
         assignedAt: true,

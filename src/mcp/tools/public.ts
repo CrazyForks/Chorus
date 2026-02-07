@@ -448,17 +448,18 @@ export function registerPublicTools(server: McpServer, auth: AgentAuthContext) {
     }
   );
 
-  // chorus_get_proposal - 获取单个 Proposal 详情
+  // chorus_get_proposal - 获取单个 Proposal 详情（包含 drafts）
   server.registerTool(
     "chorus_get_proposal",
     {
-      description: "获取单个提议的详细信息",
+      description: "获取单个提议的详细信息，包含文档草稿和任务草稿",
       inputSchema: z.object({
         proposalUuid: z.string().describe("Proposal UUID"),
       }),
     },
     async ({ proposalUuid }) => {
-      const proposal = await proposalService.getProposalByUuid(auth.companyUuid, proposalUuid);
+      // 使用 getProposal 返回完整的格式化响应，包含 drafts
+      const proposal = await proposalService.getProposal(auth.companyUuid, proposalUuid);
       if (!proposal) {
         return { content: [{ type: "text", text: "Proposal 不存在" }], isError: true };
       }

@@ -121,38 +121,48 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
     }
   );
 
-  // chorus_pm_create_proposal - 创建提议
+  // chorus_pm_create_proposal - 创建提议（容器模型）
   server.registerTool(
     "chorus_pm_create_proposal",
     {
-      description: "创建提议（PRD/任务拆分/技术方案）",
+      description: "创建提议容器（可包含文档草稿和任务草稿）",
       inputSchema: z.object({
         projectUuid: z.string().describe("项目 UUID"),
         title: z.string().describe("提议标题"),
         description: z.string().optional().describe("提议描述"),
-        inputType: z.enum(["idea", "document"]).describe("输入类型"),
+        inputType: z.enum(["idea", "document"]).describe("输入来源类型"),
         inputUuids: z.array(z.string()).describe("输入 UUID 列表"),
-        outputType: z.enum(["document", "task"]).describe("输出类型"),
-        outputData: z.record(z.string(), z.unknown()).describe("输出数据（Document 草稿或 Task 列表）"),
+        documentDrafts: z.array(z.object({
+          type: z.string().describe("文档类型（prd, tech_design, adr, spec, guide）"),
+          title: z.string().describe("文档标题"),
+          content: z.string().describe("文档内容（Markdown）"),
+        })).optional().describe("文档草稿列表"),
+        taskDrafts: z.array(z.object({
+          title: z.string().describe("任务标题"),
+          description: z.string().optional().describe("任务描述"),
+          storyPoints: z.number().optional().describe("工作量估算（Agent 小时）"),
+          priority: z.enum(["low", "medium", "high"]).optional().describe("优先级"),
+          acceptanceCriteria: z.string().optional().describe("验收标准（Markdown）"),
+        })).optional().describe("任务草稿列表"),
       }),
     },
-    async ({ projectUuid, title, description, inputType, inputUuids, outputType, outputData }) => {
+    async ({ projectUuid, title, description, inputType, inputUuids, documentDrafts, taskDrafts }) => {
       // 验证项目存在
       if (!(await projectExists(auth.companyUuid, projectUuid))) {
         return { content: [{ type: "text", text: "项目不存在" }], isError: true };
       }
 
-      // Store UUIDs directly - no ID conversion needed
       const proposal = await proposalService.createProposal({
         companyUuid: auth.companyUuid,
         projectUuid,
         title,
         description,
         inputType,
-        inputUuids,  // UUIDs stored directly
-        outputType,
-        outputData,
+        inputUuids,
+        documentDrafts: documentDrafts || undefined,
+        taskDrafts: taskDrafts || undefined,
         createdByUuid: auth.actorUuid,
+        createdByType: "agent",
       });
 
       return {
@@ -217,6 +227,7 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
           description: z.string().optional().describe("任务描述"),
           priority: z.enum(["low", "medium", "high"]).optional().describe("优先级"),
           storyPoints: z.number().optional().describe("工作量估算（Agent 小时）"),
+          acceptanceCriteria: z.string().optional().describe("验收标准（Markdown）"),
         })).describe("任务列表"),
       }),
     },
@@ -244,6 +255,7 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
             description: task.description || null,
             priority: task.priority,
             storyPoints: task.storyPoints || null,
+            acceptanceCriteria: task.acceptanceCriteria || null,
             proposalUuid: proposalUuid || null,
             createdByUuid: auth.actorUuid,
           })
@@ -282,6 +294,210 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
       return {
         content: [{ type: "text", text: JSON.stringify(updated, null, 2) }],
       };
+    }
+  );
+
+  // ===== Proposal Draft 管理工具 =====
+
+  // chorus_pm_add_document_draft - 添加文档草稿到 Proposal
+  server.registerTool(
+    "chorus_pm_add_document_draft",
+    {
+      description: "添加文档草稿到待审批的 Proposal 容器中",
+      inputSchema: z.object({
+        proposalUuid: z.string().describe("Proposal UUID"),
+        type: z.string().describe("文档类型（prd, tech_design, adr, spec, guide）"),
+        title: z.string().describe("文档标题"),
+        content: z.string().describe("文档内容（Markdown）"),
+      }),
+    },
+    async ({ proposalUuid, type, title, content }) => {
+      try {
+        const proposal = await proposalService.addDocumentDraft(
+          proposalUuid,
+          auth.companyUuid,
+          { type, title, content }
+        );
+        return {
+          content: [{ type: "text", text: JSON.stringify(proposal, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: "text", text: `添加文档草稿失败: ${error instanceof Error ? error.message : "未知错误"}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // chorus_pm_add_task_draft - 添加任务草稿到 Proposal
+  server.registerTool(
+    "chorus_pm_add_task_draft",
+    {
+      description: "添加任务草稿到待审批的 Proposal 容器中",
+      inputSchema: z.object({
+        proposalUuid: z.string().describe("Proposal UUID"),
+        title: z.string().describe("任务标题"),
+        description: z.string().optional().describe("任务描述"),
+        storyPoints: z.number().optional().describe("工作量估算（Agent 小时）"),
+        priority: z.enum(["low", "medium", "high"]).optional().describe("优先级"),
+        acceptanceCriteria: z.string().optional().describe("验收标准（Markdown）"),
+      }),
+    },
+    async ({ proposalUuid, title, description, storyPoints, priority, acceptanceCriteria }) => {
+      try {
+        const proposal = await proposalService.addTaskDraft(
+          proposalUuid,
+          auth.companyUuid,
+          { title, description, storyPoints, priority, acceptanceCriteria }
+        );
+        return {
+          content: [{ type: "text", text: JSON.stringify(proposal, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: "text", text: `添加任务草稿失败: ${error instanceof Error ? error.message : "未知错误"}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // chorus_pm_update_document_draft - 更新文档草稿
+  server.registerTool(
+    "chorus_pm_update_document_draft",
+    {
+      description: "更新 Proposal 中的文档草稿",
+      inputSchema: z.object({
+        proposalUuid: z.string().describe("Proposal UUID"),
+        draftUuid: z.string().describe("文档草稿 UUID"),
+        type: z.string().optional().describe("文档类型"),
+        title: z.string().optional().describe("文档标题"),
+        content: z.string().optional().describe("文档内容（Markdown）"),
+      }),
+    },
+    async ({ proposalUuid, draftUuid, type, title, content }) => {
+      try {
+        const updates: { type?: string; title?: string; content?: string } = {};
+        if (type !== undefined) updates.type = type;
+        if (title !== undefined) updates.title = title;
+        if (content !== undefined) updates.content = content;
+
+        const proposal = await proposalService.updateDocumentDraft(
+          proposalUuid,
+          auth.companyUuid,
+          draftUuid,
+          updates
+        );
+        return {
+          content: [{ type: "text", text: JSON.stringify(proposal, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: "text", text: `更新文档草稿失败: ${error instanceof Error ? error.message : "未知错误"}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // chorus_pm_update_task_draft - 更新任务草稿
+  server.registerTool(
+    "chorus_pm_update_task_draft",
+    {
+      description: "更新 Proposal 中的任务草稿",
+      inputSchema: z.object({
+        proposalUuid: z.string().describe("Proposal UUID"),
+        draftUuid: z.string().describe("任务草稿 UUID"),
+        title: z.string().optional().describe("任务标题"),
+        description: z.string().optional().describe("任务描述"),
+        storyPoints: z.number().optional().describe("工作量估算（Agent 小时）"),
+        priority: z.enum(["low", "medium", "high"]).optional().describe("优先级"),
+        acceptanceCriteria: z.string().optional().describe("验收标准（Markdown）"),
+      }),
+    },
+    async ({ proposalUuid, draftUuid, title, description, storyPoints, priority, acceptanceCriteria }) => {
+      try {
+        const updates: { title?: string; description?: string; storyPoints?: number; priority?: string; acceptanceCriteria?: string } = {};
+        if (title !== undefined) updates.title = title;
+        if (description !== undefined) updates.description = description;
+        if (storyPoints !== undefined) updates.storyPoints = storyPoints;
+        if (priority !== undefined) updates.priority = priority;
+        if (acceptanceCriteria !== undefined) updates.acceptanceCriteria = acceptanceCriteria;
+
+        const proposal = await proposalService.updateTaskDraft(
+          proposalUuid,
+          auth.companyUuid,
+          draftUuid,
+          updates
+        );
+        return {
+          content: [{ type: "text", text: JSON.stringify(proposal, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: "text", text: `更新任务草稿失败: ${error instanceof Error ? error.message : "未知错误"}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // chorus_pm_remove_document_draft - 删除文档草稿
+  server.registerTool(
+    "chorus_pm_remove_document_draft",
+    {
+      description: "从 Proposal 中删除文档草稿",
+      inputSchema: z.object({
+        proposalUuid: z.string().describe("Proposal UUID"),
+        draftUuid: z.string().describe("文档草稿 UUID"),
+      }),
+    },
+    async ({ proposalUuid, draftUuid }) => {
+      try {
+        const proposal = await proposalService.removeDocumentDraft(
+          proposalUuid,
+          auth.companyUuid,
+          draftUuid
+        );
+        return {
+          content: [{ type: "text", text: JSON.stringify(proposal, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: "text", text: `删除文档草稿失败: ${error instanceof Error ? error.message : "未知错误"}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // chorus_pm_remove_task_draft - 删除任务草稿
+  server.registerTool(
+    "chorus_pm_remove_task_draft",
+    {
+      description: "从 Proposal 中删除任务草稿",
+      inputSchema: z.object({
+        proposalUuid: z.string().describe("Proposal UUID"),
+        draftUuid: z.string().describe("任务草稿 UUID"),
+      }),
+    },
+    async ({ proposalUuid, draftUuid }) => {
+      try {
+        const proposal = await proposalService.removeTaskDraft(
+          proposalUuid,
+          auth.companyUuid,
+          draftUuid
+        );
+        return {
+          content: [{ type: "text", text: JSON.stringify(proposal, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: "text", text: `删除任务草稿失败: ${error instanceof Error ? error.message : "未知错误"}` }],
+          isError: true,
+        };
+      }
     }
   );
 }

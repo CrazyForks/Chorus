@@ -12,20 +12,40 @@ import { projectExists } from "@/services/project.service";
 import { TaskActions } from "./task-actions";
 import { TaskStatusProgress } from "./task-status-progress";
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-  open: { label: "Open", color: "bg-[#FFF3E0] text-[#E65100]" },
-  assigned: { label: "Assigned", color: "bg-[#E3F2FD] text-[#1976D2]" },
-  in_progress: { label: "In Progress", color: "bg-[#E8F5E9] text-[#5A9E6F]" },
-  to_verify: { label: "To Verify", color: "bg-[#F3E5F5] text-[#7B1FA2]" },
-  done: { label: "Done", color: "bg-[#E0F2F1] text-[#00796B]" },
-  closed: { label: "Closed", color: "bg-[#F5F5F5] text-[#9A9A9A]" },
+// 状态颜色配置
+const statusColors: Record<string, string> = {
+  open: "bg-[#FFF3E0] text-[#E65100]",
+  assigned: "bg-[#E3F2FD] text-[#1976D2]",
+  in_progress: "bg-[#E8F5E9] text-[#5A9E6F]",
+  to_verify: "bg-[#F3E5F5] text-[#7B1FA2]",
+  done: "bg-[#E0F2F1] text-[#00796B]",
+  closed: "bg-[#F5F5F5] text-[#9A9A9A]",
 };
 
-const priorityConfig: Record<string, { label: string; color: string }> = {
-  low: { label: "Low", color: "text-[#9A9A9A]" },
-  medium: { label: "Medium", color: "text-[#E65100]" },
-  high: { label: "High", color: "text-[#D32F2F]" },
-  critical: { label: "Critical", color: "text-[#B71C1C]" },
+// 状态到翻译 key 的映射
+const statusI18nKeys: Record<string, string> = {
+  open: "open",
+  assigned: "assigned",
+  in_progress: "inProgress",
+  to_verify: "toVerify",
+  done: "done",
+  closed: "closed",
+};
+
+// 优先级颜色配置
+const priorityColors: Record<string, string> = {
+  low: "text-[#9A9A9A]",
+  medium: "text-[#E65100]",
+  high: "text-[#D32F2F]",
+  critical: "text-[#B71C1C]",
+};
+
+// 优先级到翻译 key 的映射
+const priorityI18nKeys: Record<string, string> = {
+  low: "lowPriority",
+  medium: "mediumPriority",
+  high: "highPriority",
+  critical: "criticalPriority",
 };
 
 interface PageProps {
@@ -86,11 +106,11 @@ export default async function TaskDetailPage({ params }: PageProps) {
       <div className="mb-6 flex items-start justify-between">
         <div>
           <div className="mb-2 flex items-center gap-3">
-            <Badge className={statusConfig[task.status]?.color || ""}>
-              {statusConfig[task.status]?.label || task.status}
+            <Badge className={statusColors[task.status] || ""}>
+              {t(`status.${statusI18nKeys[task.status] || task.status}`)}
             </Badge>
-            <span className={`text-sm font-medium ${priorityConfig[task.priority]?.color || ""}`}>
-              {priorityConfig[task.priority]?.label || task.priority} {t("common.priority")}
+            <span className={`text-sm font-medium ${priorityColors[task.priority] || ""}`}>
+              {t(`priority.${priorityI18nKeys[task.priority] || task.priority}`)}
             </span>
             {task.storyPoints && (
               <span className="rounded bg-[#F5F2EC] px-2 py-0.5 text-sm font-medium text-[#6B6B6B]">
@@ -199,13 +219,13 @@ export default async function TaskDetailPage({ params }: PageProps) {
               <div className="flex justify-between text-sm">
                 <dt className="text-[#9A9A9A]">{t("common.status")}</dt>
                 <dd className="font-medium text-[#2C2C2C]">
-                  {statusConfig[task.status]?.label || task.status}
+                  {t(`status.${statusI18nKeys[task.status] || task.status}`)}
                 </dd>
               </div>
               <div className="flex justify-between text-sm">
                 <dt className="text-[#9A9A9A]">{t("common.priority")}</dt>
-                <dd className={`font-medium ${priorityConfig[task.priority]?.color || ""}`}>
-                  {priorityConfig[task.priority]?.label || task.priority}
+                <dd className={`font-medium ${priorityColors[task.priority] || ""}`}>
+                  {t(`priority.${priorityI18nKeys[task.priority] || task.priority}`)}
                 </dd>
               </div>
               {task.storyPoints && (

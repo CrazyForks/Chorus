@@ -178,6 +178,7 @@ model Task {
   status         String    @default("open")  // open | assigned | in_progress | to_verify | done | closed
   priority       String    @default("medium") // low | medium | high
   storyPoints    Float?    // 工作量估算（单位：Agent 小时）
+  acceptanceCriteria String? // 验收标准（Markdown 格式）
   assigneeType   String?   // user | agent
   assigneeUuid   String?   // User or Agent UUID (polymorphic)
   assignedAt     DateTime? // 认领时间
@@ -196,7 +197,7 @@ model Task {
   @@index([status])
 }
 
-// 提议（Agent 创建，人类审批，连接输入和输出）
+// 提议（容器模型：Agent/人类创建，人类审批，包含文档草稿和任务列表）
 model Proposal {
   id              Int       @id @default(autoincrement())
   uuid            String    @unique @default(uuid())
@@ -207,17 +208,18 @@ model Proposal {
   title           String
   description     String?
 
-  // 输入（Proposal 基于什么创建）
+  // 输入来源（Proposal 基于什么创建）
   inputType       String    // idea | document
-  inputUuids      Json      // Array of UUID strings (NOT numeric IDs)
+  inputUuids      Json      // Array of UUID strings
 
-  // 输出（Proposal 产出什么）
-  outputType      String    // document | task
-  outputData      Json      // 提议的内容（Document 草稿或 Task 列表）
+  // 容器内容（可同时包含文档和任务）
+  documentDrafts  Json?     // 文档草稿列表 [{type, title, content}]
+  taskDrafts      Json?     // 任务草稿列表 [{title, description, storyPoints, priority, acceptanceCriteria}]
 
   // 状态与审批
-  status          String    @default("pending")  // pending | approved | rejected | revised
-  createdByUuid   String    // Agent UUID
+  status          String    @default("draft")  // draft | pending | approved | rejected | revised
+  createdByUuid   String    // Agent or User UUID
+  createdByType   String    @default("agent") // agent | user
   reviewedByUuid  String?   // User UUID
   reviewNote      String?   // 审批备注
   reviewedAt      DateTime?

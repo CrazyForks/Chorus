@@ -13,6 +13,9 @@ export interface IdeaListParams {
   skip: number;
   take: number;
   status?: string;
+  assignedToMe?: boolean;  // Filter for ideas assigned to current user
+  actorUuid?: string;      // Current user/agent UUID for assignedToMe filter
+  actorType?: string;      // "user" | "agent" for assignedToMe filter
 }
 
 export interface IdeaCreateParams {
@@ -116,12 +119,27 @@ export async function listIdeas({
   skip,
   take,
   status,
+  assignedToMe,
+  actorUuid,
+  actorType,
 }: IdeaListParams): Promise<{ ideas: IdeaResponse[]; total: number }> {
-  const where = {
+  const where: {
+    projectUuid: string;
+    companyUuid: string;
+    status?: string;
+    assigneeUuid?: string;
+    assigneeType?: string;
+  } = {
     projectUuid,
     companyUuid,
     ...(status && { status }),
   };
+
+  // Add assignedToMe filter if requested
+  if (assignedToMe && actorUuid && actorType) {
+    where.assigneeUuid = actorUuid;
+    where.assigneeType = actorType;
+  }
 
   const [rawIdeas, total] = await Promise.all([
     prisma.idea.findMany({

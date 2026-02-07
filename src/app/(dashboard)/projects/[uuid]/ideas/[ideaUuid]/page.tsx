@@ -9,15 +9,27 @@ import { Badge } from "@/components/ui/badge";
 import { getServerAuthContext } from "@/lib/auth-server";
 import { getIdea } from "@/services/idea.service";
 import { projectExists } from "@/services/project.service";
+import { checkIdeasAvailability } from "@/services/proposal.service";
 import { IdeaActions } from "./idea-actions";
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-  open: { label: "Open", color: "bg-[#FFF3E0] text-[#E65100]" },
-  assigned: { label: "Assigned", color: "bg-[#E3F2FD] text-[#1976D2]" },
-  in_progress: { label: "In Progress", color: "bg-[#E8F5E9] text-[#5A9E6F]" },
-  pending_review: { label: "Pending Review", color: "bg-[#F3E5F5] text-[#7B1FA2]" },
-  completed: { label: "Completed", color: "bg-[#E0F2F1] text-[#00796B]" },
-  closed: { label: "Closed", color: "bg-[#F5F5F5] text-[#9A9A9A]" },
+// 状态颜色配置
+const statusColors: Record<string, string> = {
+  open: "bg-[#FFF3E0] text-[#E65100]",
+  assigned: "bg-[#E3F2FD] text-[#1976D2]",
+  in_progress: "bg-[#E8F5E9] text-[#5A9E6F]",
+  pending_review: "bg-[#F3E5F5] text-[#7B1FA2]",
+  completed: "bg-[#E0F2F1] text-[#00796B]",
+  closed: "bg-[#F5F5F5] text-[#9A9A9A]",
+};
+
+// 状态到翻译 key 的映射
+const statusI18nKeys: Record<string, string> = {
+  open: "open",
+  assigned: "assigned",
+  in_progress: "inProgress",
+  pending_review: "pendingReview",
+  completed: "completed",
+  closed: "closed",
 };
 
 interface PageProps {
@@ -52,6 +64,10 @@ export default async function IdeaDetailPage({ params }: PageProps) {
     );
   }
 
+  // 检查 Idea 是否已被用于创建 Proposal
+  const availabilityCheck = await checkIdeasAvailability(auth.companyUuid, [ideaUuid]);
+  const isUsedInProposal = !availabilityCheck.available;
+
   return (
     <div className="p-8">
       {/* Breadcrumb */}
@@ -78,8 +94,8 @@ export default async function IdeaDetailPage({ params }: PageProps) {
       <div className="mb-6 flex items-start justify-between">
         <div className="flex-1">
           <div className="mb-2 flex items-center gap-3">
-            <Badge className={statusConfig[idea.status]?.color || ""}>
-              {statusConfig[idea.status]?.label || idea.status}
+            <Badge className={statusColors[idea.status] || ""}>
+              {t(`status.${statusI18nKeys[idea.status] || idea.status}`)}
             </Badge>
           </div>
           <h1 className="text-2xl font-semibold text-[#2C2C2C]">{idea.title}</h1>
@@ -92,6 +108,8 @@ export default async function IdeaDetailPage({ params }: PageProps) {
           projectUuid={projectUuid}
           status={idea.status}
           currentUserUuid={auth.actorUuid}
+          assigneeUuid={idea.assignee?.uuid}
+          isUsedInProposal={isUsedInProposal}
         />
       </div>
 
@@ -154,7 +172,7 @@ export default async function IdeaDetailPage({ params }: PageProps) {
               <div className="flex justify-between text-sm">
                 <dt className="text-[#9A9A9A]">{t("common.status")}</dt>
                 <dd className="font-medium text-[#2C2C2C]">
-                  {statusConfig[idea.status]?.label || idea.status}
+                  {t(`status.${statusI18nKeys[idea.status] || idea.status}`)}
                 </dd>
               </div>
               <div className="flex justify-between text-sm">

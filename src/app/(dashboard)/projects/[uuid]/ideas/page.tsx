@@ -7,25 +7,37 @@ import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Lightbulb, Bot } from "lucide-react";
+import { Lightbulb, Bot, FileText } from "lucide-react";
 import { getServerAuthContext } from "@/lib/auth-server";
 import { listIdeas } from "@/services/idea.service";
 import { projectExists } from "@/services/project.service";
+import { checkIdeasAvailability } from "@/services/proposal.service";
 import { IdeaCreateForm } from "./idea-create-form";
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-  open: { label: "Open", color: "bg-[#FFF3E0] text-[#E65100]" },
-  assigned: { label: "Assigned", color: "bg-[#E3F2FD] text-[#1976D2]" },
-  in_progress: { label: "In Progress", color: "bg-[#E8F5E9] text-[#5A9E6F]" },
-  pending_review: { label: "Pending Review", color: "bg-[#F3E5F5] text-[#7B1FA2]" },
-  completed: { label: "Completed", color: "bg-[#E0F2F1] text-[#00796B]" },
-  closed: { label: "Closed", color: "bg-[#F5F5F5] text-[#9A9A9A]" },
+// 状态颜色配置
+const statusColors: Record<string, string> = {
+  open: "bg-[#FFF3E0] text-[#E65100]",
+  assigned: "bg-[#E3F2FD] text-[#1976D2]",
+  in_progress: "bg-[#E8F5E9] text-[#5A9E6F]",
+  pending_review: "bg-[#F3E5F5] text-[#7B1FA2]",
+  completed: "bg-[#E0F2F1] text-[#00796B]",
+  closed: "bg-[#F5F5F5] text-[#9A9A9A]",
+};
+
+// 状态到翻译 key 的映射
+const statusI18nKeys: Record<string, string> = {
+  open: "open",
+  assigned: "assigned",
+  in_progress: "inProgress",
+  pending_review: "pendingReview",
+  completed: "completed",
+  closed: "closed",
 };
 
 
 interface PageProps {
   params: Promise<{ uuid: string }>;
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; assignedToMe?: string }>;
 }
 
 export default async function IdeasPage({ params, searchParams }: PageProps) {
@@ -35,7 +47,8 @@ export default async function IdeasPage({ params, searchParams }: PageProps) {
   }
 
   const { uuid: projectUuid } = await params;
-  const { status: filter = "all" } = await searchParams;
+  const { status: filter = "all", assignedToMe } = await searchParams;
+  const isAssignedToMeFilter = assignedToMe === "true";
   const t = await getTranslations();
 
   // 验证项目存在
@@ -44,12 +57,23 @@ export default async function IdeasPage({ params, searchParams }: PageProps) {
     redirect("/projects");
   }
 
-  // 获取所有 Ideas
+  // 获取所有 Ideas（用于计数）
   const { ideas: allIdeas } = await listIdeas({
     companyUuid: auth.companyUuid,
     projectUuid,
     skip: 0,
     take: 1000,
+  });
+
+  // 获取分配给我的 Ideas（用于计数）
+  const { ideas: myIdeas } = await listIdeas({
+    companyUuid: auth.companyUuid,
+    projectUuid,
+    skip: 0,
+    take: 1000,
+    assignedToMe: true,
+    actorUuid: auth.actorUuid,
+    actorType: auth.type,
   });
 
   // 计算各状态数量
@@ -58,10 +82,32 @@ export default async function IdeasPage({ params, searchParams }: PageProps) {
     return acc;
   }, {} as Record<string, number>);
 
+  // 获取所有 Ideas 的可用性（是否已被 Proposal 使用）
+  const allIdeaUuids = allIdeas.map(idea => idea.uuid);
+  const availabilityCheck = allIdeaUuids.length > 0
+    ? await checkIdeasAvailability(auth.companyUuid, allIdeaUuids)
+    : { usedIdeas: [] };
+  const usedIdeaUuids = new Set(availabilityCheck.usedIdeas.map(u => u.uuid));
+
+  // 判断一个 Idea 是否可以创建 Proposal
+  const canCreateProposal = (idea: typeof allIdeas[0]) => {
+    return idea.assignee?.uuid === auth.actorUuid &&
+      (idea.status === "assigned" || idea.status === "in_progress") &&
+      !usedIdeaUuids.has(idea.uuid);
+  };
+
   // 根据 filter 过滤
-  const filteredIdeas = filter === "all"
-    ? allIdeas
-    : allIdeas.filter((idea) => idea.status === filter);
+  let filteredIdeas = allIdeas;
+
+  // First apply assignedToMe filter if active
+  if (isAssignedToMeFilter) {
+    filteredIdeas = myIdeas;
+  }
+
+  // Then apply status filter if not "all"
+  if (filter !== "all") {
+    filteredIdeas = filteredIdeas.filter((idea) => idea.status === filter);
+  }
 
   return (
     <div className="p-8">
@@ -79,17 +125,22 @@ export default async function IdeasPage({ params, searchParams }: PageProps) {
       {/* Filter Tabs */}
       <div className="mb-6 flex gap-2 border-b border-border pb-4">
         <Link href={`/projects/${projectUuid}/ideas`}>
-          <Button variant={filter === "all" ? "default" : "ghost"} size="sm">
+          <Button variant={filter === "all" && !isAssignedToMeFilter ? "default" : "ghost"} size="sm">
             {t("ideas.all")} ({allIdeas.length})
           </Button>
         </Link>
-        {Object.entries(statusConfig).map(([status, config]) => {
+        <Link href={`/projects/${projectUuid}/ideas?assignedToMe=true`}>
+          <Button variant={isAssignedToMeFilter && filter === "all" ? "default" : "ghost"} size="sm">
+            {t("ideas.assignedToMe")} ({myIdeas.length})
+          </Button>
+        </Link>
+        {Object.keys(statusColors).map((status) => {
           const count = statusCounts[status] || 0;
           if (count === 0 && status !== "open") return null;
           return (
-            <Link key={status} href={`/projects/${projectUuid}/ideas?status=${status}`}>
+            <Link key={status} href={`/projects/${projectUuid}/ideas?status=${status}${isAssignedToMeFilter ? "&assignedToMe=true" : ""}`}>
               <Button variant={filter === status ? "default" : "ghost"} size="sm">
-                {config.label} ({count})
+                {t(`status.${statusI18nKeys[status]}`)} ({count})
               </Button>
             </Link>
           );
@@ -103,7 +154,7 @@ export default async function IdeasPage({ params, searchParams }: PageProps) {
             <Lightbulb className="h-8 w-8 text-primary" />
           </div>
           <h3 className="mb-2 text-lg font-medium text-foreground">
-            {filter === "all" ? t("ideas.noIdeas") : `No ${statusConfig[filter]?.label.toLowerCase()} ideas`}
+            {filter === "all" ? t("ideas.noIdeas") : t("ideas.noIdeasWithStatus", { status: t(`status.${statusI18nKeys[filter] || filter}`) })}
           </h3>
           <p className="mb-6 max-w-sm text-sm text-muted-foreground">
             {filter === "all"
@@ -117,41 +168,52 @@ export default async function IdeasPage({ params, searchParams }: PageProps) {
       ) : (
         <div className="space-y-3">
           {filteredIdeas.map((idea) => (
-            <Link key={idea.uuid} href={`/projects/${projectUuid}/ideas/${idea.uuid}`}>
-              <Card className="group cursor-pointer p-4 transition-all hover:border-primary hover:shadow-sm">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="mb-1 flex items-center gap-2">
-                      <h3 className="font-medium text-foreground group-hover:text-primary">
-                        {idea.title}
-                      </h3>
-                      <Badge className={statusConfig[idea.status]?.color || ""}>
-                        {statusConfig[idea.status]?.label || idea.status}
+            <Card key={idea.uuid} className="group p-4 transition-all hover:border-primary hover:shadow-sm">
+              <div className="flex items-start justify-between">
+                <Link href={`/projects/${projectUuid}/ideas/${idea.uuid}`} className="flex-1 cursor-pointer">
+                  <div className="mb-1 flex items-center gap-2">
+                    <h3 className="font-medium text-foreground group-hover:text-primary">
+                      {idea.title}
+                    </h3>
+                    <Badge className={statusColors[idea.status] || ""}>
+                      {t(`status.${statusI18nKeys[idea.status] || idea.status}`)}
+                    </Badge>
+                    {usedIdeaUuids.has(idea.uuid) && (
+                      <Badge variant="outline" className="text-xs">
+                        {t("ideas.usedInProposal")}
                       </Badge>
-                    </div>
-                    {idea.content && (
-                      <p className="line-clamp-2 text-sm text-muted-foreground">
-                        {idea.content}
-                      </p>
                     )}
-                    <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>
-                        {new Date(idea.createdAt).toLocaleDateString()}
-                      </span>
-                      {idea.assignee && (
-                        <>
-                          <span>·</span>
-                          <span className="flex items-center gap-1">
-                            <Bot className="h-3 w-3" />
-                            {idea.assignee.name}
-                          </span>
-                        </>
-                      )}
-                    </div>
                   </div>
-                </div>
-              </Card>
-            </Link>
+                  {idea.content && (
+                    <p className="line-clamp-2 text-sm text-muted-foreground">
+                      {idea.content}
+                    </p>
+                  )}
+                  <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+                    <span>
+                      {new Date(idea.createdAt).toLocaleDateString()}
+                    </span>
+                    {idea.assignee && (
+                      <>
+                        <span>·</span>
+                        <span className="flex items-center gap-1">
+                          <Bot className="h-3 w-3" />
+                          {idea.assignee.name}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </Link>
+                {canCreateProposal(idea) && (
+                  <Link href={`/projects/${projectUuid}/proposals/new?ideaUuid=${idea.uuid}`}>
+                    <Button size="sm" className="ml-4 bg-[#C67A52] hover:bg-[#B56A42] text-white">
+                      <FileText className="mr-1 h-4 w-4" />
+                      {t("proposals.createProposal")}
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </Card>
           ))}
         </div>
       )}

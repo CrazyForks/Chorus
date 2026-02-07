@@ -35,20 +35,32 @@ interface KanbanBoardProps {
   initialTasks: Task[];
 }
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-  open: { label: "Open", color: "bg-[#FFF3E0] text-[#E65100]" },
-  assigned: { label: "Assigned", color: "bg-[#E3F2FD] text-[#1976D2]" },
-  in_progress: { label: "In Progress", color: "bg-[#E8F5E9] text-[#5A9E6F]" },
-  to_verify: { label: "To Verify", color: "bg-[#F3E5F5] text-[#7B1FA2]" },
-  done: { label: "Done", color: "bg-[#E0F2F1] text-[#00796B]" },
-  closed: { label: "Closed", color: "bg-[#F5F5F5] text-[#9A9A9A]" },
+// 状态颜色配置
+const statusColors: Record<string, string> = {
+  open: "bg-[#FFF3E0] text-[#E65100]",
+  assigned: "bg-[#E3F2FD] text-[#1976D2]",
+  in_progress: "bg-[#E8F5E9] text-[#5A9E6F]",
+  to_verify: "bg-[#F3E5F5] text-[#7B1FA2]",
+  done: "bg-[#E0F2F1] text-[#00796B]",
+  closed: "bg-[#F5F5F5] text-[#9A9A9A]",
 };
 
-const columns = [
-  { id: "todo", label: "To Do", statuses: ["open", "assigned"] },
-  { id: "in_progress", label: "In Progress", statuses: ["in_progress"] },
-  { id: "to_verify", label: "To Verify", statuses: ["to_verify"] },
-  { id: "done", label: "Done", statuses: ["done", "closed"] },
+// 状态到翻译 key 的映射
+const statusI18nKeys: Record<string, string> = {
+  open: "open",
+  assigned: "assigned",
+  in_progress: "inProgress",
+  to_verify: "toVerify",
+  done: "done",
+  closed: "closed",
+};
+
+// 看板列配置
+const columnConfigs = [
+  { id: "todo", labelKey: "todo", statuses: ["open", "assigned"] },
+  { id: "in_progress", labelKey: "inProgress", statuses: ["in_progress"] },
+  { id: "to_verify", labelKey: "toVerify", statuses: ["to_verify"] },
+  { id: "done", labelKey: "done", statuses: ["done", "closed"] },
 ];
 
 export function KanbanBoard({ projectUuid, initialTasks }: KanbanBoardProps) {
@@ -91,7 +103,7 @@ export function KanbanBoard({ projectUuid, initialTasks }: KanbanBoardProps) {
 
     // Determine the new status based on destination column
     let newStatus: string;
-    const column = columns.find((c) => c.id === newColumnId);
+    const column = columnConfigs.find((c) => c.id === newColumnId);
     if (newColumnId === "todo") {
       // Keep the original status if moving within todo, or set to open
       newStatus = task.status === "assigned" ? "assigned" : "open";
@@ -131,7 +143,7 @@ export function KanbanBoard({ projectUuid, initialTasks }: KanbanBoardProps) {
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="flex flex-1 gap-4 overflow-x-auto pb-4">
-        {columns.map((column) => {
+        {columnConfigs.map((column) => {
           const columnTasks = getTasksForColumn(column.statuses);
           return (
             <div
@@ -141,7 +153,7 @@ export function KanbanBoard({ projectUuid, initialTasks }: KanbanBoardProps) {
               {/* Column Header */}
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-[#2C2C2C]">{column.label}</h3>
+                  <h3 className="font-medium text-[#2C2C2C]">{t(`status.${column.labelKey}`)}</h3>
                   <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-[#6B6B6B]">
                     {columnTasks.length}
                   </span>
@@ -211,11 +223,10 @@ export function KanbanBoard({ projectUuid, initialTasks }: KanbanBoardProps) {
                                   <div className="mb-2 flex items-start justify-between">
                                     <Badge
                                       className={
-                                        statusConfig[task.status]?.color || ""
+                                        statusColors[task.status] || ""
                                       }
                                     >
-                                      {statusConfig[task.status]?.label ||
-                                        task.status}
+                                      {t(`status.${statusI18nKeys[task.status] || task.status}`)}
                                     </Badge>
                                     {task.storyPoints && (
                                       <span className="flex items-center gap-1 rounded bg-[#FFF3E0] px-2 py-0.5 text-xs font-medium text-[#E65100]">

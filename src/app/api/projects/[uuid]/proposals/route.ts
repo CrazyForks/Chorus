@@ -1,13 +1,14 @@
 // src/app/api/projects/[uuid]/proposals/route.ts
 // Proposals API - 列表和创建 (ARCHITECTURE.md §5.1, PRD §4.1 F5)
 // UUID-Based Architecture: All operations use UUIDs
+// Container Model: Proposal 包含 documentDrafts 和 taskDrafts
 
 import { NextRequest } from "next/server";
 import { withErrorHandler, parseBody, parsePagination } from "@/lib/api-handler";
 import { success, paginated, errors } from "@/lib/api-response";
-import { getAuthContext, isAgent, isPmAgent } from "@/lib/auth";
+import { getAuthContext, isAgent, isPmAgent, isUser } from "@/lib/auth";
 import { projectExists } from "@/services/project.service";
-import { listProposals, createProposal } from "@/services/proposal.service";
+import { listProposals, createProposal, type DocumentDraft, type TaskDraft } from "@/services/proposal.service";
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
@@ -43,7 +44,7 @@ export const GET = withErrorHandler<{ uuid: string }>(
   }
 );
 
-// POST /api/projects/[uuid]/proposals - 创建 Proposal
+// POST /api/projects/[uuid]/proposals - 创建 Proposal（容器模型）
 export const POST = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -51,9 +52,10 @@ export const POST = withErrorHandler<{ uuid: string }>(
       return errors.unauthorized();
     }
 
-    // 只有 PM Agent 可以创建 Proposal
-    if (!isAgent(auth) || !isPmAgent(auth)) {
-      return errors.forbidden("Only PM agents can create proposals");
+    // PM Agent 或 User 可以创建 Proposal
+    const canCreate = isUser(auth) || (isAgent(auth) && isPmAgent(auth));
+    if (!canCreate) {
+      return errors.forbidden("Only PM agents or users can create proposals");
     }
 
     const { uuid: projectUuid } = await context.params;
@@ -67,9 +69,9 @@ export const POST = withErrorHandler<{ uuid: string }>(
       title: string;
       description?: string;
       inputType: "idea" | "document";
-      inputUuids: string[];  // Accept UUIDs directly
-      outputType: "document" | "task";
-      outputData: unknown;
+      inputUuids: string[];
+      documentDrafts?: DocumentDraft[];
+      taskDrafts?: TaskDraft[];
     }>(request);
 
     // 验证必填字段
@@ -82,24 +84,21 @@ export const POST = withErrorHandler<{ uuid: string }>(
     if (!body.inputUuids || !Array.isArray(body.inputUuids) || body.inputUuids.length === 0) {
       return errors.validationError({ inputUuids: "Input UUIDs are required" });
     }
-    if (!body.outputType || !["document", "task"].includes(body.outputType)) {
-      return errors.validationError({ outputType: "Invalid output type" });
-    }
-    if (!body.outputData) {
-      return errors.validationError({ outputData: "Output data is required" });
-    }
 
-    // Store UUIDs directly - no conversion needed in UUID-based architecture
+    // 确定创建者类型
+    const createdByType = isUser(auth) ? "user" : "agent";
+
     const proposal = await createProposal({
       companyUuid: auth.companyUuid,
       projectUuid,
       title: body.title.trim(),
       description: body.description?.trim() || null,
       inputType: body.inputType,
-      inputUuids: body.inputUuids,  // Store UUIDs directly
-      outputType: body.outputType,
-      outputData: body.outputData,
+      inputUuids: body.inputUuids,
+      documentDrafts: body.documentDrafts,
+      taskDrafts: body.taskDrafts,
       createdByUuid: auth.actorUuid,
+      createdByType,
     });
 
     return success(proposal);

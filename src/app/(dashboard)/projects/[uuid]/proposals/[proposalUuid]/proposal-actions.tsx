@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { approveProposalAction, rejectProposalAction } from "./actions";
+import { approveProposalAction, rejectProposalAction, submitProposalAction } from "./actions";
 
 interface ProposalActionsProps {
   proposalUuid: string;
@@ -16,6 +16,17 @@ export function ProposalActions({ proposalUuid, status }: ProposalActionsProps) 
   const t = useTranslations();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+
+  const handleSubmit = () => {
+    if (!confirm(t("proposals.confirmSubmitDesc"))) return;
+
+    startTransition(async () => {
+      const result = await submitProposalAction(proposalUuid);
+      if (result.success) {
+        router.refresh();
+      }
+    });
+  };
 
   const handleApprove = () => {
     startTransition(async () => {
@@ -39,6 +50,15 @@ export function ProposalActions({ proposalUuid, status }: ProposalActionsProps) 
 
   return (
     <div className="flex gap-2">
+      {status === "draft" && (
+        <Button
+          onClick={handleSubmit}
+          disabled={isPending}
+          className="bg-[#C67A52] hover:bg-[#B56A42] text-white"
+        >
+          {isPending ? t("common.processing") : t("proposals.submitForReview")}
+        </Button>
+      )}
       {status === "pending" && (
         <>
           <Button

@@ -1,5 +1,6 @@
 // src/app/(dashboard)/projects/[uuid]/proposals/page.tsx
 // Server Component - UUID 从 URL 获取
+// Container Model: Proposal 包含 documentDrafts 和 taskDrafts
 
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -8,21 +9,31 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getServerAuthContext } from "@/lib/auth-server";
-import { listProposals } from "@/services/proposal.service";
+import { listProposals, type DocumentDraft, type TaskDraft } from "@/services/proposal.service";
 import { projectExists } from "@/services/project.service";
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-  pending: { label: "Pending Review", color: "bg-[#FFF3E0] text-[#E65100]" },
-  approved: { label: "Approved", color: "bg-[#E8F5E9] text-[#5A9E6F]" },
-  rejected: { label: "Rejected", color: "bg-[#FFEBEE] text-[#D32F2F]" },
-  revised: { label: "Revised", color: "bg-[#E3F2FD] text-[#1976D2]" },
+// 状态颜色配置
+const statusColors: Record<string, string> = {
+  draft: "bg-[#F5F5F5] text-[#6B6B6B]",
+  pending: "bg-[#FFF3E0] text-[#E65100]",
+  approved: "bg-[#E8F5E9] text-[#5A9E6F]",
+  rejected: "bg-[#FFEBEE] text-[#D32F2F]",
+  revised: "bg-[#E3F2FD] text-[#1976D2]",
 };
 
-const typeConfig: Record<string, { label: string; icon: string }> = {
-  prd: { label: "PRD", icon: "📋" },
-  tasks: { label: "Task Breakdown", icon: "📝" },
-  doc_update: { label: "Document Update", icon: "📄" },
-  tech_spec: { label: "Tech Spec", icon: "⚙️" },
+// 状态到翻译 key 的映射
+const statusI18nKeys: Record<string, string> = {
+  draft: "draft",
+  pending: "pending",
+  approved: "approved",
+  rejected: "rejected",
+  revised: "revised",
+};
+
+// 输入类型到翻译 key 的映射
+const inputTypeI18nKeys: Record<string, { key: string; icon: string }> = {
+  idea: { key: "ideas.title", icon: "💡" },
+  document: { key: "documents.title", icon: "📄" },
 };
 
 interface PageProps {
@@ -103,13 +114,13 @@ export default async function ProposalsPage({ params, searchParams }: PageProps)
             {t("proposals.all")} ({allProposals.length})
           </Button>
         </Link>
-        {Object.entries(statusConfig).map(([status, config]) => {
+        {Object.keys(statusColors).map((status) => {
           const count = statusCounts[status] || 0;
-          if (count === 0 && status !== "pending") return null;
+          if (count === 0 && status !== "pending" && status !== "draft") return null;
           return (
             <Link key={status} href={`/projects/${projectUuid}/proposals?status=${status}`}>
               <Button variant={filter === status ? "default" : "ghost"} size="sm">
-                {config.label} ({count})
+                {t(`status.${statusI18nKeys[status]}`)} ({count})
               </Button>
             </Link>
           );
@@ -145,36 +156,62 @@ export default async function ProposalsPage({ params, searchParams }: PageProps)
         </Card>
       ) : (
         <div className="space-y-3">
-          {filteredProposals.map((proposal) => (
-            <Link key={proposal.uuid} href={`/projects/${projectUuid}/proposals/${proposal.uuid}`}>
-              <Card className="group cursor-pointer border-[#E5E0D8] p-5 transition-all hover:border-[#C67A52] hover:shadow-sm">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F5F2EC] text-2xl">
-                      {typeConfig[proposal.outputType]?.icon || "📋"}
-                    </div>
-                    <div>
-                      <div className="mb-1 flex items-center gap-2">
-                        <h3 className="font-medium text-[#2C2C2C] group-hover:text-[#C67A52]">
-                          {proposal.title}
-                        </h3>
-                        <Badge className={statusConfig[proposal.status]?.color || ""}>
-                          {statusConfig[proposal.status]?.label || proposal.status}
-                        </Badge>
+          {filteredProposals.map((proposal) => {
+            const documentDrafts = proposal.documentDrafts as DocumentDraft[] | null;
+            const taskDrafts = proposal.taskDrafts as TaskDraft[] | null;
+            const docCount = documentDrafts?.length || 0;
+            const taskCount = taskDrafts?.length || 0;
+
+            return (
+              <Link key={proposal.uuid} href={`/projects/${projectUuid}/proposals/${proposal.uuid}`}>
+                <Card className="group cursor-pointer border-[#E5E0D8] p-5 transition-all hover:border-[#C67A52] hover:shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F5F2EC] text-2xl">
+                        📋
                       </div>
-                      <div className="flex items-center gap-3 text-sm text-[#6B6B6B]">
-                        <span>{typeConfig[proposal.outputType]?.label || proposal.outputType}</span>
-                        <span>·</span>
-                        <span>
-                          {new Date(proposal.createdAt).toLocaleDateString()}
-                        </span>
+                      <div>
+                        <div className="mb-1 flex items-center gap-2">
+                          <h3 className="font-medium text-[#2C2C2C] group-hover:text-[#C67A52]">
+                            {proposal.title}
+                          </h3>
+                          <Badge className={statusColors[proposal.status] || ""}>
+                            {t(`status.${statusI18nKeys[proposal.status] || proposal.status}`)}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-[#6B6B6B]">
+                          <span className="flex items-center gap-1">
+                            {inputTypeI18nKeys[proposal.inputType]?.icon || "📥"}
+                            {t("proposals.basedOn")} {t(inputTypeI18nKeys[proposal.inputType]?.key || "common.unknown")}
+                          </span>
+                          <span>·</span>
+                          {docCount > 0 && (
+                            <>
+                              <span className="flex items-center gap-1">
+                                <span>📄</span> {docCount}
+                              </span>
+                              <span>·</span>
+                            </>
+                          )}
+                          {taskCount > 0 && (
+                            <>
+                              <span className="flex items-center gap-1">
+                                <span>📝</span> {taskCount}
+                              </span>
+                              <span>·</span>
+                            </>
+                          )}
+                          <span>
+                            {new Date(proposal.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </Card>
-            </Link>
-          ))}
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

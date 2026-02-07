@@ -1,28 +1,41 @@
 // src/app/(dashboard)/projects/[uuid]/proposals/[proposalUuid]/page.tsx
 // Server Component - UUID 从 URL 获取
+// Container Model: Proposal 包含 documentDrafts 和 taskDrafts
 
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Streamdown } from "streamdown";
 import { getServerAuthContext } from "@/lib/auth-server";
-import { getProposal } from "@/services/proposal.service";
+import { getProposal, type DocumentDraft, type TaskDraft } from "@/services/proposal.service";
 import { projectExists } from "@/services/project.service";
 import { ProposalActions } from "./proposal-actions";
+import { ProposalEditor } from "./proposal-editor";
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-  pending: { label: "Pending Review", color: "bg-[#FFF3E0] text-[#E65100]" },
-  approved: { label: "Approved", color: "bg-[#E8F5E9] text-[#5A9E6F]" },
-  rejected: { label: "Rejected", color: "bg-[#FFEBEE] text-[#D32F2F]" },
-  revised: { label: "Revised", color: "bg-[#E3F2FD] text-[#1976D2]" },
+// 状态颜色配置
+const statusColors: Record<string, string> = {
+  draft: "bg-[#F5F5F5] text-[#6B6B6B]",
+  pending: "bg-[#FFF3E0] text-[#E65100]",
+  approved: "bg-[#E8F5E9] text-[#5A9E6F]",
+  rejected: "bg-[#FFEBEE] text-[#D32F2F]",
+  revised: "bg-[#E3F2FD] text-[#1976D2]",
 };
 
-const typeConfig: Record<string, { label: string; icon: string }> = {
-  prd: { label: "PRD", icon: "📋" },
-  tasks: { label: "Task Breakdown", icon: "📝" },
-  doc_update: { label: "Document Update", icon: "📄" },
-  tech_spec: { label: "Tech Spec", icon: "⚙️" },
+// 状态到翻译 key 的映射
+const statusI18nKeys: Record<string, string> = {
+  draft: "draft",
+  pending: "pending",
+  approved: "approved",
+  rejected: "rejected",
+  revised: "revised",
+};
+
+// 输入类型到翻译 key 的映射
+const inputTypeI18nKeys: Record<string, { key: string; icon: string }> = {
+  idea: { key: "ideas.title", icon: "💡" },
+  document: { key: "documents.title", icon: "📄" },
 };
 
 interface PageProps {
@@ -57,6 +70,9 @@ export default async function ProposalDetailPage({ params }: PageProps) {
     );
   }
 
+  const documentDrafts = proposal.documentDrafts as DocumentDraft[] | null;
+  const taskDrafts = proposal.taskDrafts as TaskDraft[] | null;
+
   return (
     <div className="p-8">
       {/* Breadcrumb */}
@@ -83,15 +99,15 @@ export default async function ProposalDetailPage({ params }: PageProps) {
       <div className="mb-6 flex items-start justify-between">
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F5F2EC] text-2xl">
-            {typeConfig[proposal.outputType]?.icon || "📋"}
+            📋
           </div>
           <div>
             <div className="mb-1 flex items-center gap-3">
-              <Badge className={statusConfig[proposal.status]?.color || ""}>
-                {statusConfig[proposal.status]?.label || proposal.status}
+              <Badge className={statusColors[proposal.status] || ""}>
+                {t(`status.${statusI18nKeys[proposal.status] || proposal.status}`)}
               </Badge>
               <span className="text-sm text-[#6B6B6B]">
-                {typeConfig[proposal.outputType]?.label || proposal.outputType}
+                {t("proposals.basedOn")} {t(inputTypeI18nKeys[proposal.inputType]?.key || "common.unknown")}
               </span>
             </div>
             <h1 className="text-2xl font-semibold text-[#2C2C2C]">{proposal.title}</h1>
@@ -131,21 +147,25 @@ export default async function ProposalDetailPage({ params }: PageProps) {
       {/* Content */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main Content */}
-        <div className="lg:col-span-2">
-          <Card className="border-[#E5E0D8] p-6">
-            <h2 className="mb-4 text-lg font-medium text-[#2C2C2C]">{t("common.content")}</h2>
-            <div className="prose prose-sm max-w-none text-[#6B6B6B]">
-              {proposal.outputData ? (
-                <div className="whitespace-pre-wrap rounded-lg bg-[#F5F2EC] p-4 font-mono text-sm">
-                  {typeof proposal.outputData === "string"
-                    ? proposal.outputData
-                    : JSON.stringify(proposal.outputData, null, 2)}
-                </div>
-              ) : (
-                <p className="text-sm text-[#9A9A9A] italic">{t("common.noContent")}</p>
-              )}
-            </div>
-          </Card>
+        <div className="lg:col-span-2 space-y-6">
+          {/* Description */}
+          {proposal.description && (
+            <Card className="border-[#E5E0D8] p-6">
+              <h2 className="mb-4 text-lg font-medium text-[#2C2C2C]">{t("common.description")}</h2>
+              <div className="prose prose-sm max-w-none text-[#6B6B6B]">
+                <Streamdown>{proposal.description}</Streamdown>
+              </div>
+            </Card>
+          )}
+
+          {/* Editable Document and Task Drafts */}
+          <ProposalEditor
+            proposalUuid={proposalUuid}
+            projectUuid={projectUuid}
+            status={proposal.status}
+            documentDrafts={documentDrafts}
+            taskDrafts={taskDrafts}
+          />
         </div>
 
         {/* Sidebar */}
@@ -157,13 +177,19 @@ export default async function ProposalDetailPage({ params }: PageProps) {
               <div className="flex justify-between text-sm">
                 <dt className="text-[#9A9A9A]">{t("common.status")}</dt>
                 <dd className="font-medium text-[#2C2C2C]">
-                  {statusConfig[proposal.status]?.label || proposal.status}
+                  {t(`status.${statusI18nKeys[proposal.status] || proposal.status}`)}
                 </dd>
               </div>
               <div className="flex justify-between text-sm">
-                <dt className="text-[#9A9A9A]">{t("common.type")}</dt>
+                <dt className="text-[#9A9A9A]">{t("proposals.inputType")}</dt>
                 <dd className="font-medium text-[#2C2C2C]">
-                  {typeConfig[proposal.outputType]?.label || proposal.outputType}
+                  {t(inputTypeI18nKeys[proposal.inputType]?.key || "common.unknown")}
+                </dd>
+              </div>
+              <div className="flex justify-between text-sm">
+                <dt className="text-[#9A9A9A]">{t("proposals.creatorType")}</dt>
+                <dd className="font-medium text-[#2C2C2C]">
+                  {proposal.createdByType === "agent" ? t("common.agent") : t("common.user")}
                 </dd>
               </div>
               <div className="flex justify-between text-sm">
@@ -181,7 +207,88 @@ export default async function ProposalDetailPage({ params }: PageProps) {
             </dl>
           </Card>
 
-          {/* Actions */}
+          {/* Container Summary */}
+          <Card className="border-[#E5E0D8] p-4">
+            <h3 className="mb-3 text-sm font-medium text-[#6B6B6B]">{t("proposals.containerSummary")}</h3>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-2 text-[#9A9A9A]">
+                  <span>📄</span> {t("proposals.documents")}
+                </span>
+                <span className="font-medium text-[#2C2C2C]">{documentDrafts?.length || 0}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-2 text-[#9A9A9A]">
+                  <span>📝</span> {t("proposals.tasks")}
+                </span>
+                <span className="font-medium text-[#2C2C2C]">{taskDrafts?.length || 0}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-2 text-[#9A9A9A]">
+                  <span>💡</span> {t("proposals.inputs")}
+                </span>
+                <span className="font-medium text-[#2C2C2C]">{proposal.inputUuids?.length || 0}</span>
+              </div>
+            </div>
+          </Card>
+
+          {/* Review Info */}
+          {proposal.review && (
+            <Card className="border-[#E5E0D8] p-4">
+              <h3 className="mb-3 text-sm font-medium text-[#6B6B6B]">{t("proposals.reviewInfo")}</h3>
+              <dl className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <dt className="text-[#9A9A9A]">{t("proposals.reviewedBy")}</dt>
+                  <dd className="font-medium text-[#2C2C2C]">
+                    {proposal.review.reviewedBy?.name || "-"}
+                  </dd>
+                </div>
+                {proposal.review.reviewedAt && (
+                  <div className="flex justify-between text-sm">
+                    <dt className="text-[#9A9A9A]">{t("proposals.reviewedAt")}</dt>
+                    <dd className="font-medium text-[#2C2C2C]">
+                      {new Date(proposal.review.reviewedAt).toLocaleDateString()}
+                    </dd>
+                  </div>
+                )}
+                {proposal.review.reviewNote && (
+                  <div className="mt-2">
+                    <dt className="text-xs text-[#9A9A9A] mb-1">{t("proposals.reviewNote")}</dt>
+                    <dd className="text-sm text-[#6B6B6B] bg-[#F5F2EC] p-2 rounded">
+                      {proposal.review.reviewNote}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            </Card>
+          )}
+
+          {/* Draft Notice */}
+          {proposal.status === "draft" && (
+            <Card className="border-[#6B6B6B] bg-[#F5F5F5] p-4">
+              <div className="flex items-center gap-2 text-sm text-[#6B6B6B]">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-4 w-4"
+                >
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+                {t("proposals.draftStatus")}
+              </div>
+              <p className="mt-2 text-xs text-[#6B6B6B]">
+                {t("proposals.draftNotice")}
+              </p>
+            </Card>
+          )}
+
+          {/* Pending Review Notice */}
           {proposal.status === "pending" && (
             <Card className="border-[#C67A52] bg-[#FFFBF8] p-4">
               <div className="flex items-center gap-2 text-sm text-[#E65100]">
