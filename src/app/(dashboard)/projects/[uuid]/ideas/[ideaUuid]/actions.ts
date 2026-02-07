@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getServerAuthContext } from "@/lib/auth-server";
-import { claimIdea, getIdeaByUuid } from "@/services/idea.service";
+import { claimIdea, releaseIdea, getIdeaByUuid } from "@/services/idea.service";
 import { getAgentsByRole, getCompanyUsers } from "@/services/agent.service";
 
 export async function claimIdeaAction(ideaUuid: string) {
@@ -18,9 +18,9 @@ export async function claimIdeaAction(ideaUuid: string) {
       return { success: false, error: "Idea not found" };
     }
 
-    // 只有 open 状态的 idea 可以被认领
-    if (idea.status !== "open") {
-      return { success: false, error: "Idea is not available for claiming" };
+    // open/assigned/in_progress 状态的 idea 可以被分配
+    if (idea.status !== "open" && idea.status !== "assigned" && idea.status !== "in_progress") {
+      return { success: false, error: "Idea is not available for assignment" };
     }
 
     await claimIdea({
@@ -54,8 +54,8 @@ export async function claimIdeaToAgentAction(ideaUuid: string, agentUuid: string
       return { success: false, error: "Idea not found" };
     }
 
-    if (idea.status !== "open") {
-      return { success: false, error: "Idea is not available for claiming" };
+    if (idea.status !== "open" && idea.status !== "assigned" && idea.status !== "in_progress") {
+      return { success: false, error: "Idea is not available for assignment" };
     }
 
     await claimIdea({
@@ -89,8 +89,8 @@ export async function claimIdeaToUserAction(ideaUuid: string, userUuid: string) 
       return { success: false, error: "Idea not found" };
     }
 
-    if (idea.status !== "open") {
-      return { success: false, error: "Idea is not available for claiming" };
+    if (idea.status !== "open" && idea.status !== "assigned" && idea.status !== "in_progress") {
+      return { success: false, error: "Idea is not available for assignment" };
     }
 
     await claimIdea({
@@ -108,6 +108,35 @@ export async function claimIdeaToUserAction(ideaUuid: string, userUuid: string) 
   } catch (error) {
     console.error("Failed to claim idea to user:", error);
     return { success: false, error: "Failed to claim idea" };
+  }
+}
+
+// Release idea (clear assignee, back to open)
+export async function releaseIdeaAction(ideaUuid: string) {
+  const auth = await getServerAuthContext();
+  if (!auth) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  try {
+    const idea = await getIdeaByUuid(auth.companyUuid, ideaUuid);
+    if (!idea) {
+      return { success: false, error: "Idea not found" };
+    }
+
+    if (idea.status !== "assigned" && idea.status !== "in_progress") {
+      return { success: false, error: "Idea cannot be released from current status" };
+    }
+
+    await releaseIdea(idea.uuid);
+
+    revalidatePath(`/projects/${idea.projectUuid}/ideas/${ideaUuid}`);
+    revalidatePath(`/projects/${idea.projectUuid}/ideas`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to release idea:", error);
+    return { success: false, error: "Failed to release idea" };
   }
 }
 

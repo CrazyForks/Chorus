@@ -15,17 +15,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  claimTaskAction,
-  claimTaskToAgentAction,
-  claimTaskToUserAction,
-  releaseTaskAction,
-  getDeveloperAgentsAction,
-} from "./[taskUuid]/actions";
+  claimIdeaAction,
+  claimIdeaToAgentAction,
+  claimIdeaToUserAction,
+  releaseIdeaAction,
+  getPmAgentsAction,
+} from "./[ideaUuid]/actions";
 
-interface Task {
+interface Idea {
   uuid: string;
   title: string;
-  description: string | null;
+  content: string | null;
   status: string;
   assignee: {
     type: string;
@@ -47,8 +47,8 @@ interface CompanyUser {
   email: string | null;
 }
 
-interface AssignTaskModalProps {
-  task: Task;
+interface AssignIdeaModalProps {
+  idea: Idea;
   projectUuid: string;
   currentUserUuid: string;
   onClose: () => void;
@@ -56,12 +56,12 @@ interface AssignTaskModalProps {
 
 type AssignOption = "self" | "agent" | "user" | "release";
 
-export function AssignTaskModal({
-  task,
+export function AssignIdeaModal({
+  idea,
   projectUuid,
   currentUserUuid,
   onClose,
-}: AssignTaskModalProps) {
+}: AssignIdeaModalProps) {
   const t = useTranslations();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -72,13 +72,13 @@ export function AssignTaskModal({
   const [users, setUsers] = useState<CompanyUser[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
-  const isAssigned = !!task.assignee;
+  const isAssigned = !!idea.assignee;
 
-  // Load agents and users
+  // Load PM agents and users
   useEffect(() => {
     async function loadData() {
       setIsLoadingData(true);
-      const result = await getDeveloperAgentsAction();
+      const result = await getPmAgentsAction();
       setAgents(result.agents || []);
       setUsers((result.users || []).filter((u: CompanyUser) => u.uuid !== currentUserUuid));
       setIsLoadingData(false);
@@ -86,20 +86,18 @@ export function AssignTaskModal({
     loadData();
   }, [currentUserUuid]);
 
-  // All developer agents in the company are available for assignment
-
   const handleSubmit = async () => {
     setIsLoading(true);
     let result;
 
     if (selectedOption === "self") {
-      result = await claimTaskAction(task.uuid);
+      result = await claimIdeaAction(idea.uuid);
     } else if (selectedOption === "agent" && selectedAgentUuid) {
-      result = await claimTaskToAgentAction(task.uuid, selectedAgentUuid);
+      result = await claimIdeaToAgentAction(idea.uuid, selectedAgentUuid);
     } else if (selectedOption === "user" && selectedUserUuid) {
-      result = await claimTaskToUserAction(task.uuid, selectedUserUuid);
+      result = await claimIdeaToUserAction(idea.uuid, selectedUserUuid);
     } else if (selectedOption === "release") {
-      result = await releaseTaskAction(task.uuid);
+      result = await releaseIdeaAction(idea.uuid);
     } else {
       setIsLoading(false);
       return;
@@ -131,7 +129,7 @@ export function AssignTaskModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#E5E0D8] px-6 py-5">
           <h2 className="text-base font-semibold text-[#2C2C2C]">
-            {t("tasks.assignTask")}
+            {t("ideas.assignIdea")}
           </h2>
           <button
             onClick={onClose}
@@ -143,12 +141,12 @@ export function AssignTaskModal({
 
         {/* Body */}
         <div className="p-6 space-y-4">
-          {/* Task Info */}
+          {/* Idea Info */}
           <div className="rounded-lg bg-[#FAF8F4] p-3">
-            <p className="text-[13px] font-medium text-[#2C2C2C]">{task.title}</p>
-            {task.description && (
+            <p className="text-[13px] font-medium text-[#2C2C2C]">{idea.title}</p>
+            {idea.content && (
               <p className="mt-1 text-[11px] text-[#6B6B6B] line-clamp-2">
-                {task.description}
+                {idea.content}
               </p>
             )}
           </div>
@@ -157,13 +155,13 @@ export function AssignTaskModal({
           {isAssigned && (
             <div className="rounded-lg bg-[#E3F2FD] p-3">
               <p className="text-xs text-[#1976D2]">
-                {t("common.currentAssignee")}: <span className="font-medium">{task.assignee?.name}</span>
+                {t("common.currentAssignee")}: <span className="font-medium">{idea.assignee?.name}</span>
               </p>
             </div>
           )}
 
           <p className="text-[13px] text-[#6B6B6B]">
-            {t("assign.selectAssignee")}
+            {t("ideas.selectIdeaAssignee")}
           </p>
 
           {isLoadingData ? (
@@ -186,17 +184,17 @@ export function AssignTaskModal({
                 onClick={() => setSelectedOption("self")}
               >
                 <div className="flex items-center gap-2.5">
-                  <RadioGroupItem value="self" id="self" className="border-[#C67A52] text-[#C67A52]" />
-                  <Label htmlFor="self" className="text-sm font-medium text-[#2C2C2C] cursor-pointer">
+                  <RadioGroupItem value="self" id="idea-self" className="border-[#C67A52] text-[#C67A52]" />
+                  <Label htmlFor="idea-self" className="text-sm font-medium text-[#2C2C2C] cursor-pointer">
                     {t("assign.assignToMyself")}
                   </Label>
                 </div>
                 <p className="mt-2 ml-6 text-xs text-[#6B6B6B] leading-relaxed">
-                  {t("assign.assignToMyselfDesc")}
+                  {t("ideas.assignToMyselfIdeaDesc")}
                 </p>
               </div>
 
-              {/* Option 2: Assign to specific agent */}
+              {/* Option 2: Assign to specific PM Agent */}
               <div
                 className={`rounded-[10px] p-4 transition-colors ${
                   selectedOption === "agent"
@@ -208,13 +206,13 @@ export function AssignTaskModal({
                   className="flex items-center gap-2.5 cursor-pointer"
                   onClick={() => setSelectedOption("agent")}
                 >
-                  <RadioGroupItem value="agent" id="agent" className="border-[#C67A52] text-[#C67A52]" />
-                  <Label htmlFor="agent" className="text-sm font-medium text-[#2C2C2C] cursor-pointer">
-                    {t("assign.orAssignToAgent")}
+                  <RadioGroupItem value="agent" id="idea-agent" className="border-[#C67A52] text-[#C67A52]" />
+                  <Label htmlFor="idea-agent" className="text-sm font-medium text-[#2C2C2C] cursor-pointer">
+                    {t("ideas.orAssignToPmAgent")}
                   </Label>
                 </div>
                 <p className="mt-2 ml-6 text-xs text-[#6B6B6B] leading-relaxed">
-                  {t("tasks.onlySelectedAgentCanWork")}
+                  {t("ideas.onlySelectedPmAgentCanWork")}
                 </p>
 
                 {selectedOption === "agent" && (
@@ -224,7 +222,7 @@ export function AssignTaskModal({
                       onValueChange={setSelectedAgentUuid}
                     >
                       <SelectTrigger className="w-full border-[#E5E0D8]">
-                        <SelectValue placeholder={t("tasks.selectAgent")} />
+                        <SelectValue placeholder={t("ideas.selectPmAgent")} />
                       </SelectTrigger>
                       <SelectContent>
                         {agents.length > 0 ? (
@@ -238,7 +236,7 @@ export function AssignTaskModal({
                           ))
                         ) : (
                           <div className="px-3 py-2 text-xs text-[#9A9A9A]">
-                            {t("tasks.noAgentsAvailable")}
+                            {t("ideas.noPmAgentsAvailable")}
                           </div>
                         )}
                       </SelectContent>
@@ -259,8 +257,8 @@ export function AssignTaskModal({
                   className="flex items-center gap-2.5 cursor-pointer"
                   onClick={() => setSelectedOption("user")}
                 >
-                  <RadioGroupItem value="user" id="user" className="border-[#C67A52] text-[#C67A52]" />
-                  <Label htmlFor="user" className="text-sm font-medium text-[#2C2C2C] cursor-pointer">
+                  <RadioGroupItem value="user" id="idea-user" className="border-[#C67A52] text-[#C67A52]" />
+                  <Label htmlFor="idea-user" className="text-sm font-medium text-[#2C2C2C] cursor-pointer">
                     {t("assign.orAssignToUser")}
                   </Label>
                 </div>
@@ -306,13 +304,13 @@ export function AssignTaskModal({
                   onClick={() => setSelectedOption("release")}
                 >
                   <div className="flex items-center gap-2.5">
-                    <RadioGroupItem value="release" id="release" className="border-[#C67A52] text-[#C67A52]" />
-                    <Label htmlFor="release" className="text-sm font-medium text-[#2C2C2C] cursor-pointer">
+                    <RadioGroupItem value="release" id="idea-release" className="border-[#C67A52] text-[#C67A52]" />
+                    <Label htmlFor="idea-release" className="text-sm font-medium text-[#2C2C2C] cursor-pointer">
                       {t("assign.releaseAssignee")}
                     </Label>
                   </div>
                   <p className="mt-2 ml-6 text-xs text-[#6B6B6B] leading-relaxed">
-                    {t("assign.releaseAssigneeDesc")}
+                    {t("ideas.releaseIdeaAssigneeDesc")}
                   </p>
                 </div>
               )}

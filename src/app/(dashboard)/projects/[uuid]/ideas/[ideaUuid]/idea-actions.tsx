@@ -1,92 +1,76 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { AssignModal } from "@/components/assign-modal";
 import { UserPlus, FileText } from "lucide-react";
-import { claimIdeaAction, claimIdeaToAgentAction, claimIdeaToUserAction, getPmAgentsAction } from "./actions";
-
-interface Agent {
-  uuid: string;
-  name: string;
-  roles: string[];
-  ownerUuid?: string | null;
-}
-
-interface CompanyUser {
-  uuid: string;
-  name: string | null;
-  email: string | null;
-}
+import { AssignIdeaModal } from "../assign-idea-modal";
 
 interface IdeaActionsProps {
   ideaUuid: string;
+  ideaTitle: string;
+  ideaContent: string | null;
   projectUuid: string;
   status: string;
-  currentUserUuid?: string;
-  assigneeUuid?: string;
+  currentUserUuid: string;
+  assignee: { type: string; uuid: string; name: string } | null;
   isUsedInProposal?: boolean;
 }
 
-export function IdeaActions({ ideaUuid, projectUuid, status, currentUserUuid, assigneeUuid, isUsedInProposal }: IdeaActionsProps) {
+export function IdeaActions({
+  ideaUuid,
+  ideaTitle,
+  ideaContent,
+  projectUuid,
+  status,
+  currentUserUuid,
+  assignee,
+  isUsedInProposal,
+}: IdeaActionsProps) {
   const t = useTranslations();
   const router = useRouter();
   const [showAssignModal, setShowAssignModal] = useState(false);
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [users, setUsers] = useState<CompanyUser[]>([]);
-
-  useEffect(() => {
-    // Load PM agents and users when modal opens
-    if (showAssignModal) {
-      getPmAgentsAction().then(({ agents, users }) => {
-        setAgents(agents);
-        setUsers(users);
-      });
-    }
-  }, [showAssignModal]);
-
-  const handleAssignToSelf = async () => {
-    return claimIdeaAction(ideaUuid);
-  };
-
-  const handleAssignToAgent = async (agentUuid: string) => {
-    return claimIdeaToAgentAction(ideaUuid, agentUuid);
-  };
-
-  const handleAssignToUser = async (userUuid: string) => {
-    return claimIdeaToUserAction(ideaUuid, userUuid);
-  };
 
   // Check if current user can create proposal (is the assignee and idea not used)
-  const canCreateProposal = assigneeUuid === currentUserUuid &&
+  const canCreateProposal = assignee?.uuid === currentUserUuid &&
     (status === "assigned" || status === "in_progress") &&
     !isUsedInProposal;
 
+  // Show assign button for open ideas, and reassign/release for assigned ideas
+  const canAssign = status === "open" || status === "assigned" || status === "in_progress";
+  const isAssigned = !!assignee;
+
   return (
     <div className="flex gap-2">
-      {status === "open" && (
+      {canAssign && (
         <>
           <Button
             onClick={() => setShowAssignModal(true)}
-            className="bg-[#C67A52] hover:bg-[#B56A42] text-white"
+            className={isAssigned
+              ? "border-[#E5E0D8] text-[#6B6B6B]"
+              : "bg-[#C67A52] hover:bg-[#B56A42] text-white"
+            }
+            variant={isAssigned ? "outline" : "default"}
           >
             <UserPlus className="mr-2 h-4 w-4" />
-            {t("common.assign")}
+            {isAssigned ? t("common.reassign") : t("common.assign")}
           </Button>
-          <AssignModal
-            open={showAssignModal}
-            onOpenChange={setShowAssignModal}
-            title={t("ideas.assignIdea")}
-            agents={agents}
-            users={users}
-            currentUserUuid={currentUserUuid}
-            onAssignToSelf={handleAssignToSelf}
-            onAssignToAgent={handleAssignToAgent}
-            onAssignToUser={handleAssignToUser}
-          />
+          {showAssignModal && (
+            <AssignIdeaModal
+              idea={{
+                uuid: ideaUuid,
+                title: ideaTitle,
+                content: ideaContent,
+                status,
+                assignee,
+              }}
+              projectUuid={projectUuid}
+              currentUserUuid={currentUserUuid}
+              onClose={() => setShowAssignModal(false)}
+            />
+          )}
         </>
       )}
       {canCreateProposal && (

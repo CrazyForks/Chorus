@@ -105,10 +105,12 @@ export default async function IdeaDetailPage({ params }: PageProps) {
         </div>
         <IdeaActions
           ideaUuid={ideaUuid}
+          ideaTitle={idea.title}
+          ideaContent={idea.content}
           projectUuid={projectUuid}
           status={idea.status}
           currentUserUuid={auth.actorUuid}
-          assigneeUuid={idea.assignee?.uuid}
+          assignee={idea.assignee ? { type: idea.assignee.type, uuid: idea.assignee.uuid, name: idea.assignee.name } : null}
           isUsedInProposal={isUsedInProposal}
         />
       </div>

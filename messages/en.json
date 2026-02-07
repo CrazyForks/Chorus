@@ -35,6 +35,7 @@
     "claim": "Claim",
     "release": "Release",
     "assign": "Assign",
+    "reassign": "Reassign",
     "verify": "Verify",
     "reject": "Reject",
     "approve": "Approve",
@@ -250,7 +251,14 @@
     "source": "Source:",
     "assignedToMe": "Assigned to me",
     "usedInProposal": "Used in Proposal",
-    "noIdeasWithStatus": "No {status} ideas"
+    "noIdeasWithStatus": "No {status} ideas",
+    "selectIdeaAssignee": "Choose how to assign this idea",
+    "assignToMyselfIdeaDesc": "All your PM Agents can see and process this idea",
+    "orAssignToPmAgent": "Assign to specific PM Agent",
+    "onlySelectedPmAgentCanWork": "Only the selected PM Agent can process this idea",
+    "selectPmAgent": "Select a PM Agent",
+    "noPmAgentsAvailable": "No PM agents available",
+    "releaseIdeaAssigneeDesc": "Remove current assignee and make this idea available again"
   },
   "tasks": {
     "title": "Tasks",
@@ -275,7 +283,9 @@
     "noActionsAvailable": "No actions available",
     "onlySelectedAgentCanWork": "Only the selected agent can work on this task",
     "selectAgent": "Select an agent",
-    "selectUser": "Select a user"
+    "selectUser": "Select a user",
+    "noAgentsAvailable": "No agents available",
+    "noUsersAvailable": "No other users available"
   },
   "proposals": {
     "title": "Proposals",

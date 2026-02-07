@@ -214,11 +214,15 @@ export async function getAgentsByOwner(companyUuid: string, ownerUuid: string) {
 }
 
 // 获取公司内所有指定角色的 Agents (for assignment)
+// 支持两种角色格式: "developer" 和 "developer_agent"
 export async function getAgentsByRole(companyUuid: string, role: string) {
   return prisma.agent.findMany({
     where: {
       companyUuid,
-      roles: { has: role },
+      OR: [
+        { roles: { has: role } },
+        { roles: { has: `${role}_agent` } },
+      ],
     },
     select: {
       uuid: true,

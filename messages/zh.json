@@ -35,6 +35,7 @@
     "claim": "认领",
     "release": "释放",
     "assign": "分配",
+    "reassign": "重新分配",
     "verify": "验证",
     "reject": "拒绝",
     "approve": "批准",
@@ -250,7 +251,14 @@
     "source": "来源：",
     "assignedToMe": "分配给我",
     "usedInProposal": "已用于提案",
-    "noIdeasWithStatus": "暂无{status}的想法"
+    "noIdeasWithStatus": "暂无{status}的想法",
+    "selectIdeaAssignee": "选择如何分配此想法",
+    "assignToMyselfIdeaDesc": "您的所有 PM 智能体都可以查看并处理此想法",
+    "orAssignToPmAgent": "分配给特定 PM 智能体",
+    "onlySelectedPmAgentCanWork": "只有选中的 PM 智能体可以处理此想法",
+    "selectPmAgent": "选择一个 PM 智能体",
+    "noPmAgentsAvailable": "没有可用的 PM 智能体",
+    "releaseIdeaAssigneeDesc": "移除当前负责人，使此想法重新可用"
   },
   "tasks": {
     "title": "任务",
@@ -275,7 +283,9 @@
     "noActionsAvailable": "无可用操作",
     "onlySelectedAgentCanWork": "仅选定的智能体可以处理此任务",
     "selectAgent": "选择智能体",
-    "selectUser": "选择用户"
+    "selectUser": "选择用户",
+    "noAgentsAvailable": "暂无可用的智能体",
+    "noUsersAvailable": "暂无其他用户"
   },
   "proposals": {
     "title": "提案",

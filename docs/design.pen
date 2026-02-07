@@ -17385,7 +17385,7 @@
       "id": "VobiB",
       "x": 6633,
       "y": 2116,
-      "name": "Modal - Claim Assignment",
+      "name": "Modal - Assign Idea",
       "width": 400,
       "fill": "#FFFFFF",
       "cornerRadius": 16,
@@ -17420,7 +17420,7 @@
               "id": "f5ydU",
               "name": "headerTitle",
               "fill": "#2C2C2C",
-              "content": "Claim Idea",
+              "content": "Assign Idea",
               "fontFamily": "IBM Plex Sans",
               "fontSize": 16,
               "fontWeight": "600"
@@ -17572,7 +17572,7 @@
                       "id": "Z7QLp",
                       "name": "opt2Label",
                       "fill": "#2C2C2C",
-                      "content": "Assign to specific Agent",
+                      "content": "Assign to specific PM Agent",
                       "fontFamily": "IBM Plex Sans",
                       "fontSize": 14,
                       "fontWeight": "500"
@@ -17584,7 +17584,7 @@
                   "id": "RqYEE",
                   "name": "opt2Desc",
                   "fill": "#6B6B6B",
-                  "content": "Only the selected Agent can process this idea",
+                  "content": "Only the selected PM Agent can process this idea",
                   "lineHeight": 1.4,
                   "fontFamily": "IBM Plex Sans",
                   "fontSize": 12,
@@ -17630,7 +17630,7 @@
                           "id": "4y3a8",
                           "name": "selectText",
                           "fill": "#9A9A9A",
-                          "content": "Select an Agent...",
+                          "content": "Select a PM Agent...",
                           "fontFamily": "IBM Plex Sans",
                           "fontSize": 13,
                           "fontWeight": "normal"
@@ -17648,6 +17648,178 @@
                       "fill": "#9A9A9A"
                     }
                   ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Zz4UQ",
+              "name": "Option - User",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 10,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#E5E0D8"
+              },
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Dusf2",
+                  "name": "opt3Header",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "SZ5vR",
+                      "name": "opt3Radio",
+                      "width": 18,
+                      "height": 18,
+                      "cornerRadius": 9,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 2,
+                        "fill": "#9A9A9A"
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "kV8S4",
+                      "name": "opt3Label",
+                      "fill": "#2C2C2C",
+                      "content": "Assign to another user",
+                      "fontFamily": "IBM Plex Sans",
+                      "fontSize": 14,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "kTkrS",
+                  "name": "User Select",
+                  "width": "fill_container",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#E5E0D8"
+                  },
+                  "padding": [
+                    10,
+                    12
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "1TAig",
+                      "name": "selectLeft",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "yYYHm",
+                          "name": "opt3icon",
+                          "width": 16,
+                          "height": 16,
+                          "iconFontName": "user",
+                          "iconFontFamily": "lucide",
+                          "fill": "#6B6B6B"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Htk5Q",
+                          "name": "selectText",
+                          "fill": "#9A9A9A",
+                          "content": "Select a user...",
+                          "fontFamily": "IBM Plex Sans",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "icon_font",
+                      "id": "40Dt3",
+                      "name": "opt3chevron",
+                      "width": 16,
+                      "height": 16,
+                      "iconFontName": "chevron-down",
+                      "iconFontFamily": "lucide",
+                      "fill": "#9A9A9A"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "nUpa0",
+              "name": "Option - Release",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 10,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#E5E0D8"
+              },
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "F2nF0",
+                  "name": "opt4Header",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "a4Amy",
+                      "name": "opt4Radio",
+                      "width": 18,
+                      "height": 18,
+                      "cornerRadius": 9,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 2,
+                        "fill": "#9A9A9A"
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "Nh35R",
+                      "name": "opt4Label",
+                      "fill": "#2C2C2C",
+                      "content": "Release (Clear Assignee)",
+                      "fontFamily": "IBM Plex Sans",
+                      "fontSize": 14,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "G50i1",
+                  "name": "opt4Desc",
+                  "fill": "#6B6B6B",
+                  "content": "Remove current assignee and make this idea available again",
+                  "lineHeight": 1.4,
+                  "fontFamily": "IBM Plex Sans",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
                 }
               ]
             }
