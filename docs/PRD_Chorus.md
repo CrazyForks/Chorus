@@ -304,42 +304,79 @@ Chorus Platform
 
 #### 3.3.1 任务系统
 - 任务 CRUD、状态管理
-- **认领机制**：Agent/人类可认领任务，解决多 Agent 协作冲突
+- **分配机制**：灵活的任务分配，支持人类和 Agent 协作
 - 分配给人或 Agent
 - 评论和讨论（类似 GitHub Issue）
 
-**Task 六阶段工作流**（认领 + AI-DLC 人类验证）：
+**Task 六阶段工作流**（分配 + AI-DLC 人类验证）：
 ```
 Open → Assigned → In Progress → To Verify → Done
-(待认领) (已认领)  (执行中)      (待验证)   (完成)
+(待分配) (已分配)  (执行中)      (待验证)   (完成)
                                     ↓
                                   Closed (关闭)
 ```
-- **Open**: 待认领，任何符合角色的 Agent/人类可认领
-- **Assigned**: 已被认领，等待开始工作
-- **In Progress**: 认领者正在执行
+- **Open**: 待分配，任何符合角色的 Agent/人类可被分配
+- **Assigned**: 已被分配，等待开始工作
+- **In Progress**: 执行者正在执行
 - **To Verify**: 执行完成，等待人类验证
 - **Done**: 人类验证通过
 - **Closed**: 任务关闭（取消或其他原因）
 
-**认领规则**：
-- 被认领的 Task 不能被他人重复认领
-- 只有认领者可以更新 Task 状态
+**分配规则**：
+- 只有当前负责人可以更新 Task 状态
 - 所有人都可以评论任务
-- 人类可以强制重新分配已认领的任务
+- **人类可以随时重新分配任务**（不论当前状态）
+- 所有分配/释放操作都会记录 Activity
 
-**认领方式**：
+**分配方式**：
 
-| 操作者 | 认领方式 | 可见性 |
+| 操作者 | 分配方式 | 可见性 |
 |--------|----------|--------|
 | **Agent** | 自己认领 | 仅该 Agent 可操作 |
-| **人类** | Assign 给自己 | 该人类名下**所有 Agent** 都可看到并操作 |
-| **人类** | Assign 给特定 Agent | 仅该 Agent 可操作 |
+| **人类** | Assign 给自己 | 该人类名下**所有 Developer Agent** 都可看到并操作 |
+| **人类** | Assign 给自己的特定 Agent | 仅该 Agent 可操作 |
+| **人类** | Assign 给其他用户 | 该用户及其所有 Agent 可看到 |
 
-**UI 交互**：
-- 人类点击 "Claim" 按钮时，弹出选择框：
-  - "Assign to myself" - 分配给自己，所有我的 Agent 都能处理
-  - "Assign to [Agent Name]" - 分配给特定 Agent
+**UI 交互 - Assign 弹窗**：
+
+人类点击 "Assign" 按钮时，弹出模态框，包含以下选项：
+
+1. **Assign to myself**（分配给自己）
+   - 描述：我的所有 Developer Agent 都能处理此任务
+   - 适用场景：用户想让自己的 Agent 团队处理
+
+2. **Assign to specific Agent**（分配给特定 Agent）
+   - 下拉选择当前用户拥有的 Developer Agent
+   - 仅选中的 Agent 可操作
+
+3. **Assign to another user**（分配给其他用户）
+   - 下拉选择公司内的其他用户（不包含 Agent）
+   - 该用户收到分配后，可进一步分配给自己的 Agent
+
+4. **Release**（释放任务）
+   - 仅当任务已有负责人时显示
+   - 清除当前负责人，任务状态回到 Open
+   - 适用场景：负责人无法完成，需要重新分配
+
+**分配流程示例**：
+```
+用户 A 创建任务 → 分配给用户 B
+                     ↓
+              用户 B 收到任务
+                     ↓
+              用户 B 点击 Assign
+                     ↓
+              分配给自己的 Agent X
+                     ↓
+              Agent X 开始执行
+```
+
+**Activity 记录**：
+每次分配操作都会创建 Activity 记录，包括：
+- `task_assigned`: 任务被分配给某人/Agent
+- `task_released`: 任务被释放（清除负责人）
+- `task_reassigned`: 任务被重新分配
+
 - Agent 通过 MCP 工具 `chorus_claim_task` 直接认领给自己
 
 #### 3.3.2 知识库（Project Knowledge）
@@ -621,44 +658,50 @@ Proposal 审批通过
           └── 可在 Task 详情页看到"来源 Proposal"链接
 ```
 
-**Idea 六阶段状态**（认领 + 处理流程）：
+**Idea 六阶段状态**（分配 + 处理流程）：
 ```
 Open → Assigned → In Progress → Pending Review → Completed
-(待认领) (已认领)   (处理中)      (待审批)         (完成)
+(待分配) (已分配)   (处理中)      (待审批)         (完成)
                                       ↓
                                     Closed (关闭)
 ```
-- **Open**: 待认领，PM Agent 可认领
-- **Assigned**: 已被 PM Agent 认领，等待处理
+- **Open**: 待分配，PM Agent 可被分配
+- **Assigned**: 已分配给 PM Agent，等待处理
 - **In Progress**: PM Agent 正在基于 Idea 产出 Proposal
 - **Pending Review**: Proposal 已提交，等待人类审批
 - **Completed**: Proposal 审批通过，Idea 处理完成
 - **Closed**: Idea 关闭（拒绝或取消）
 
-**认领规则**：
-- 被认领的 Idea 不能被他人重复认领
-- 只有认领者可以更新 Idea 状态
+**分配规则**：
+- 只有当前负责人可以更新 Idea 状态
 - 所有人都可以评论 Idea
-- 人类可以强制重新分配已认领的 Idea
+- **人类可以随时重新分配 Idea**（不论当前状态）
+- 所有分配/释放操作都会记录 Activity
 
 **Proposal 创建规则**：
-- **只有 Idea 的认领者**才能基于该 Idea 创建 Proposal
+- **只有 Idea 的负责人**才能基于该 Idea 创建 Proposal
 - 一个 Idea **只能被用于创建一个 Proposal**，一旦关联到 Proposal 后，该 Idea 不能再被用于其他 Proposal
 - 在创建 Proposal 时，系统会自动检查输入的 Idea 是否已被其他 Proposal 使用
 - 如果 Idea 已被使用，系统拒绝创建并提示用户
 
-**认领方式**：
+**分配方式**：
 
-| 操作者 | 认领方式 | 可见性 |
+| 操作者 | 分配方式 | 可见性 |
 |--------|----------|--------|
 | **PM Agent** | 自己认领 | 仅该 Agent 可操作 |
 | **人类** | Assign 给自己 | 该人类名下**所有 PM Agent** 都可看到并操作 |
-| **人类** | Assign 给特定 PM Agent | 仅该 PM Agent 可操作 |
+| **人类** | Assign 给自己的特定 PM Agent | 仅该 PM Agent 可操作 |
+| **人类** | Assign 给其他用户 | 该用户及其所有 PM Agent 可看到 |
 
-**UI 交互**：
-- 人类点击 "Claim" 按钮时，弹出选择框：
-  - "Assign to myself" - 分配给自己，所有我的 PM Agent 都能处理
-  - "Assign to [PM Agent Name]" - 分配给特定 PM Agent
+**UI 交互 - Assign 弹窗**：
+
+人类点击 "Assign" 按钮时，弹出模态框（与 Task 共用相同的 UI 模式）：
+
+1. **Assign to myself** - 分配给自己，所有我的 PM Agent 都能处理
+2. **Assign to specific Agent** - 分配给特定 PM Agent
+3. **Assign to another user** - 分配给其他用户
+4. **Release** - 释放当前负责人（仅当已有负责人时显示）
+
 - PM Agent 通过 MCP 工具 `chorus_claim_idea` 直接认领给自己
 
 **Proposal 的灵活性**：

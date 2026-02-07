@@ -33,18 +33,41 @@
     "processing": "处理中...",
     "saving": "保存中...",
     "claim": "认领",
+    "release": "释放",
     "assign": "分配",
     "verify": "验证",
     "reject": "拒绝",
     "approve": "批准",
-    "selectProject": "请先选择一个项目"
+    "selectProject": "请先选择一个项目",
+    "assignee": "负责人",
+    "activity": "动态",
+    "noActivity": "暂无动态",
+    "source": "来源",
+    "currentAssignee": "当前负责人"
+  },
+  "activity": {
+    "taskCreated": "{actor} 创建了此任务",
+    "taskAssigned": "{actor} 被分配到此任务",
+    "taskClaimed": "{actor} 认领了此任务",
+    "taskStarted": "{actor} 开始处理此任务",
+    "taskSubmitted": "{actor} 提交了此任务待审核",
+    "taskCompleted": "{actor} 完成了此任务",
+    "taskReleased": "{actor} 释放了此任务",
+    "taskStatusChanged": "{actor} 更改了任务状态"
+  },
+  "comments": {
+    "title": "评论",
+    "noComments": "暂无评论",
+    "addComment": "添加评论..."
   },
   "assign": {
-    "selectAssignee": "选择谁来处理此项目",
+    "selectAssignee": "选择如何分配此任务",
     "assignToMyself": "分配给我自己",
-    "assignToMyselfDesc": "您的所有智能体都可以查看并处理此项目",
-    "orAssignToUser": "或分配给其他用户",
-    "orAssignToAgent": "或分配给特定智能体"
+    "assignToMyselfDesc": "您的所有开发智能体都可以查看并处理此任务",
+    "orAssignToUser": "分配给其他用户",
+    "orAssignToAgent": "分配给特定智能体",
+    "releaseAssignee": "释放（清除负责人）",
+    "releaseAssigneeDesc": "移除当前负责人，使此任务重新可用"
   },
   "time": {
     "justNow": "刚刚",
@@ -244,7 +267,15 @@
     "subtasks": "子任务",
     "parentTask": "父任务",
     "storyPoints": "故事点",
-    "acceptanceCriteria": "验收标准"
+    "acceptanceCriteria": "验收标准",
+    "startWork": "开始工作",
+    "submitForReview": "提交验证",
+    "markAsVerified": "标记为已验证",
+    "taskCompleted": "任务已完成",
+    "noActionsAvailable": "无可用操作",
+    "onlySelectedAgentCanWork": "仅选定的智能体可以处理此任务",
+    "selectAgent": "选择智能体",
+    "selectUser": "选择用户"
   },
   "proposals": {
     "title": "提案",

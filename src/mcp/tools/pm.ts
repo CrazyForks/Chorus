@@ -10,6 +10,7 @@ import * as ideaService from "@/services/idea.service";
 import * as proposalService from "@/services/proposal.service";
 import * as documentService from "@/services/document.service";
 import * as taskService from "@/services/task.service";
+import * as activityService from "@/services/activity.service";
 
 export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
   // chorus_claim_idea - 认领 Idea
@@ -36,6 +37,17 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
         companyUuid: auth.companyUuid,
         assigneeType: "agent",
         assigneeUuid: auth.actorUuid,
+      });
+
+      await activityService.createActivity({
+        companyUuid: auth.companyUuid,
+        projectUuid: idea.projectUuid,
+        targetType: "idea",
+        targetUuid: idea.uuid,
+        actorType: "agent",
+        actorUuid: auth.actorUuid,
+        action: "assigned",
+        value: { assigneeType: "agent", assigneeUuid: auth.actorUuid },
       });
 
       return {
@@ -73,6 +85,16 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
       }
 
       const updated = await ideaService.releaseIdea(idea.uuid);
+
+      await activityService.createActivity({
+        companyUuid: auth.companyUuid,
+        projectUuid: idea.projectUuid,
+        targetType: "idea",
+        targetUuid: idea.uuid,
+        actorType: "agent",
+        actorUuid: auth.actorUuid,
+        action: "released",
+      });
 
       return {
         content: [{ type: "text", text: JSON.stringify(updated, null, 2) }],
@@ -114,6 +136,17 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
       }
 
       const updated = await ideaService.updateIdea(idea.uuid, auth.companyUuid, { status });
+
+      await activityService.createActivity({
+        companyUuid: auth.companyUuid,
+        projectUuid: idea.projectUuid,
+        targetType: "idea",
+        targetUuid: idea.uuid,
+        actorType: "agent",
+        actorUuid: auth.actorUuid,
+        action: "status_changed",
+        value: { status },
+      });
 
       return {
         content: [{ type: "text", text: JSON.stringify(updated, null, 2) }],
@@ -168,6 +201,33 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
       return {
         content: [{ type: "text", text: JSON.stringify(proposal, null, 2) }],
       };
+    }
+  );
+
+  // chorus_pm_submit_proposal - 提交 Proposal 审批
+  server.registerTool(
+    "chorus_pm_submit_proposal",
+    {
+      description: "提交 Proposal 进入审批流程（draft → pending）",
+      inputSchema: z.object({
+        proposalUuid: z.string().describe("Proposal UUID"),
+      }),
+    },
+    async ({ proposalUuid }) => {
+      try {
+        const proposal = await proposalService.submitProposal(
+          proposalUuid,
+          auth.companyUuid
+        );
+        return {
+          content: [{ type: "text", text: JSON.stringify(proposal, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: "text", text: `提交 Proposal 失败: ${error instanceof Error ? error.message : "未知错误"}` }],
+          isError: true,
+        };
+      }
     }
   );
 

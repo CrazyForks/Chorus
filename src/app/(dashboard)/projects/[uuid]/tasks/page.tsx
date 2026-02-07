@@ -89,7 +89,7 @@ export default async function TasksPage({ params }: PageProps) {
       </div>
 
       {/* Kanban Board with drag-and-drop */}
-      <KanbanBoard projectUuid={projectUuid} initialTasks={tasks} />
+      <KanbanBoard projectUuid={projectUuid} initialTasks={tasks} currentUserUuid={auth.actorUuid} />
     </div>
   );
 }

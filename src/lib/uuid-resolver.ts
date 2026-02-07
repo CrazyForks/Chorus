@@ -15,9 +15,11 @@ export async function getActorName(
   if (actorType === "user") {
     const user = await prisma.user.findUnique({
       where: { uuid: actorUuid },
-      select: { name: true },
+      select: { name: true, email: true },
     });
-    return user?.name ?? "Unknown";
+    if (!user) return "Unknown";
+    // 优先使用 name，否则使用 email
+    return user.name || user.email || "Unknown";
   } else if (actorType === "agent") {
     const agent = await prisma.agent.findUnique({
       where: { uuid: actorUuid },
@@ -60,10 +62,10 @@ export async function formatCreatedBy(
   // 未指定类型，先尝试 user
   const user = await prisma.user.findUnique({
     where: { uuid: createdByUuid },
-    select: { name: true },
+    select: { name: true, email: true },
   });
   if (user) {
-    return { type: "user", uuid: createdByUuid, name: user.name ?? "Unknown" };
+    return { type: "user", uuid: createdByUuid, name: user.name || user.email || "Unknown" };
   }
 
   // 再尝试 agent

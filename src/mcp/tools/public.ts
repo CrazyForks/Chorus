@@ -168,7 +168,7 @@ export function registerPublicTools(server: McpServer, auth: AgentAuthContext) {
       }),
     },
     async ({ taskUuid }) => {
-      const task = await taskService.getTaskByUuid(auth.companyUuid, taskUuid);
+      const task = await taskService.getTask(auth.companyUuid, taskUuid);
       if (!task) {
         return { content: [{ type: "text", text: "任务不存在" }], isError: true };
       }
@@ -438,7 +438,7 @@ export function registerPublicTools(server: McpServer, auth: AgentAuthContext) {
       }),
     },
     async ({ ideaUuid }) => {
-      const idea = await ideaService.getIdeaByUuid(auth.companyUuid, ideaUuid);
+      const idea = await ideaService.getIdea(auth.companyUuid, ideaUuid);
       if (!idea) {
         return { content: [{ type: "text", text: "Idea 不存在" }], isError: true };
       }

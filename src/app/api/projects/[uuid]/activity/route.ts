@@ -44,14 +44,12 @@ export const GET = withErrorHandler<{ uuid: string }>(
         orderBy: { createdAt: "desc" },
         select: {
           uuid: true,
-          ideaUuid: true,
-          documentUuid: true,
-          proposalUuid: true,
-          taskUuid: true,
+          targetType: true,
+          targetUuid: true,
           actorType: true,
           actorUuid: true,
           action: true,
-          payload: true,
+          value: true,
           createdAt: true,
         },
       }),
@@ -60,18 +58,14 @@ export const GET = withErrorHandler<{ uuid: string }>(
 
     const data = activities.map((a) => ({
       uuid: a.uuid,
-      references: {
-        ideaUuid: a.ideaUuid,
-        documentUuid: a.documentUuid,
-        proposalUuid: a.proposalUuid,
-        taskUuid: a.taskUuid,
-      },
+      targetType: a.targetType,
+      targetUuid: a.targetUuid,
       actor: {
         type: a.actorType,
         uuid: a.actorUuid,
       },
       action: a.action,
-      payload: a.payload,
+      value: a.value,
       createdAt: a.createdAt.toISOString(),
     }));
 

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { useTranslations } from "next-intl";
 import {
   DragDropContext,
@@ -13,6 +12,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { moveTaskToColumnAction } from "./actions";
+import { TaskDetailPanel } from "./task-detail-panel";
 
 interface Task {
   uuid: string;
@@ -21,6 +21,7 @@ interface Task {
   status: string;
   priority: string;
   storyPoints: number | null;
+  proposalUuid: string | null;
   assignee: {
     type: string;
     uuid: string;
@@ -33,6 +34,7 @@ interface Task {
 interface KanbanBoardProps {
   projectUuid: string;
   initialTasks: Task[];
+  currentUserUuid: string;
 }
 
 // 状态颜色配置
@@ -63,10 +65,11 @@ const columnConfigs = [
   { id: "done", labelKey: "done", statuses: ["done", "closed"] },
 ];
 
-export function KanbanBoard({ projectUuid, initialTasks }: KanbanBoardProps) {
+export function KanbanBoard({ projectUuid, initialTasks, currentUserUuid }: KanbanBoardProps) {
   const t = useTranslations();
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const getTasksForColumn = (statuses: string[]) => {
     return tasks.filter((task) => statuses.includes(task.status));
@@ -141,6 +144,7 @@ export function KanbanBoard({ projectUuid, initialTasks }: KanbanBoardProps) {
   };
 
   return (
+    <>
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="flex flex-1 gap-4 overflow-x-auto pb-4">
         {columnConfigs.map((column) => {
@@ -204,91 +208,87 @@ export function KanbanBoard({ projectUuid, initialTasks }: KanbanBoardProps) {
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
+                              onClick={() => {
+                                if (!snapshot.isDragging) {
+                                  setSelectedTask(task);
+                                }
+                              }}
                             >
-                              <Link
-                                href={`/projects/${projectUuid}/tasks/${task.uuid}`}
-                                onClick={(e) => {
-                                  if (snapshot.isDragging) {
-                                    e.preventDefault();
-                                  }
-                                }}
+                              <Card
+                                className={`cursor-pointer border-[#E5E0D8] bg-white p-4 transition-all hover:border-[#C67A52] hover:shadow-sm ${
+                                  snapshot.isDragging
+                                    ? "shadow-lg rotate-2"
+                                    : ""
+                                }`}
                               >
-                                <Card
-                                  className={`cursor-pointer border-[#E5E0D8] bg-white p-4 transition-all hover:border-[#C67A52] hover:shadow-sm ${
-                                    snapshot.isDragging
-                                      ? "shadow-lg rotate-2"
-                                      : ""
-                                  }`}
-                                >
-                                  <div className="mb-2 flex items-start justify-between">
-                                    <Badge
-                                      className={
-                                        statusColors[task.status] || ""
-                                      }
-                                    >
-                                      {t(`status.${statusI18nKeys[task.status] || task.status}`)}
-                                    </Badge>
-                                    {task.storyPoints && (
-                                      <span className="flex items-center gap-1 rounded bg-[#FFF3E0] px-2 py-0.5 text-xs font-medium text-[#E65100]">
-                                        <svg
-                                          xmlns="http://www.w3.org/2000/svg"
-                                          viewBox="0 0 24 24"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          strokeWidth="2"
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          className="h-3 w-3"
-                                        >
-                                          <circle cx="12" cy="12" r="10" />
-                                          <polyline points="12 6 12 12 16 14" />
-                                        </svg>
-                                        {task.storyPoints}h
-                                      </span>
-                                    )}
-                                  </div>
-                                  <h4 className="mb-1 font-medium text-[#2C2C2C]">
-                                    {task.title}
-                                  </h4>
-                                  {task.description && (
-                                    <p className="mb-2 line-clamp-2 text-sm text-[#6B6B6B]">
-                                      {task.description}
-                                    </p>
+                                <div className="mb-2 flex items-start justify-between">
+                                  <Badge
+                                    className={
+                                      statusColors[task.status] || ""
+                                    }
+                                  >
+                                    {t(`status.${statusI18nKeys[task.status] || task.status}`)}
+                                  </Badge>
+                                  {task.storyPoints && (
+                                    <span className="flex items-center gap-1 rounded bg-[#FFF3E0] px-2 py-0.5 text-xs font-medium text-[#E65100]">
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className="h-3 w-3"
+                                      >
+                                        <circle cx="12" cy="12" r="10" />
+                                        <polyline points="12 6 12 12 16 14" />
+                                      </svg>
+                                      {task.storyPoints}h
+                                    </span>
                                   )}
-                                  <div className="flex items-center justify-between text-xs text-[#9A9A9A]">
-                                    {task.assignee ? (
-                                      <span className="flex items-center gap-1">
-                                        <svg
-                                          xmlns="http://www.w3.org/2000/svg"
-                                          viewBox="0 0 24 24"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          strokeWidth="2"
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          className="h-3 w-3"
-                                        >
-                                          <path d="M12 8V4H8" />
-                                          <rect
-                                            width="16"
-                                            height="12"
-                                            x="4"
-                                            y="8"
-                                            rx="2"
-                                          />
-                                        </svg>
-                                        {task.assignee.name}
-                                      </span>
-                                    ) : task.status === "open" ? (
-                                      <span className="text-[#C67A52]">
-                                        {t("common.claim")}
-                                      </span>
-                                    ) : (
-                                      <span>{t("common.unassigned")}</span>
-                                    )}
-                                  </div>
-                                </Card>
-                              </Link>
+                                </div>
+                                <h4 className="mb-1 font-medium text-[#2C2C2C]">
+                                  {task.title}
+                                </h4>
+                                {task.description && (
+                                  <p className="mb-2 line-clamp-2 text-sm text-[#6B6B6B]">
+                                    {task.description}
+                                  </p>
+                                )}
+                                <div className="flex items-center justify-between text-xs text-[#9A9A9A]">
+                                  {task.assignee ? (
+                                    <span className="flex items-center gap-1">
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className="h-3 w-3"
+                                      >
+                                        <path d="M12 8V4H8" />
+                                        <rect
+                                          width="16"
+                                          height="12"
+                                          x="4"
+                                          y="8"
+                                          rx="2"
+                                        />
+                                      </svg>
+                                      {task.assignee.name}
+                                    </span>
+                                  ) : task.status === "open" ? (
+                                    <span className="text-[#C67A52]">
+                                      {t("common.assign")}
+                                    </span>
+                                  ) : (
+                                    <span>{t("common.unassigned")}</span>
+                                  )}
+                                </div>
+                              </Card>
                             </div>
                           )}
                         </Draggable>
@@ -303,5 +303,16 @@ export function KanbanBoard({ projectUuid, initialTasks }: KanbanBoardProps) {
         })}
       </div>
     </DragDropContext>
+
+    {/* Task Detail Panel */}
+    {selectedTask && (
+      <TaskDetailPanel
+        task={selectedTask}
+        projectUuid={projectUuid}
+        currentUserUuid={currentUserUuid}
+        onClose={() => setSelectedTask(null)}
+      />
+    )}
+    </>
   );
 }

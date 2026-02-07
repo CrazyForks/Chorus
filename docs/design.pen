@@ -17767,7 +17767,7 @@
               "id": "de9E6",
               "name": "headerTitle",
               "fill": "#2C2C2C",
-              "content": "Claim Task",
+              "content": "Assign Task",
               "fontFamily": "IBM Plex Sans",
               "fontSize": 16,
               "fontWeight": "600"
@@ -18028,6 +18028,189 @@
                       "fill": "#9A9A9A"
                     }
                   ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "BrN0q",
+              "name": "Option - User",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 10,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#E5E0D8"
+              },
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Y5Bi2",
+                  "name": "opt3Header",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "pi6TW",
+                      "name": "opt3Radio",
+                      "width": 18,
+                      "height": 18,
+                      "cornerRadius": 9,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 2,
+                        "fill": "#9A9A9A"
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "QWjTE",
+                      "name": "opt3Label",
+                      "fill": "#2C2C2C",
+                      "content": "Assign to another user",
+                      "fontFamily": "IBM Plex Sans",
+                      "fontSize": 14,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "LGiqg",
+                  "name": "opt3Desc",
+                  "fill": "#6B6B6B",
+                  "content": "Delegate this task to a colleague",
+                  "lineHeight": 1.4,
+                  "fontFamily": "IBM Plex Sans",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "zM8hl",
+                  "name": "User Select",
+                  "width": "fill_container",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#E5E0D8"
+                  },
+                  "padding": [
+                    10,
+                    12
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "LutLW",
+                      "name": "selectLeft",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "rDjVR",
+                          "name": "opt3UserIcon",
+                          "width": 16,
+                          "height": 16,
+                          "iconFontName": "user",
+                          "iconFontFamily": "lucide",
+                          "fill": "#9A9A9A"
+                        },
+                        {
+                          "type": "text",
+                          "id": "TS9HW",
+                          "name": "opt3SelectText",
+                          "fill": "#9A9A9A",
+                          "content": "Select user...",
+                          "fontFamily": "IBM Plex Sans",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "icon_font",
+                      "id": "h213x",
+                      "name": "opt3Chevron",
+                      "width": 16,
+                      "height": 16,
+                      "iconFontName": "chevron-down",
+                      "iconFontFamily": "lucide",
+                      "fill": "#9A9A9A"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "rEkhe",
+              "name": "Option - Release",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 10,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#E5E0D8"
+              },
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "qisG2",
+                  "name": "opt4Header",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "HZqxa",
+                      "name": "opt4Radio",
+                      "width": 18,
+                      "height": 18,
+                      "cornerRadius": 9,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 2,
+                        "fill": "#9A9A9A"
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "ZEM9M",
+                      "name": "opt4Label",
+                      "fill": "#2C2C2C",
+                      "content": "Release (Clear Assignee)",
+                      "fontFamily": "IBM Plex Sans",
+                      "fontSize": 14,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "NpDvj",
+                  "name": "opt4Desc",
+                  "fill": "#6B6B6B",
+                  "content": "Remove current assignee and make this task available again",
+                  "lineHeight": 1.4,
+                  "fontFamily": "IBM Plex Sans",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
                 }
               ]
             }

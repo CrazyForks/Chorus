@@ -32,9 +32,8 @@ export function createMcpServer(auth: AgentAuthContext): McpServer {
     registerPmTools(server, auth);
     registerDeveloperTools(server, auth);
   } else if (hasPmRole) {
-    // PM Agent 拥有 PM + Developer 工具
+    // PM Agent 只有 PM 工具
     registerPmTools(server, auth);
-    registerDeveloperTools(server, auth);
   } else if (hasDevRole) {
     // Developer Agent 只有开发者工具
     registerDeveloperTools(server, auth);

@@ -35,6 +35,17 @@ export function registerDeveloperTools(server: McpServer, auth: AgentAuthContext
         assigneeUuid: auth.actorUuid,
       });
 
+      await activityService.createActivity({
+        companyUuid: auth.companyUuid,
+        projectUuid: task.projectUuid,
+        targetType: "task",
+        targetUuid: task.uuid,
+        actorType: "agent",
+        actorUuid: auth.actorUuid,
+        action: "assigned",
+        value: { assigneeType: "agent", assigneeUuid: auth.actorUuid },
+      });
+
       return {
         content: [{ type: "text", text: JSON.stringify(updated, null, 2) }],
       };
@@ -70,6 +81,16 @@ export function registerDeveloperTools(server: McpServer, auth: AgentAuthContext
       }
 
       const updated = await taskService.releaseTask(task.uuid);
+
+      await activityService.createActivity({
+        companyUuid: auth.companyUuid,
+        projectUuid: task.projectUuid,
+        targetType: "task",
+        targetUuid: task.uuid,
+        actorType: "agent",
+        actorUuid: auth.actorUuid,
+        action: "released",
+      });
 
       return {
         content: [{ type: "text", text: JSON.stringify(updated, null, 2) }],
@@ -112,6 +133,17 @@ export function registerDeveloperTools(server: McpServer, auth: AgentAuthContext
 
       const updated = await taskService.updateTask(task.uuid, { status });
 
+      await activityService.createActivity({
+        companyUuid: auth.companyUuid,
+        projectUuid: task.projectUuid,
+        targetType: "task",
+        targetUuid: task.uuid,
+        actorType: "agent",
+        actorUuid: auth.actorUuid,
+        action: "status_changed",
+        value: { status },
+      });
+
       return {
         content: [{ type: "text", text: JSON.stringify(updated, null, 2) }],
       };
@@ -153,11 +185,12 @@ export function registerDeveloperTools(server: McpServer, auth: AgentAuthContext
       await activityService.createActivity({
         companyUuid: auth.companyUuid,
         projectUuid: task.projectUuid,
+        targetType: "task",
+        targetUuid: task.uuid,
         actorType: "agent",
         actorUuid: auth.actorUuid,
-        action: "task_submitted_for_verify",
-        taskUuid: task.uuid,
-        payload: summary ? { summary } : undefined,
+        action: "submitted",
+        value: summary ? { summary } : undefined,
       });
 
       return {
@@ -201,11 +234,12 @@ export function registerDeveloperTools(server: McpServer, auth: AgentAuthContext
       await activityService.createActivity({
         companyUuid: auth.companyUuid,
         projectUuid: task.projectUuid,
+        targetType: "task",
+        targetUuid: task.uuid,
         actorType: "agent",
         actorUuid: auth.actorUuid,
-        action: "task_work_reported",
-        taskUuid: task.uuid,
-        payload: { report, statusUpdated: status || null },
+        action: "comment_added",
+        value: { report, statusUpdated: status || null },
       });
 
       return {

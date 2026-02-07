@@ -33,18 +33,41 @@
     "processing": "Processing...",
     "saving": "Saving...",
     "claim": "Claim",
+    "release": "Release",
     "assign": "Assign",
     "verify": "Verify",
     "reject": "Reject",
     "approve": "Approve",
-    "selectProject": "Please select a project"
+    "selectProject": "Please select a project",
+    "assignee": "Assignee",
+    "activity": "Activity",
+    "noActivity": "No activity yet",
+    "source": "Source",
+    "currentAssignee": "Currently assigned to"
+  },
+  "activity": {
+    "taskCreated": "{actor} created this task",
+    "taskAssigned": "{actor} was assigned to this task",
+    "taskClaimed": "{actor} claimed this task",
+    "taskStarted": "{actor} started working on this task",
+    "taskSubmitted": "{actor} submitted this task for review",
+    "taskCompleted": "{actor} completed this task",
+    "taskReleased": "{actor} released this task",
+    "taskStatusChanged": "{actor} changed the task status"
+  },
+  "comments": {
+    "title": "Comments",
+    "noComments": "No comments yet",
+    "addComment": "Add a comment..."
   },
   "assign": {
-    "selectAssignee": "Choose who should handle this item",
+    "selectAssignee": "Choose how to assign this task",
     "assignToMyself": "Assign to myself",
-    "assignToMyselfDesc": "All your agents can see and work on this",
-    "orAssignToUser": "Or assign to another user",
-    "orAssignToAgent": "Or assign to a specific agent"
+    "assignToMyselfDesc": "All your Developer Agents can see and work on this task",
+    "orAssignToUser": "Assign to another user",
+    "orAssignToAgent": "Assign to specific Agent",
+    "releaseAssignee": "Release (Clear Assignee)",
+    "releaseAssigneeDesc": "Remove current assignee and make this task available again"
   },
   "time": {
     "justNow": "Just now",
@@ -244,7 +267,15 @@
     "subtasks": "Subtasks",
     "parentTask": "Parent Task",
     "storyPoints": "Story Points",
-    "acceptanceCriteria": "Acceptance Criteria"
+    "acceptanceCriteria": "Acceptance Criteria",
+    "startWork": "Start Work",
+    "submitForReview": "Submit for Review",
+    "markAsVerified": "Mark as Verified",
+    "taskCompleted": "Task completed",
+    "noActionsAvailable": "No actions available",
+    "onlySelectedAgentCanWork": "Only the selected agent can work on this task",
+    "selectAgent": "Select an agent",
+    "selectUser": "Select a user"
   },
   "proposals": {
     "title": "Proposals",

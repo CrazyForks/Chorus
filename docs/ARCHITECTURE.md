@@ -17,10 +17,10 @@ Chorus 是一个 AI Agent 与人类协作的平台，实现 AI-DLC（AI-Driven D
 |-----|------|
 | **知识库** | 项目上下文存储和查询 |
 | **任务管理** | 任务 CRUD、状态流转、Kanban |
-| **认领机制** | Idea/Task 认领，解决 Agent 协作冲突 |
+| **分配机制** | Idea/Task 灵活分配，支持人类和 Agent 协作 |
 | **提议审批** | PM Agent 创建提议，人类审批 |
 | **MCP Server** | Agent 通过 MCP 协议接入平台 |
-| **活动流** | 实时追踪所有参与者的操作 |
+| **活动流** | 实时追踪所有参与者的操作（含分配/释放记录） |
 
 ### 1.3 参与者
 
@@ -182,14 +182,14 @@ Chorus 采用经典的三层架构模式，职责清晰分离：
 | 服务 | 文件 | 职责 |
 |-----|------|------|
 | ProjectService | `project.service.ts` | 项目 CRUD |
-| IdeaService | `idea.service.ts` | Idea CRUD + 状态流转 + 认领 |
-| TaskService | `task.service.ts` | Task CRUD + 状态流转 + 认领 |
+| IdeaService | `idea.service.ts` | Idea CRUD + 状态流转 + 分配 |
+| TaskService | `task.service.ts` | Task CRUD + 状态流转 + 分配 |
 | DocumentService | `document.service.ts` | Document CRUD |
 | ProposalService | `proposal.service.ts` | Proposal CRUD + 审批流程 |
 | AgentService | `agent.service.ts` | Agent + API Key 管理 |
 | CommentService | `comment.service.ts` | 多态评论 |
-| ActivityService | `activity.service.ts` | 活动日志 |
-| AssignmentService | `assignment.service.ts` | Agent 自助查询（我的任务、可认领） |
+| ActivityService | `activity.service.ts` | 活动日志（含分配/释放记录） |
+| AssignmentService | `assignment.service.ts` | Agent 自助查询（我的任务、可分配） |
 
 #### 代码示例
 
@@ -764,14 +764,12 @@ model Task {
                       │  uuid       │
                       │  companyUuid│
                       │  projectUuid│
-                      │  ideaUuid   │
-                      │  documentUuid│
-                      │  proposalUuid│
-                      │  taskUuid   │
-                      │  actorType  │
+                      │  targetType │  (idea|task|proposal|document)
+                      │  targetUuid │
+                      │  actorType  │  (user|agent)
                       │  actorUuid  │
-                      │  action     │
-                      │  payload    │
+                      │  action     │  (created|assigned|released|...)
+                      │  value      │  (JSON: 操作结果值)
                       └─────────────┘
 ```
 
@@ -818,7 +816,7 @@ model Task {
 - 包含 Ideas、Documents、Tasks、Proposals、Activities
 
 #### Idea（想法）
-- 人类原始输入，可被 PM Agent 认领处理
+- 人类原始输入，可被 PM Agent 分配处理
 - `companyUuid`: 所属公司 UUID
 - `projectUuid`: 所属项目 UUID
 - `title`: 标题
@@ -826,11 +824,16 @@ model Task {
 - `attachments`: 附件列表（图片、文件等）
 - `status`: `open` | `assigned` | `in_progress` | `pending_review` | `completed` | `closed`
 - `assigneeType`: `user` | `agent`（多态关联）
-- `assigneeUuid`: 认领者 UUID
-- `assignedAt`: 认领时间
+- `assigneeUuid`: 负责人 UUID
+- `assignedAt`: 分配时间
 - `assignedByUuid`: 分配者 User UUID（人类分配时记录）
 - `createdByUuid`: 创建者 User UUID
 - 作为 Proposal 的输入源
+
+**分配方式**：
+- 分配给用户：该用户名下所有 PM Agent 可见并操作
+- 分配给特定 PM Agent：仅该 Agent 可见并操作
+- 人类可随时重新分配（不论当前状态）
 
 #### Document（文档）
 - Proposal 的产物（PRD、技术设计等）
@@ -843,18 +846,23 @@ model Task {
 - `createdByUuid`: 创建者 UUID
 
 #### Task（任务）
-- Proposal 的产物或人工创建，可被 Agent/人类认领执行
+- Proposal 的产物或人工创建，可被 Agent/人类分配执行
 - `companyUuid`: 所属公司 UUID
 - `projectUuid`: 所属项目 UUID
 - `status`: `open` | `assigned` | `in_progress` | `to_verify` | `done` | `closed`
 - `priority`: `low` | `medium` | `high`
 - `storyPoints`: 工作量估算（单位：Agent 小时）
 - `assigneeType`: `user` | `agent`（多态关联）
-- `assigneeUuid`: 认领者 UUID
-- `assignedAt`: 认领时间
+- `assigneeUuid`: 负责人 UUID
+- `assignedAt`: 分配时间
 - `assignedByUuid`: 分配者 User UUID（人类分配时记录）
 - `proposalUuid`: 来源 Proposal UUID（可追溯，可选）
 - `createdByUuid`: 创建者 UUID
+
+**分配方式**：
+- 分配给用户：该用户名下所有 Developer Agent 可见并操作
+- 分配给特定 Agent：仅该 Agent 可见并操作
+- 人类可随时重新分配（不论当前状态）
 
 #### Proposal（提议）
 - PM Agent 创建，人类审批，连接输入和输出
@@ -872,13 +880,38 @@ model Task {
 - 批准后根据 outputType 自动创建 Document 或 Tasks
 
 #### Activity（活动）
-- 项目级活动日志
+- 项目级活动日志，通用设计支持所有实体类型
 - `companyUuid`: 所属公司 UUID
 - `projectUuid`: 所属项目 UUID
-- `actorType`: `user` | `agent`
+- `targetType`: 目标实体类型（`idea` | `task` | `proposal` | `document`）
+- `targetUuid`: 目标实体 UUID
+- `actorType`: 操作者类型（`user` | `agent`）
 - `actorUuid`: 操作者 UUID
-- `action`: `idea_created` | `proposal_created` | `proposal_approved` | `document_created` | `task_created` | ...
-- 可关联 `ideaUuid`、`documentUuid`、`proposalUuid`、`taskUuid` 用于追溯
+- `action`: 操作类型（见下表）
+- `value`: 操作结果值（如新状态、分配目标等，JSON 格式）
+
+**Activity 字段设计原则**：
+- `targetType` + `targetUuid`: 标识操作的目标实体（通用设计）
+- `action`: 描述发生了什么操作
+- `value`: 记录操作结果/变化后的值（简洁，只记录结果）
+
+**Activity Action 类型**：
+
+| Action | 说明 | Value 示例 |
+|--------|------|-----------|
+| `created` | 实体被创建 | - |
+| `assigned` | 实体被分配 | `{ type: "user", uuid: "...", name: "..." }` |
+| `released` | 实体被释放 | - |
+| `status_changed` | 状态变更 | `"in_progress"` (新状态) |
+| `submitted` | 提交审批/验证 | - |
+| `approved` | 审批通过 | - |
+| `rejected` | 被拒绝 | `"reason text"` (可选) |
+| `comment_added` | 添加评论 | - |
+
+**Activity 维护原则**：
+- **Service 层创建**：所有 Activity 由 Service 层在业务操作时自动创建
+- **value 只记录结果**：状态变更只记录变化后的值，不记录变化前的值
+- **分配操作必记录**：任何分配/释放操作都必须创建 Activity
 
 #### Comment（评论）
 - 多态评论，可评论 Idea、Proposal、Task、Document
@@ -1261,14 +1294,14 @@ Ideas → Proposal → Document(PRD) → Proposal → Tasks
                            ▼
                     ┌──────────────┐
          ┌─────────│     open     │←─────────────────┐
-         │         │  (待认领)     │                  │
+         │         │  (待分配)     │                  │
          │         └──────┬───────┘                  │
          │                │                          │
-         │                │ Agent/User 认领           │ 放弃认领
+         │                │ 分配给 User/Agent        │ 释放（Release）
          │                ▼                          │
          │         ┌──────────────┐                  │
          │         │   assigned   │──────────────────┘
-         │         │  (已认领)     │
+         │         │  (已分配)     │
          │         └──────┬───────┘
          │                │
          │                │ 开始工作
@@ -1298,11 +1331,25 @@ Ideas → Proposal → Document(PRD) → Proposal → Tasks
                    └──────────────┘
 ```
 
-**认领规则**：
-- 只有 `open` 状态的任务可被认领
-- 只有认领者（assignee）可以更新状态
-- 人类可以强制重新分配任何状态的任务
+**分配规则**：
+- 只有当前负责人（assignee）可以更新状态
+- **人类可以随时重新分配任何状态的任务**
 - 所有人都可以评论任何状态的任务
+- Release 操作清除负责人，状态回到 open
+
+**分配流程（UI）**：
+```
+点击 Assign 按钮 → 弹出 Assign 模态框
+    ├── Assign to myself（分配给自己）→ 所有我的 Developer Agent 可见
+    ├── Assign to specific Agent（分配给特定 Agent）→ 仅该 Agent 可见
+    ├── Assign to another user（分配给其他用户）→ 该用户及其 Agent 可见
+    └── Release（释放）→ 清除负责人，status → open
+```
+
+**Activity 记录**：
+每次分配/释放操作都自动创建 Activity：
+- `task_assigned`: 任务被分配，payload 包含目标信息
+- `task_released`: 任务被释放
 
 ### 7.3 Idea 状态流转
 

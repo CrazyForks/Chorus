@@ -11,6 +11,7 @@ import * as proposalService from "@/services/proposal.service";
 import * as taskService from "@/services/task.service";
 import * as ideaService from "@/services/idea.service";
 import * as documentService from "@/services/document.service";
+import * as activityService from "@/services/activity.service";
 
 export function registerAdminTools(server: McpServer, auth: AgentAuthContext) {
   // chorus_admin_create_project - 创建新项目
@@ -72,7 +73,7 @@ export function registerAdminTools(server: McpServer, auth: AgentAuthContext) {
   server.registerTool(
     "chorus_admin_approve_proposal",
     {
-      description: "审批通过 Proposal（Admin 专属，代理人类审批）",
+      description: "审批通过 Proposal（Admin 专属，代理人类审批）。审批通过后，Proposal 中的 documentDrafts 和 taskDrafts 会自动物化为实际的 Document 和 Task，无需再手动调用 create_document/create_tasks。",
       inputSchema: z.object({
         proposalUuid: z.string().describe("Proposal UUID"),
         reviewNote: z.string().optional().describe("审批备注"),
@@ -94,6 +95,17 @@ export function registerAdminTools(server: McpServer, auth: AgentAuthContext) {
         auth.actorUuid,  // Admin Agent 作为审批者
         reviewNote || null
       );
+
+      await activityService.createActivity({
+        companyUuid: auth.companyUuid,
+        projectUuid: proposal.projectUuid,
+        targetType: "proposal",
+        targetUuid: proposalUuid,
+        actorType: "agent",
+        actorUuid: auth.actorUuid,
+        action: "approved",
+        value: reviewNote ? { reviewNote } : undefined,
+      });
 
       return {
         content: [{ type: "text", text: JSON.stringify(updated, null, 2) }],
@@ -127,6 +139,17 @@ export function registerAdminTools(server: McpServer, auth: AgentAuthContext) {
         reviewNote
       );
 
+      await activityService.createActivity({
+        companyUuid: auth.companyUuid,
+        projectUuid: proposal.projectUuid,
+        targetType: "proposal",
+        targetUuid: proposalUuid,
+        actorType: "agent",
+        actorUuid: auth.actorUuid,
+        action: "rejected",
+        value: { reviewNote },
+      });
+
       return {
         content: [{ type: "text", text: JSON.stringify(updated, null, 2) }],
       };
@@ -153,6 +176,16 @@ export function registerAdminTools(server: McpServer, auth: AgentAuthContext) {
       }
 
       const updated = await taskService.updateTask(task.uuid, { status: "done" });
+
+      await activityService.createActivity({
+        companyUuid: auth.companyUuid,
+        projectUuid: task.projectUuid,
+        targetType: "task",
+        targetUuid: task.uuid,
+        actorType: "agent",
+        actorUuid: auth.actorUuid,
+        action: "verified",
+      });
 
       return {
         content: [{ type: "text", text: JSON.stringify(updated, null, 2) }],
@@ -181,6 +214,16 @@ export function registerAdminTools(server: McpServer, auth: AgentAuthContext) {
 
       const updated = await taskService.updateTask(task.uuid, { status: "in_progress" });
 
+      await activityService.createActivity({
+        companyUuid: auth.companyUuid,
+        projectUuid: task.projectUuid,
+        targetType: "task",
+        targetUuid: task.uuid,
+        actorType: "agent",
+        actorUuid: auth.actorUuid,
+        action: "reopened",
+      });
+
       return {
         content: [{ type: "text", text: JSON.stringify(updated, null, 2) }],
       };
@@ -207,6 +250,16 @@ export function registerAdminTools(server: McpServer, auth: AgentAuthContext) {
       }
 
       const updated = await taskService.updateTask(task.uuid, { status: "closed" });
+
+      await activityService.createActivity({
+        companyUuid: auth.companyUuid,
+        projectUuid: task.projectUuid,
+        targetType: "task",
+        targetUuid: task.uuid,
+        actorType: "agent",
+        actorUuid: auth.actorUuid,
+        action: "closed",
+      });
 
       return {
         content: [{ type: "text", text: JSON.stringify(updated, null, 2) }],
@@ -303,6 +356,16 @@ export function registerAdminTools(server: McpServer, auth: AgentAuthContext) {
       }
 
       const updated = await ideaService.updateIdea(ideaUuid, auth.companyUuid, { status: "closed" });
+
+      await activityService.createActivity({
+        companyUuid: auth.companyUuid,
+        projectUuid: idea.projectUuid,
+        targetType: "idea",
+        targetUuid: ideaUuid,
+        actorType: "agent",
+        actorUuid: auth.actorUuid,
+        action: "closed",
+      });
 
       return {
         content: [{ type: "text", text: JSON.stringify(updated, null, 2) }],

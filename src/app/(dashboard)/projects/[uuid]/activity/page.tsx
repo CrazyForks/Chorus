@@ -11,9 +11,10 @@ import { prisma } from "@/lib/prisma";
 
 interface ActivityWithActor {
   uuid: string;
-  entityType: string | null;
+  targetType: string;
+  targetUuid: string;
   action: string;
-  payload: unknown;
+  value: unknown;
   createdAt: Date;
   actorName: string;
   isAgent: boolean;
@@ -127,17 +128,12 @@ export default async function ActivityPage({ params }: PageProps) {
   const activities: ActivityWithActor[] = rawActivities.map((activity) => {
     const actor = userMap.get(activity.actorUuid) || agentMap.get(activity.actorUuid) || { name: "System", isAgent: false };
 
-    let entityType: string | null = null;
-    if (activity.ideaUuid) entityType = "idea";
-    else if (activity.proposalUuid) entityType = "proposal";
-    else if (activity.taskUuid) entityType = "task";
-    else if (activity.documentUuid) entityType = "document";
-
     return {
       uuid: activity.uuid,
-      entityType,
+      targetType: activity.targetType,
+      targetUuid: activity.targetUuid,
       action: activity.action,
-      payload: activity.payload,
+      value: activity.value,
       createdAt: activity.createdAt,
       actorName: actor.name,
       isAgent: actor.isAgent,
@@ -178,9 +174,7 @@ export default async function ActivityPage({ params }: PageProps) {
               <div className="space-y-3">
                 {items.map((activity) => {
                   const actionConf = actionConfig[activity.action] || actionConfig.updated;
-                  const entityConf = activity.entityType
-                    ? entityTypeConfig[activity.entityType] || entityTypeConfig.project
-                    : null;
+                  const entityConf = entityTypeConfig[activity.targetType] || entityTypeConfig.project;
 
                   return (
                     <Card key={activity.uuid} className="flex items-start gap-4 border-[#E5E0D8] p-4">
@@ -202,15 +196,13 @@ export default async function ActivityPage({ params }: PageProps) {
                         <div className="flex items-center gap-2 text-sm">
                           <span className="font-medium text-[#2C2C2C]">{activity.actorName}</span>
                           <span className={actionConf.color}>{actionConf.label}</span>
-                          {entityConf && (
-                            <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${entityConf.color}`}>
-                              {entityConf.label}
-                            </span>
-                          )}
+                          <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${entityConf.color}`}>
+                            {entityConf.label}
+                          </span>
                         </div>
-                        {activity.payload && typeof activity.payload === "object" && "title" in (activity.payload as object) ? (
+                        {activity.value && typeof activity.value === "object" && "title" in (activity.value as object) ? (
                           <p className="mt-1 text-sm text-[#6B6B6B] truncate">
-                            {String((activity.payload as { title: string }).title)}
+                            {String((activity.value as { title: string }).title)}
                           </p>
                         ) : null}
                       </div>

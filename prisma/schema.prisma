@@ -188,8 +188,6 @@ model Task {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  activities Activity[]
-
   @@index([companyUuid])
   @@index([projectUuid])
   @@index([proposalUuid])
@@ -249,29 +247,26 @@ model Comment {
   @@index([targetType, targetUuid])
 }
 
-// 活动流（项目级）
+// 活动流（项目级）- 通用设计
 model Activity {
-  id           Int      @id @default(autoincrement())
-  uuid         String   @unique @default(uuid())
-  companyUuid  String
-  company      Company  @relation(fields: [companyUuid], references: [uuid])
-  projectUuid  String
-  project      Project  @relation(fields: [projectUuid], references: [uuid])
-  // 关联实体（可选，用于追溯）- all UUIDs
-  ideaUuid     String?
-  documentUuid String?
-  proposalUuid String?
-  taskUuid     String?
-  task         Task?    @relation(fields: [taskUuid], references: [uuid])
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid())
+  companyUuid String
+  company     Company  @relation(fields: [companyUuid], references: [uuid])
+  projectUuid String
+  project     Project  @relation(fields: [projectUuid], references: [uuid])
+  // 目标实体（通用设计）
+  targetType  String   // idea | task | proposal | document
+  targetUuid  String   // 目标实体 UUID
   // 操作信息
-  actorType    String   // user | agent
-  actorUuid    String   // User or Agent UUID
-  action       String   // idea_created | proposal_created | proposal_approved | document_created | task_created | task_updated | comment_added | ...
-  payload      Json?    // 额外数据
-  createdAt    DateTime @default(now())
+  actorType   String   // user | agent
+  actorUuid   String   // 操作者 UUID
+  action      String   // created | assigned | released | status_changed | submitted | approved | rejected | comment_added
+  value       Json?    // 操作结果值（如新状态、分配目标信息等）
+  createdAt   DateTime @default(now())
 
   @@index([companyUuid])
   @@index([projectUuid])
-  @@index([taskUuid])
+  @@index([targetType, targetUuid])
   @@index([createdAt])
 }

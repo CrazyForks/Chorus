@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { getServerAuthContext } from "@/lib/auth-server";
-import { claimTask, getTaskByUuid, updateTask } from "@/services/task.service";
+import { claimTask, getTaskByUuid, updateTask, releaseTask } from "@/services/task.service";
 import { getAgentsByRole, getCompanyUsers } from "@/services/agent.service";
+import { createActivity } from "@/services/activity.service";
 
 export async function claimTaskAction(taskUuid: string) {
   const auth = await getServerAuthContext();
@@ -29,6 +30,18 @@ export async function claimTaskAction(taskUuid: string) {
       assigneeType: auth.type,
       assigneeUuid: auth.actorUuid,
       assignedByUuid: auth.actorUuid,
+    });
+
+    // Record activity
+    await createActivity({
+      companyUuid: auth.companyUuid,
+      projectUuid: task.projectUuid,
+      targetType: "task",
+      targetUuid: taskUuid,
+      actorType: auth.type,
+      actorUuid: auth.actorUuid,
+      action: "assigned",
+      value: { assigneeType: auth.type, assigneeUuid: auth.actorUuid },
     });
 
     revalidatePath(`/projects/${task.projectUuid}/tasks/${taskUuid}`);
@@ -66,6 +79,18 @@ export async function claimTaskToAgentAction(taskUuid: string, agentUuid: string
       assignedByUuid: auth.actorUuid,
     });
 
+    // Record activity
+    await createActivity({
+      companyUuid: auth.companyUuid,
+      projectUuid: task.projectUuid,
+      targetType: "task",
+      targetUuid: taskUuid,
+      actorType: auth.type,
+      actorUuid: auth.actorUuid,
+      action: "assigned",
+      value: { assigneeType: "agent", assigneeUuid: agentUuid },
+    });
+
     revalidatePath(`/projects/${task.projectUuid}/tasks/${taskUuid}`);
     revalidatePath(`/projects/${task.projectUuid}/tasks`);
 
@@ -73,6 +98,48 @@ export async function claimTaskToAgentAction(taskUuid: string, agentUuid: string
   } catch (error) {
     console.error("Failed to claim task to agent:", error);
     return { success: false, error: "Failed to claim task" };
+  }
+}
+
+export async function releaseTaskAction(taskUuid: string) {
+  const auth = await getServerAuthContext();
+  if (!auth) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  try {
+    // 验证 task 存在且属于该公司
+    const task = await getTaskByUuid(auth.companyUuid, taskUuid);
+    if (!task) {
+      return { success: false, error: "Task not found" };
+    }
+
+    // 只有 assigned 状态且是自己认领的 task 才能释放
+    if (task.status !== "assigned") {
+      return { success: false, error: "Task is not in assigned status" };
+    }
+
+    // 释放 task
+    await releaseTask(taskUuid);
+
+    // Record activity
+    await createActivity({
+      companyUuid: auth.companyUuid,
+      projectUuid: task.projectUuid,
+      targetType: "task",
+      targetUuid: taskUuid,
+      actorType: auth.type,
+      actorUuid: auth.actorUuid,
+      action: "released",
+    });
+
+    revalidatePath(`/projects/${task.projectUuid}/tasks/${taskUuid}`);
+    revalidatePath(`/projects/${task.projectUuid}/tasks`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to release task:", error);
+    return { success: false, error: "Failed to release task" };
   }
 }
 
@@ -90,6 +157,18 @@ export async function updateTaskStatusAction(taskUuid: string, newStatus: string
     }
 
     await updateTask(taskUuid, { status: newStatus });
+
+    // Record activity
+    await createActivity({
+      companyUuid: auth.companyUuid,
+      projectUuid: task.projectUuid,
+      targetType: "task",
+      targetUuid: taskUuid,
+      actorType: auth.type,
+      actorUuid: auth.actorUuid,
+      action: "status_changed",
+      value: { status: newStatus },
+    });
 
     revalidatePath(`/projects/${task.projectUuid}/tasks/${taskUuid}`);
     revalidatePath(`/projects/${task.projectUuid}/tasks`);
@@ -153,6 +232,18 @@ export async function claimTaskToUserAction(taskUuid: string, userUuid: string) 
       assigneeType: "user",
       assigneeUuid: userUuid,
       assignedByUuid: auth.actorUuid,
+    });
+
+    // Record activity
+    await createActivity({
+      companyUuid: auth.companyUuid,
+      projectUuid: task.projectUuid,
+      targetType: "task",
+      targetUuid: taskUuid,
+      actorType: auth.type,
+      actorUuid: auth.actorUuid,
+      action: "assigned",
+      value: { assigneeType: "user", assigneeUuid: userUuid },
     });
 
     revalidatePath(`/projects/${task.projectUuid}/tasks/${taskUuid}`);
