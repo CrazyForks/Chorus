@@ -76,6 +76,21 @@ export async function isAuthenticated(): Promise<boolean> {
   return user !== null && !user.expired;
 }
 
+// Sync a new access token to the HTTP-only cookie via the server endpoint
+export async function syncTokenToCookie(accessToken: string): Promise<boolean> {
+  try {
+    const response = await fetch("/api/auth/sync-token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accessToken }),
+    });
+    return response.ok;
+  } catch {
+    console.error("Failed to sync token to cookie");
+    return false;
+  }
+}
+
 // Create authenticated fetch wrapper
 export async function authFetch(
   url: string,
@@ -89,10 +104,29 @@ export async function authFetch(
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  return fetch(url, {
+  const response = await fetch(url, {
     ...options,
     headers,
   });
+
+  // On 401, attempt silent renew + cookie sync, then retry once
+  if (response.status === 401) {
+    const manager = getUserManager();
+    if (manager) {
+      try {
+        const renewed = await manager.signinSilent();
+        if (renewed?.access_token) {
+          await syncTokenToCookie(renewed.access_token);
+          headers.set("Authorization", `Bearer ${renewed.access_token}`);
+          return fetch(url, { ...options, headers });
+        }
+      } catch {
+        // Silent renew failed, return original 401
+      }
+    }
+  }
+
+  return response;
 }
 
 // Create fetch hook for SWR or React Query

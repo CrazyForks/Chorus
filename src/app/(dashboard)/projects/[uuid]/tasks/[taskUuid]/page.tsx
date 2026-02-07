@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ChevronRight, Monitor, User } from "lucide-react";
 import { getServerAuthContext } from "@/lib/auth-server";
 import { getTask } from "@/services/task.service";
 import { projectExists } from "@/services/project.service";
@@ -87,18 +88,7 @@ export default async function TaskDetailPage({ params }: PageProps) {
         <Link href={`/projects/${projectUuid}/tasks`} className="text-[#6B6B6B] hover:text-[#2C2C2C]">
           {t("nav.tasks")}
         </Link>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-4 w-4 text-[#9A9A9A]"
-        >
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
+        <ChevronRight className="h-4 w-4 text-[#9A9A9A]" />
         <span className="text-[#2C2C2C]">{task.title}</span>
       </div>
 
@@ -169,33 +159,9 @@ export default async function TaskDetailPage({ params }: PageProps) {
                   }`}
                 >
                   {task.assignee.type === "agent" ? (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-4 w-4 text-[#1976D2]"
-                    >
-                      <path d="M12 8V4H8" />
-                      <rect width="16" height="12" x="4" y="8" rx="2" />
-                    </svg>
+                    <Monitor className="h-4 w-4 text-[#1976D2]" />
                   ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-4 w-4 text-[#6B6B6B]"
-                    >
-                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
+                    <User className="h-4 w-4 text-[#6B6B6B]" />
                   )}
                 </div>
                 <div>

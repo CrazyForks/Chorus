@@ -7,17 +7,18 @@ import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ClipboardList, FileEdit, Palette, BookOpen, FileText, FilePlus, type LucideIcon } from "lucide-react";
 import { getServerAuthContext } from "@/lib/auth-server";
 import { listDocuments } from "@/services/document.service";
 import { projectExists } from "@/services/project.service";
 import { CreateDocumentDialog } from "./create-document-dialog";
 
-const docTypeConfig: Record<string, { label: string; color: string; icon: string }> = {
-  prd: { label: "PRD", color: "bg-[#E3F2FD] text-[#1976D2]", icon: "📋" },
-  spec: { label: "Spec", color: "bg-[#E8F5E9] text-[#5A9E6F]", icon: "📝" },
-  design: { label: "Design", color: "bg-[#F3E5F5] text-[#7B1FA2]", icon: "🎨" },
-  note: { label: "Note", color: "bg-[#FFF3E0] text-[#E65100]", icon: "📒" },
-  other: { label: "Other", color: "bg-[#F5F5F5] text-[#6B6B6B]", icon: "📄" },
+const docTypeConfig: Record<string, { labelKey: string; color: string; icon: LucideIcon }> = {
+  prd: { labelKey: "documents.typePrd", color: "bg-[#E3F2FD] text-[#1976D2]", icon: ClipboardList },
+  spec: { labelKey: "documents.typeSpec", color: "bg-[#E8F5E9] text-[#5A9E6F]", icon: FileEdit },
+  design: { labelKey: "documents.typeDesign", color: "bg-[#F3E5F5] text-[#7B1FA2]", icon: Palette },
+  note: { labelKey: "documents.typeNote", color: "bg-[#FFF3E0] text-[#E65100]", icon: BookOpen },
+  other: { labelKey: "documents.typeOther", color: "bg-[#F5F5F5] text-[#6B6B6B]", icon: FileText },
 };
 
 interface PageProps {
@@ -84,7 +85,7 @@ export default async function DocumentsPage({ params, searchParams }: PageProps)
           return (
             <Link key={type} href={`/projects/${projectUuid}/documents?type=${type}`}>
               <Button variant={filter === type ? "default" : "ghost"} size="sm">
-                {config.label} ({count})
+                {t(config.labelKey)} ({count})
               </Button>
             </Link>
           );
@@ -95,12 +96,7 @@ export default async function DocumentsPage({ params, searchParams }: PageProps)
       {filteredDocuments.length === 0 ? (
         <Card className="flex flex-col items-center justify-center p-12 text-center border-[#E5E0D8]">
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#E8F5E9]">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8 text-[#5A9E6F]">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="12" y1="18" x2="12" y2="12" />
-              <line x1="9" y1="15" x2="15" y2="15" />
-            </svg>
+            <FilePlus className="h-8 w-8 text-[#5A9E6F]" />
           </div>
           <h3 className="mb-2 text-lg font-medium text-[#2C2C2C]">{t("documents.noDocuments")}</h3>
           <p className="mb-6 max-w-sm text-sm text-[#6B6B6B]">{t("documents.noDocumentsDesc")}</p>
@@ -112,11 +108,11 @@ export default async function DocumentsPage({ params, searchParams }: PageProps)
             <Link key={doc.uuid} href={`/projects/${projectUuid}/documents/${doc.uuid}`}>
               <Card className="group cursor-pointer border-[#E5E0D8] p-5 transition-all hover:border-[#C67A52] hover:shadow-md">
                 <div className="mb-3 flex items-start justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F5F2EC] text-xl">
-                    {docTypeConfig[doc.type]?.icon || "📄"}
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F5F2EC]">
+                    {(() => { const Icon = docTypeConfig[doc.type]?.icon || FileText; return <Icon className="h-5 w-5 text-[#6B6B6B]" />; })()}
                   </div>
                   <Badge className={docTypeConfig[doc.type]?.color || ""}>
-                    {docTypeConfig[doc.type]?.label || doc.type}
+                    {t(docTypeConfig[doc.type]?.labelKey || "documents.typeOther")}
                   </Badge>
                 </div>
                 <h3 className="mb-1 font-medium text-[#2C2C2C] group-hover:text-[#C67A52]">{doc.title}</h3>

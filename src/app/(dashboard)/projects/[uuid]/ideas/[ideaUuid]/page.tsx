@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ChevronRight, Monitor } from "lucide-react";
 import { getServerAuthContext } from "@/lib/auth-server";
 import { getIdea } from "@/services/idea.service";
 import { projectExists } from "@/services/project.service";
@@ -75,18 +76,7 @@ export default async function IdeaDetailPage({ params }: PageProps) {
         <Link href={`/projects/${projectUuid}/ideas`} className="text-[#6B6B6B] hover:text-[#2C2C2C]">
           {t("nav.ideas")}
         </Link>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-4 w-4 text-[#9A9A9A]"
-        >
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
+        <ChevronRight className="h-4 w-4 text-[#9A9A9A]" />
         <span className="text-[#2C2C2C]">{idea.title}</span>
       </div>
 
@@ -139,19 +129,7 @@ export default async function IdeaDetailPage({ params }: PageProps) {
             {idea.assignee ? (
               <div className="flex items-center gap-3">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#E3F2FD]">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4 text-[#1976D2]"
-                  >
-                    <path d="M12 8V4H8" />
-                    <rect width="16" height="12" x="4" y="8" rx="2" />
-                  </svg>
+                  <Monitor className="h-4 w-4 text-[#1976D2]" />
                 </div>
                 <div>
                   <div className="text-sm font-medium text-[#2C2C2C]">

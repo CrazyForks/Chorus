@@ -1,5 +1,6 @@
 {
   "common": {
+    "appName": "Chorus",
     "loading": "加载中...",
     "save": "保存",
     "cancel": "取消",
@@ -189,7 +190,9 @@
     "createCompanyDesc": "设置新公司并配置 OIDC 认证",
     "emailDomain": "邮箱域名",
     "emailDomainHelp": "使用此邮箱域名的用户将被路由到此公司",
-    "required": "必填"
+    "required": "必填",
+    "companyNamePlaceholder": "例如：Acme 公司",
+    "emailDomainPlaceholder": "例如：acme.com"
   },
   "dashboard": {
     "title": "仪表盘",
@@ -403,7 +406,12 @@
     "uploadMarkdown": "Markdown 文件（可选）",
     "clickToUpload": "点击上传 Markdown 文件",
     "characters": "个字符",
-    "createFailed": "创建文档失败"
+    "createFailed": "创建文档失败",
+    "typePrd": "PRD",
+    "typeSpec": "技术规格",
+    "typeDesign": "设计文档",
+    "typeNote": "笔记",
+    "typeOther": "其他"
   },
   "activity": {
     "title": "动态",

@@ -4,6 +4,7 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Card } from "@/components/ui/card";
+import { Monitor, User, Settings } from "lucide-react";
 import { getServerAuthContext } from "@/lib/auth-server";
 import { listActivities } from "@/services/activity.service";
 import { projectExists } from "@/services/project.service";
@@ -154,14 +155,7 @@ export default async function ActivityPage({ params }: PageProps) {
       {activities.length === 0 ? (
         <Card className="flex flex-col items-center justify-center p-12 text-center border-[#E5E0D8]">
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#F5F2EC]">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8 text-[#6B6B6B]">
-              <path d="M12 8V4H8" />
-              <rect width="16" height="12" x="4" y="8" rx="2" />
-              <path d="M2 14h2" />
-              <path d="M20 14h2" />
-              <path d="M15 13v2" />
-              <path d="M9 13v2" />
-            </svg>
+            <Monitor className="h-8 w-8 text-[#6B6B6B]" />
           </div>
           <h3 className="mb-2 text-lg font-medium text-[#2C2C2C]">{t("activity.noActivity")}</h3>
           <p className="max-w-sm text-sm text-[#6B6B6B]">{t("activity.noActivityDesc")}</p>
@@ -180,15 +174,9 @@ export default async function ActivityPage({ params }: PageProps) {
                     <Card key={activity.uuid} className="flex items-start gap-4 border-[#E5E0D8] p-4">
                       <div className={`mt-0.5 flex h-8 w-8 items-center justify-center rounded-full ${activity.isAgent ? "bg-[#E3F2FD]" : "bg-[#F5F2EC]"}`}>
                         {activity.isAgent ? (
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-[#1976D2]">
-                            <path d="M12 8V4H8" />
-                            <rect width="16" height="12" x="4" y="8" rx="2" />
-                          </svg>
+                          <Monitor className="h-4 w-4 text-[#1976D2]" />
                         ) : (
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-[#6B6B6B]">
-                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                            <circle cx="12" cy="7" r="4" />
-                          </svg>
+                          <User className="h-4 w-4 text-[#6B6B6B]" />
                         )}
                       </div>
 

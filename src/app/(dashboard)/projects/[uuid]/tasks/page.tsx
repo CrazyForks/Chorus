@@ -3,6 +3,7 @@
 
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { Clock } from "lucide-react";
 import { getServerAuthContext } from "@/lib/auth-server";
 import { listTasks } from "@/services/task.service";
 import { projectExists } from "@/services/project.service";
@@ -49,19 +50,7 @@ export default async function TasksPage({ params }: PageProps) {
             </p>
             {totalHours > 0 && (
               <div className="flex items-center gap-1.5 rounded-full bg-[#F5F2EC] px-3 py-1">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-3.5 w-3.5 text-[#C67A52]"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg>
+                <Clock className="h-3.5 w-3.5 text-[#C67A52]" />
                 <span className="text-xs font-medium text-[#6B6B6B]">
                   <span className="text-[#2C2C2C]">{totalHours.toFixed(1)}</span> {t("tasks.agentHours")}
                 </span>

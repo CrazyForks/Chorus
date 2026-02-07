@@ -103,7 +103,7 @@ export default function OidcCallbackPage() {
           {/* Logo */}
           <div className="mb-8 flex flex-col items-center gap-2">
             <Music className="h-12 w-12 text-foreground" />
-            <h1 className="text-[28px] font-semibold text-foreground">Chorus</h1>
+            <h1 className="text-[28px] font-semibold text-foreground">{t("title")}</h1>
           </div>
 
           {/* Status */}

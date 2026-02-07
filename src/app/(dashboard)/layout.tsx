@@ -185,7 +185,7 @@ export default function DashboardLayout({
           <div className="flex items-center gap-2.5">
             <Music className="h-7 w-7 text-foreground" />
             <span className="text-base font-semibold text-foreground">
-              Chorus
+              {t("common.appName")}
             </span>
           </div>
 

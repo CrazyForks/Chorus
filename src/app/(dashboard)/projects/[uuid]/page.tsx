@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Lightbulb, LayoutGrid, FileText, ClipboardList, Settings, ChevronRight, Plus } from "lucide-react";
 import { getServerAuthContext } from "@/lib/auth-server";
 import { getProject, getProjectStats } from "@/services/project.service";
 
@@ -39,22 +40,7 @@ export default async function ProjectOverviewPage({ params }: PageProps) {
       href: `/projects/${uuid}/ideas`,
       color: "bg-[#FFF3E0]",
       iconColor: "text-[#E65100]",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-5 w-5"
-        >
-          <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
-          <path d="M9 18h6" />
-          <path d="M10 22h4" />
-        </svg>
-      ),
+      icon: <Lightbulb className="h-5 w-5" />,
     },
     {
       label: t("nav.tasks"),
@@ -63,22 +49,7 @@ export default async function ProjectOverviewPage({ params }: PageProps) {
       href: `/projects/${uuid}/tasks`,
       color: "bg-[#E3F2FD]",
       iconColor: "text-[#1976D2]",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-5 w-5"
-        >
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-          <line x1="3" y1="9" x2="21" y2="9" />
-          <line x1="9" y1="21" x2="9" y2="9" />
-        </svg>
-      ),
+      icon: <LayoutGrid className="h-5 w-5" />,
     },
     {
       label: t("nav.documents"),
@@ -87,21 +58,7 @@ export default async function ProjectOverviewPage({ params }: PageProps) {
       href: `/projects/${uuid}/documents`,
       color: "bg-[#E8F5E9]",
       iconColor: "text-[#5A9E6F]",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-5 w-5"
-        >
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-        </svg>
-      ),
+      icon: <FileText className="h-5 w-5" />,
     },
     {
       label: t("nav.proposals"),
@@ -110,23 +67,7 @@ export default async function ProjectOverviewPage({ params }: PageProps) {
       href: `/projects/${uuid}/proposals`,
       color: "bg-[#F3E5F5]",
       iconColor: "text-[#7B1FA2]",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-5 w-5"
-        >
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-          <line x1="16" y1="13" x2="8" y2="13" />
-          <line x1="16" y1="17" x2="8" y2="17" />
-        </svg>
-      ),
+      icon: <ClipboardList className="h-5 w-5" />,
     },
   ];
 
@@ -154,19 +95,7 @@ export default async function ProjectOverviewPage({ params }: PageProps) {
             variant="outline"
             className="border-[#E5E0D8] text-[#6B6B6B] hover:bg-[#F5F2EC]"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="mr-2 h-4 w-4"
-            >
-              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
+            <Settings className="mr-2 h-4 w-4" />
             {t("projectOverview.settings")}
           </Button>
         </div>
@@ -183,18 +112,7 @@ export default async function ProjectOverviewPage({ params }: PageProps) {
                 >
                   <span className={stat.iconColor}>{stat.icon}</span>
                 </div>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-4 w-4 text-[#9A9A9A] opacity-0 transition-opacity group-hover:opacity-100"
-                >
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
+                <ChevronRight className="h-4 w-4 text-[#9A9A9A] opacity-0 transition-opacity group-hover:opacity-100" />
               </div>
               <div className="text-2xl font-semibold text-[#2C2C2C]">
                 {stat.value}
@@ -219,19 +137,7 @@ export default async function ProjectOverviewPage({ params }: PageProps) {
               variant="outline"
               className="border-[#E5E0D8] text-[#6B6B6B] hover:bg-[#F5F2EC]"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mr-2 h-4 w-4"
-              >
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
+              <Plus className="mr-2 h-4 w-4" />
               {t("projectOverview.addIdea")}
             </Button>
           </Link>
@@ -240,20 +146,7 @@ export default async function ProjectOverviewPage({ params }: PageProps) {
               variant="outline"
               className="border-[#E5E0D8] text-[#6B6B6B] hover:bg-[#F5F2EC]"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mr-2 h-4 w-4"
-              >
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                <line x1="3" y1="9" x2="21" y2="9" />
-                <line x1="9" y1="21" x2="9" y2="9" />
-              </svg>
+              <LayoutGrid className="mr-2 h-4 w-4" />
               {t("projectOverview.viewKanban")}
             </Button>
           </Link>
@@ -262,19 +155,7 @@ export default async function ProjectOverviewPage({ params }: PageProps) {
               variant="outline"
               className="border-[#E5E0D8] text-[#6B6B6B] hover:bg-[#F5F2EC]"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mr-2 h-4 w-4"
-              >
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-              </svg>
+              <FileText className="mr-2 h-4 w-4" />
               {t("projectOverview.browseDocuments")}
             </Button>
           </Link>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,64 +32,24 @@ interface ApiKey {
   roles: string[];
 }
 
-// PM Agent Persona presets
+// PM Agent Persona presets (labels and descriptions use i18n keys)
 const PM_PERSONAS = [
-  {
-    id: "dev_pm",
-    label: "Dev-focused PM",
-    description:
-      "You are a product manager who prioritizes developer experience and builds developer-first products. You understand technical constraints and communicate effectively with engineering teams.",
-  },
-  {
-    id: "full_pm",
-    label: "Full-fledged PM",
-    description:
-      "You are a comprehensive product manager with the mindset of building products that solve real problems for your target audience. You balance business goals, user needs, and technical feasibility.",
-  },
-  {
-    id: "simple_pm",
-    label: "Simple PM",
-    description:
-      "You are a focused product manager who prioritizes core features first, avoiding over-engineering. You believe in shipping fast, gathering feedback, and iterating quickly.",
-  },
+  { id: "dev_pm", labelKey: "personas.devPm", descKey: "personas.devPmDesc" },
+  { id: "full_pm", labelKey: "personas.fullPm", descKey: "personas.fullPmDesc" },
+  { id: "simple_pm", labelKey: "personas.simplePm", descKey: "personas.simplePmDesc" },
 ];
 
 // Developer Agent Persona presets
 const DEV_PERSONAS = [
-  {
-    id: "senior_dev",
-    label: "Senior Developer",
-    description:
-      "You are a senior software developer with extensive experience in building scalable systems. You write clean, maintainable code and follow best practices. You mentor junior developers and make architectural decisions.",
-  },
-  {
-    id: "fullstack_dev",
-    label: "Full-stack Developer",
-    description:
-      "You are a versatile full-stack developer comfortable working across the entire stack. You can build APIs, design databases, and create responsive UIs. You prioritize user experience and performance.",
-  },
-  {
-    id: "pragmatic_dev",
-    label: "Pragmatic Developer",
-    description:
-      "You are a practical developer who focuses on delivering working solutions quickly. You avoid premature optimization, write tests for critical paths, and prefer simple solutions over complex abstractions.",
-  },
+  { id: "senior_dev", labelKey: "personas.seniorDev", descKey: "personas.seniorDevDesc" },
+  { id: "fullstack_dev", labelKey: "personas.fullstackDev", descKey: "personas.fullstackDevDesc" },
+  { id: "pragmatic_dev", labelKey: "personas.pragmaticDev", descKey: "personas.pragmaticDevDesc" },
 ];
 
 // Admin Agent Persona presets
 const ADMIN_PERSONAS = [
-  {
-    id: "careful_admin",
-    label: "Careful Admin",
-    description:
-      "You are a careful administrator who thoroughly reviews all proposals and tasks before approval. You verify that acceptance criteria are met, check for potential issues, and document your reasoning. When in doubt, you prefer to ask for clarification rather than approve blindly.",
-  },
-  {
-    id: "efficient_admin",
-    label: "Efficient Admin",
-    description:
-      "You are an efficient administrator who streamlines the approval process while maintaining quality standards. You trust the team's work but still perform necessary checks. You focus on unblocking work quickly while ensuring basic quality gates are met.",
-  },
+  { id: "careful_admin", labelKey: "personas.carefulAdmin", descKey: "personas.carefulAdminDesc" },
+  { id: "efficient_admin", labelKey: "personas.efficientAdmin", descKey: "personas.efficientAdminDesc" },
 ];
 
 export default function SettingsPage() {
@@ -219,7 +180,7 @@ export default function SettingsPage() {
 
   // Get available persona presets based on selected roles
   const getAvailablePersonas = () => {
-    const personas: { id: string; label: string; description: string }[] = [];
+    const personas: { id: string; labelKey: string; descKey: string }[] = [];
     if (selectedRoles.includes("pm_agent")) {
       personas.push(...PM_PERSONAS);
     }
@@ -510,10 +471,11 @@ export default function SettingsPage() {
                       {t("settings.agentRolesDesc")}
                     </p>
                     <div className="space-y-2">
-                      <button
+                      <Button
                         type="button"
+                        variant="outline"
                         onClick={() => toggleRole("developer_agent")}
-                        className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors ${
+                        className={`flex h-auto w-full items-start justify-start gap-3 rounded-lg border p-3 text-left transition-colors ${
                           selectedRoles.includes("developer_agent")
                             ? "border-primary bg-primary/5"
                             : "border-border hover:border-primary"
@@ -534,15 +496,16 @@ export default function SettingsPage() {
                           <div className="text-sm font-medium text-foreground">
                             {t("settings.developerAgent")}
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs font-normal text-muted-foreground">
                             {t("settings.developerAgentDesc")}
                           </div>
                         </div>
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
+                        variant="outline"
                         onClick={() => toggleRole("pm_agent")}
-                        className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors ${
+                        className={`flex h-auto w-full items-start justify-start gap-3 rounded-lg border p-3 text-left transition-colors ${
                           selectedRoles.includes("pm_agent")
                             ? "border-primary bg-primary/5"
                             : "border-border hover:border-primary"
@@ -563,16 +526,17 @@ export default function SettingsPage() {
                           <div className="text-sm font-medium text-foreground">
                             {t("settings.pmAgent")}
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs font-normal text-muted-foreground">
                             {t("settings.pmAgentDesc")}
                           </div>
                         </div>
-                      </button>
+                      </Button>
                       {/* Admin Agent - with danger styling */}
-                      <button
+                      <Button
                         type="button"
+                        variant="outline"
                         onClick={() => toggleRole("admin_agent")}
-                        className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors ${
+                        className={`flex h-auto w-full items-start justify-start gap-3 rounded-lg border p-3 text-left transition-colors ${
                           selectedRoles.includes("admin_agent")
                             ? "border-red-500 bg-red-50 dark:bg-red-950"
                             : "border-border hover:border-red-400"
@@ -594,11 +558,11 @@ export default function SettingsPage() {
                             <ShieldAlert className="h-4 w-4" />
                             {t("settings.adminAgent")}
                           </div>
-                          <div className="text-xs text-red-500/80 dark:text-red-400/80">
+                          <div className="text-xs font-normal text-red-500/80 dark:text-red-400/80">
                             {t("settings.adminAgentDesc")}
                           </div>
                         </div>
-                      </button>
+                      </Button>
                     </div>
 
                     {/* Admin Warning Box */}
@@ -619,17 +583,17 @@ export default function SettingsPage() {
                               <li>{t("settings.adminWarningItem3")}</li>
                               <li>{t("settings.adminWarningItem4")}</li>
                             </ul>
-                            <label className="mt-3 flex cursor-pointer items-center gap-2">
-                              <input
-                                type="checkbox"
+                            <div className="mt-3 flex cursor-pointer items-center gap-2">
+                              <Checkbox
+                                id="adminConfirm"
                                 checked={adminConfirmed}
-                                onChange={(e) => setAdminConfirmed(e.target.checked)}
-                                className="h-4 w-4 rounded border-red-300 text-red-600 focus:ring-red-500"
+                                onCheckedChange={(checked) => setAdminConfirmed(checked === true)}
+                                className="border-red-300 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                               />
-                              <span className="text-xs font-medium text-red-700 dark:text-red-300">
+                              <Label htmlFor="adminConfirm" className="cursor-pointer text-xs font-medium text-red-700 dark:text-red-300">
                                 {t("settings.adminConfirmCheckbox")}
-                              </span>
-                            </label>
+                              </Label>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -652,14 +616,14 @@ export default function SettingsPage() {
                           <Button
                             key={persona.id}
                             type="button"
-                            variant={customPersona === persona.description ? "default" : "outline"}
+                            variant={customPersona === t(persona.descKey) ? "default" : "outline"}
                             size="sm"
                             onClick={() =>
-                              selectPersonaPreset(persona.description)
+                              selectPersonaPreset(t(persona.descKey))
                             }
                             className="rounded-full"
                           >
-                            {persona.label}
+                            {t(persona.labelKey)}
                           </Button>
                         ))}
                       </div>

@@ -6,18 +6,19 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ClipboardList, FileEdit, Palette, BookOpen, FileText, ChevronRight, type LucideIcon } from "lucide-react";
 import { getServerAuthContext } from "@/lib/auth-server";
 import { getDocument } from "@/services/document.service";
 import { projectExists } from "@/services/project.service";
 import { DocumentActions } from "./document-actions";
 import { DocumentContent } from "./document-content";
 
-const docTypeConfig: Record<string, { label: string; color: string; icon: string }> = {
-  prd: { label: "PRD", color: "bg-[#E3F2FD] text-[#1976D2]", icon: "📋" },
-  spec: { label: "Spec", color: "bg-[#E8F5E9] text-[#5A9E6F]", icon: "📝" },
-  design: { label: "Design", color: "bg-[#F3E5F5] text-[#7B1FA2]", icon: "🎨" },
-  note: { label: "Note", color: "bg-[#FFF3E0] text-[#E65100]", icon: "📒" },
-  other: { label: "Other", color: "bg-[#F5F5F5] text-[#6B6B6B]", icon: "📄" },
+const docTypeConfig: Record<string, { labelKey: string; color: string; icon: LucideIcon }> = {
+  prd: { labelKey: "documents.typePrd", color: "bg-[#E3F2FD] text-[#1976D2]", icon: ClipboardList },
+  spec: { labelKey: "documents.typeSpec", color: "bg-[#E8F5E9] text-[#5A9E6F]", icon: FileEdit },
+  design: { labelKey: "documents.typeDesign", color: "bg-[#F3E5F5] text-[#7B1FA2]", icon: Palette },
+  note: { labelKey: "documents.typeNote", color: "bg-[#FFF3E0] text-[#E65100]", icon: BookOpen },
+  other: { labelKey: "documents.typeOther", color: "bg-[#F5F5F5] text-[#6B6B6B]", icon: FileText },
 };
 
 interface PageProps {
@@ -59,31 +60,20 @@ export default async function DocumentDetailPage({ params }: PageProps) {
         <Link href={`/projects/${projectUuid}/documents`} className="text-[#6B6B6B] hover:text-[#2C2C2C]">
           {t("nav.documents")}
         </Link>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-4 w-4 text-[#9A9A9A]"
-        >
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
+        <ChevronRight className="h-4 w-4 text-[#9A9A9A]" />
         <span className="text-[#2C2C2C]">{document.title}</span>
       </div>
 
       {/* Header */}
       <div className="mb-6 flex items-start justify-between">
         <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F5F2EC] text-2xl">
-            {docTypeConfig[document.type]?.icon || "📄"}
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F5F2EC]">
+            {(() => { const Icon = docTypeConfig[document.type]?.icon || FileText; return <Icon className="h-6 w-6 text-[#6B6B6B]" />; })()}
           </div>
           <div>
             <div className="mb-1 flex items-center gap-3">
               <Badge className={docTypeConfig[document.type]?.color || ""}>
-                {docTypeConfig[document.type]?.label || document.type}
+                {t(docTypeConfig[document.type]?.labelKey || "documents.typeOther")}
               </Badge>
               <span className="rounded bg-[#F5F2EC] px-2 py-0.5 text-xs font-medium text-[#6B6B6B]">
                 v{document.version}
@@ -120,19 +110,7 @@ export default async function DocumentDetailPage({ params }: PageProps) {
                 href={`/projects/${projectUuid}/proposals/${document.proposalUuid}`}
                 className="flex items-center gap-2 text-sm text-[#C67A52] hover:underline"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-4 w-4"
-                >
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                </svg>
+                <FileText className="h-4 w-4" />
                 {t("documents.viewProposal")}
               </Link>
             </Card>
@@ -145,7 +123,7 @@ export default async function DocumentDetailPage({ params }: PageProps) {
               <div className="flex justify-between text-sm">
                 <dt className="text-[#9A9A9A]">{t("common.type")}</dt>
                 <dd className="font-medium text-[#2C2C2C]">
-                  {docTypeConfig[document.type]?.label || document.type}
+                  {t(docTypeConfig[document.type]?.labelKey || "documents.typeOther")}
                 </dd>
               </div>
               <div className="flex justify-between text-sm">

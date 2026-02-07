@@ -1,5 +1,6 @@
 {
   "common": {
+    "appName": "Chorus",
     "loading": "Loading...",
     "save": "Save",
     "cancel": "Cancel",
@@ -189,7 +190,9 @@
     "createCompanyDesc": "Set up a new company and configure OIDC authentication",
     "emailDomain": "Email Domain",
     "emailDomainHelp": "Users with this email domain will be routed to this company",
-    "required": "Required"
+    "required": "Required",
+    "companyNamePlaceholder": "e.g., Acme Corporation",
+    "emailDomainPlaceholder": "e.g., acme.com"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -402,7 +405,12 @@
     "uploadMarkdown": "Markdown File (optional)",
     "clickToUpload": "Click to upload a Markdown file",
     "characters": "characters",
-    "createFailed": "Failed to create document"
+    "createFailed": "Failed to create document",
+    "typePrd": "PRD",
+    "typeSpec": "Spec",
+    "typeDesign": "Design",
+    "typeNote": "Note",
+    "typeOther": "Other"
   },
   "activity": {
     "title": "Activity",

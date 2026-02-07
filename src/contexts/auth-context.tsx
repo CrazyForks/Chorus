@@ -14,6 +14,7 @@ import {
   getUserManager,
   getOidcUser,
   authFetch,
+  syncTokenToCookie,
   logout as authLogout,
   clearUserManager,
 } from "@/lib/auth-client";
@@ -76,6 +77,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const oidcUser = await getOidcUser();
 
       if (oidcUser && !oidcUser.expired) {
+        // Sync token to cookie in case it was refreshed while the page was away
+        await syncTokenToCookie(oidcUser.access_token);
         // We have a valid OIDC session, fetch user info from backend
         await fetchSession();
       }
@@ -108,10 +111,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       handleSessionExpired();
     };
 
-    // Handle user loaded (after silent renew)
-    const handleUserLoaded = (user: User) => {
-      console.log("OIDC user loaded/renewed");
-      // Session is still valid, no action needed
+    // Handle user loaded (after silent renew) — sync new token to cookie
+    const handleUserLoaded = async (user: User) => {
+      console.log("OIDC user loaded/renewed, syncing token to cookie");
+      try {
+        await syncTokenToCookie(user.access_token);
+      } catch (err) {
+        console.error("Failed to sync token after renewal:", err);
+      }
     };
 
     manager.events.addAccessTokenExpiring(handleExpiring);

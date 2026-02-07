@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Plus, FolderOpen, Folder } from "lucide-react";
 import { getServerAuthContext } from "@/lib/auth-server";
 import { listProjects } from "@/services/project.service";
 
@@ -50,19 +51,7 @@ export default async function ProjectsPage() {
         </div>
         <Link href="/projects/new">
           <Button className="bg-[#C67A52] hover:bg-[#B56A42] text-white">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="mr-2 h-4 w-4"
-            >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
+            <Plus className="mr-2 h-4 w-4" />
             {t("projects.newProject")}
           </Button>
         </Link>
@@ -72,20 +61,7 @@ export default async function ProjectsPage() {
       {projectList.length === 0 ? (
         <Card className="flex flex-col items-center justify-center p-12 text-center border-[#E5E0D8]">
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#F5F2EC]">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-8 w-8 text-[#C67A52]"
-            >
-              <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
-              <line x1="12" y1="10" x2="12" y2="16" />
-              <line x1="9" y1="13" x2="15" y2="13" />
-            </svg>
+            <FolderOpen className="h-8 w-8 text-[#C67A52]" />
           </div>
           <h3 className="mb-2 text-lg font-medium text-[#2C2C2C]">
             {t("projects.noProjects")}
@@ -106,18 +82,7 @@ export default async function ProjectsPage() {
               <Card className="group cursor-pointer border-[#E5E0D8] p-5 transition-all hover:border-[#C67A52] hover:shadow-md">
                 <div className="mb-3 flex items-start justify-between">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#FFF3E0]">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-5 w-5 text-[#C67A52]"
-                    >
-                      <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
-                    </svg>
+                    <Folder className="h-5 w-5 text-[#C67A52]" />
                   </div>
                 </div>
                 <h3 className="mb-1 font-medium text-[#2C2C2C] group-hover:text-[#C67A52]">

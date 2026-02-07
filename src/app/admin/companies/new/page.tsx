@@ -104,7 +104,7 @@ export default function NewCompanyPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                placeholder="e.g., Acme Corporation"
+                placeholder={t("admin.companyNamePlaceholder")}
                 required
                 disabled={loading}
               />
@@ -118,7 +118,7 @@ export default function NewCompanyPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, emailDomain: e.target.value })
                 }
-                placeholder="e.g., acme.com"
+                placeholder={t("admin.emailDomainPlaceholder")}
                 required
                 disabled={loading}
               />
