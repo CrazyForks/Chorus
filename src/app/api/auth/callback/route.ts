@@ -14,7 +14,7 @@ import { findOrCreateUserByOidc, getCompanyByUuid } from "@/services/user.servic
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { companyUuid, oidcSub, email, name, accessToken } = body;
+    const { companyUuid, oidcSub, email, name, accessToken, refreshToken } = body;
 
     // Validate required fields
     if (!companyUuid || !oidcSub || !email) {
@@ -55,14 +55,41 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Cookie options
+    const cookieBase = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax" as const,
+      path: "/",
+    };
+
     // Store access token in HTTP-only cookie for Server Actions
     if (accessToken) {
       response.cookies.set("oidc_access_token", accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
+        ...cookieBase,
         maxAge: 3600, // 1 hour (OIDC tokens typically expire in 1 hour)
+      });
+    }
+
+    // Store refresh token for server-side token refresh (middleware)
+    if (refreshToken) {
+      response.cookies.set("oidc_refresh_token", refreshToken, {
+        ...cookieBase,
+        maxAge: 30 * 24 * 3600, // 30 days
+      });
+    }
+
+    // Store client_id and issuer for server-side token refresh (middleware)
+    if (company.oidcClientId) {
+      response.cookies.set("oidc_client_id", company.oidcClientId, {
+        ...cookieBase,
+        maxAge: 30 * 24 * 3600, // 30 days
+      });
+    }
+    if (company.oidcIssuer) {
+      response.cookies.set("oidc_issuer", company.oidcIssuer, {
+        ...cookieBase,
+        maxAge: 30 * 24 * 3600, // 30 days
       });
     }
 

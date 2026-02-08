@@ -7,14 +7,19 @@ import { NextResponse } from "next/server";
 export async function POST() {
   const response = NextResponse.json({ success: true });
 
-  // Clear the OIDC access token cookie
-  response.cookies.set("oidc_access_token", "", {
+  const expireOpts = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "lax" as const,
     path: "/",
     maxAge: 0, // Expire immediately
-  });
+  };
+
+  // Clear all OIDC auth cookies
+  response.cookies.set("oidc_access_token", "", expireOpts);
+  response.cookies.set("oidc_refresh_token", "", expireOpts);
+  response.cookies.set("oidc_client_id", "", expireOpts);
+  response.cookies.set("oidc_issuer", "", expireOpts);
 
   return response;
 }

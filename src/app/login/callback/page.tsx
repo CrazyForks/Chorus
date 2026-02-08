@@ -70,6 +70,7 @@ export default function OidcCallbackPage() {
           email: userInfo.email,
           name: userInfo.name,
           accessToken: user.access_token, // Send token to be stored in HTTP-only cookie
+          refreshToken: user.refresh_token, // Send refresh token for server-side refresh
         }),
       });
 

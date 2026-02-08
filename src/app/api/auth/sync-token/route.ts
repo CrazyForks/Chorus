@@ -12,7 +12,7 @@ import { verifyOidcAccessToken } from "@/lib/oidc-auth";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { accessToken } = body;
+    const { accessToken, refreshToken } = body;
 
     if (!accessToken || typeof accessToken !== "string") {
       return errors.badRequest("Missing required field: accessToken");
@@ -26,14 +26,26 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json({ success: true });
 
-    // Update the HTTP-only cookie with the new token
-    response.cookies.set("oidc_access_token", accessToken, {
+    const cookieBase = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "lax" as const,
       path: "/",
+    };
+
+    // Update the HTTP-only cookie with the new token
+    response.cookies.set("oidc_access_token", accessToken, {
+      ...cookieBase,
       maxAge: 3600, // 1 hour
     });
+
+    // Update refresh token if provided (e.g. after token rotation)
+    if (refreshToken && typeof refreshToken === "string") {
+      response.cookies.set("oidc_refresh_token", refreshToken, {
+        ...cookieBase,
+        maxAge: 30 * 24 * 3600, // 30 days
+      });
+    }
 
     return response;
   } catch (error) {

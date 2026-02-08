@@ -76,13 +76,13 @@ export async function isAuthenticated(): Promise<boolean> {
   return user !== null && !user.expired;
 }
 
-// Sync a new access token to the HTTP-only cookie via the server endpoint
-export async function syncTokenToCookie(accessToken: string): Promise<boolean> {
+// Sync a new access token (and optionally refresh token) to HTTP-only cookies via the server endpoint
+export async function syncTokenToCookie(accessToken: string, refreshToken?: string): Promise<boolean> {
   try {
     const response = await fetch("/api/auth/sync-token", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ accessToken }),
+      body: JSON.stringify({ accessToken, refreshToken }),
     });
     return response.ok;
   } catch {
