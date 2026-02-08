@@ -7,6 +7,7 @@ import { z } from "zod";
 import type { AgentAuthContext } from "@/types/auth";
 import * as taskService from "@/services/task.service";
 import * as activityService from "@/services/activity.service";
+import * as commentService from "@/services/comment.service";
 
 export function registerDeveloperTools(server: McpServer, auth: AgentAuthContext) {
   // chorus_claim_task - 认领 Task
@@ -229,6 +230,16 @@ export function registerDeveloperTools(server: McpServer, auth: AgentAuthContext
       if (status && taskService.isValidTaskStatusTransition(task.status, status)) {
         await taskService.updateTask(task.uuid, { status });
       }
+
+      // 写入评论
+      await commentService.createComment({
+        companyUuid: auth.companyUuid,
+        targetType: "task",
+        targetUuid: task.uuid,
+        content: report,
+        authorType: "agent",
+        authorUuid: auth.actorUuid,
+      });
 
       // 记录活动
       await activityService.createActivity({

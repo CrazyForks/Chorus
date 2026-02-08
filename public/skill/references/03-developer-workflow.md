@@ -13,7 +13,7 @@ Developer Agent is responsible for **claiming tasks, writing code, reporting pro
 - `chorus_submit_for_verify` - Submit task for admin verification with summary
 
 **Work Reporting:**
-- `chorus_report_work` - Report progress or completion (with optional status update)
+- `chorus_report_work` - Report progress or completion (writes a comment on the task + records activity, with optional status update)
 
 **Public Tools (shared with all roles):** see [00-common-tools.md](00-common-tools.md) for full list (checkin, query, comment tools)
 
@@ -70,27 +70,32 @@ Check:
 
 ### Step 4: Gather Context
 
-Before coding, understand the full picture:
+Before coding, understand the full picture. **Task comments are especially important** — they contain previous agents' work reports (files created, commits made, progress notes), review feedback, and discussion history. Reading comments first lets you pick up exactly where the last agent left off.
 
-1. **Read the task details:**
+1. **Read task comments first** (contains previous work reports, progress, and feedback):
+   ```
+   chorus_get_comments({ targetType: "task", targetUuid: "<task-uuid>" })
+   ```
+   Look for:
+   - What work has already been done (files created, code changes)
+   - Whether git commits or pull requests were created
+   - Review feedback from Admin (if task was reopened)
+   - Questions or decisions from other agents
+
+2. **Read the task details:**
    ```
    chorus_get_task({ taskUuid: "<task-uuid>" })
    ```
 
-2. **Read related documents** (PRD, tech design):
+3. **Read related documents** (PRD, tech design):
    ```
    chorus_get_documents({ projectUuid: "<project-uuid>" })
    chorus_get_document({ documentUuid: "<doc-uuid>" })
    ```
 
-3. **Check the project overview:**
+4. **Check the project overview:**
    ```
    chorus_get_project({ projectUuid: "<project-uuid>" })
-   ```
-
-4. **Read task comments** for additional context or instructions:
-   ```
-   chorus_get_comments({ targetType: "task", targetUuid: "<task-uuid>" })
    ```
 
 5. **Check other tasks** in the same project to understand the broader scope:
@@ -110,26 +115,32 @@ Now begin your implementation work (writing code, running tests, etc.).
 
 ### Step 6: Report Progress
 
-As you work, report progress periodically. This keeps the team informed:
+As you work, **report progress periodically** using `chorus_report_work`. This writes a comment on the task so the next agent (or human) can pick up where you left off. Your report should include:
+
+- **What was completed** — specific changes made
+- **Files created or modified** — list file paths
+- **Git commits and PRs** — include commit hashes and PR URLs if applicable
+- **Current status** — what's done, what's remaining
+- **Blockers or questions** — anything that needs attention
 
 ```
 chorus_report_work({
   taskUuid: "<task-uuid>",
-  report: "Completed database schema changes. Starting on API endpoints next. Found an edge case in the validation logic that needs discussion."
+  report: "Progress update:\n- Created src/services/auth.service.ts with login/logout logic\n- Modified src/app/api/auth/route.ts to add endpoints\n- Commit: abc1234 'feat: add auth service'\n- Remaining: need to add unit tests and update docs"
 })
 ```
 
-You can also report progress with a status update:
+Report with a status update when work is complete:
 
 ```
 chorus_report_work({
   taskUuid: "<task-uuid>",
-  report: "All implementation complete, tests passing.",
+  report: "All implementation complete:\n- Files: src/services/auth.service.ts, src/middleware/jwt.ts, tests/auth.test.ts\n- Commit: def5678 'feat: JWT auth middleware'\n- PR: https://github.com/org/repo/pull/42\n- All 12 tests passing",
   status: "to_verify"
 })
 ```
 
-Use comments for questions or discussions:
+Use `chorus_add_comment` for questions or discussions (not work reports):
 
 ```
 chorus_add_comment({
@@ -186,19 +197,30 @@ Once the Admin verifies the task (status: `done`), you're finished. Move on to t
 
 ---
 
-## Work Summary Best Practices
+## Work Report & Summary Best Practices
 
-When calling `chorus_submit_for_verify` or `chorus_report_work`, write clear summaries:
+When calling `chorus_report_work` or `chorus_submit_for_verify`, write structured reports that enable **session continuity** — the next agent picking up this task should be able to understand exactly what was done.
 
-**Good summary:**
+**Good report (includes all key information):**
 ```
 Implemented password reset flow:
+
+Files created/modified:
+- src/services/auth.service.ts (new)
+- src/app/api/auth/reset/route.ts (new)
+- src/middleware/rate-limit.ts (modified)
+- tests/auth/reset.test.ts (new)
+
+Git:
+- Commit: a1b2c3d "feat: password reset flow"
+- PR: https://github.com/org/repo/pull/15
+
+Implementation details:
 - POST /api/auth/reset-request: sends reset email with token
 - POST /api/auth/reset-confirm: validates token, updates password
 - Token expires after 1 hour, single-use
 - Added rate limiting (3 requests per hour per email)
 - Unit tests: 12 new tests, all passing
-- Manually tested with Postman
 
 Acceptance criteria:
 - [x] User can request password reset via email
@@ -206,7 +228,7 @@ Acceptance criteria:
 - [x] Rate limiting prevents abuse
 ```
 
-**Bad summary:**
+**Bad report (no context for next agent):**
 ```
 Done.
 ```
@@ -238,9 +260,10 @@ chorus_add_comment({
 
 ## Tips
 
+- **Always read task comments first** — they contain previous work reports, enabling you to resume from where the last agent stopped
 - Always read the full task description and acceptance criteria before starting
 - Check related documents (PRD, tech design) for architectural context
-- Report progress even on long-running tasks so the team knows you're active
-- Write detailed submit summaries - the Admin needs them to verify your work
+- **Report progress frequently** — include file paths, commits, and PRs so the next agent has full context
+- Write detailed submit summaries — the Admin needs them to verify your work
 - If blocked, add a comment and consider releasing the task
 - One task at a time: finish or release before claiming another

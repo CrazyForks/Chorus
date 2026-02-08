@@ -26,16 +26,13 @@ export function createMcpServer(auth: AgentAuthContext): McpServer {
   const hasDevRole = roles.some(r => r === "developer" || r === "developer_agent");
   const hasAdminRole = roles.some(r => r === "admin" || r === "admin_agent");
 
-  // Admin Agent 拥有所有工具（代理人类）
   if (hasAdminRole) {
     registerAdminTools(server, auth);
+  }
+  if (hasPmRole || hasAdminRole) {
     registerPmTools(server, auth);
-    registerDeveloperTools(server, auth);
-  } else if (hasPmRole) {
-    // PM Agent 只有 PM 工具
-    registerPmTools(server, auth);
-  } else if (hasDevRole) {
-    // Developer Agent 只有开发者工具
+  }
+  if (hasDevRole || hasAdminRole) {
     registerDeveloperTools(server, auth);
   }
 
