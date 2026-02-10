@@ -308,7 +308,7 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
   server.registerTool(
     "chorus_pm_create_tasks",
     {
-      description: "批量创建任务（可关联 Proposal）",
+      description: "批量创建任务（可关联 Proposal，支持批次内依赖）",
       inputSchema: z.object({
         projectUuid: z.string().describe("项目 UUID"),
         proposalUuid: z.string().optional().describe("关联的 Proposal UUID（可选）"),
@@ -318,6 +318,9 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
           priority: z.enum(["low", "medium", "high"]).optional().describe("优先级"),
           storyPoints: z.number().optional().describe("工作量估算（Agent 小时）"),
           acceptanceCriteria: z.string().optional().describe("验收标准（Markdown）"),
+          draftUuid: z.string().optional().describe("临时 UUID，供同批次 dependsOnDraftUuids 引用"),
+          dependsOnDraftUuids: z.array(z.string()).optional().describe("依赖的同批次 draftUuid 列表"),
+          dependsOnTaskUuids: z.array(z.string()).optional().describe("依赖的已有 Task UUID 列表"),
         })).describe("任务列表"),
       }),
     },
@@ -335,7 +338,7 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
         }
       }
 
-      // 批量创建任务
+      // 1. 批量创建任务
       const createdTasks = await Promise.all(
         tasks.map(task =>
           taskService.createTask({
@@ -352,8 +355,64 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
         )
       );
 
+      // 2. 构建 draftUuid → realUuid Map
+      const draftToTaskUuidMap: Record<string, string> = {};
+      for (let i = 0; i < tasks.length; i++) {
+        if (tasks[i].draftUuid) {
+          draftToTaskUuidMap[tasks[i].draftUuid!] = createdTasks[i].uuid;
+        }
+      }
+
+      // 3. 创建依赖关系
+      const warnings: string[] = [];
+      for (let i = 0; i < tasks.length; i++) {
+        const task = tasks[i];
+        const realUuid = createdTasks[i].uuid;
+
+        // 处理 dependsOnDraftUuids（批次内依赖）
+        if (task.dependsOnDraftUuids) {
+          for (const draftUuid of task.dependsOnDraftUuids) {
+            const depRealUuid = draftToTaskUuidMap[draftUuid];
+            if (!depRealUuid) {
+              warnings.push(`Task "${task.title}": draftUuid "${draftUuid}" not found in this batch`);
+              continue;
+            }
+            try {
+              await taskService.addTaskDependency(auth.companyUuid, realUuid, depRealUuid);
+            } catch (error) {
+              warnings.push(`Task "${task.title}" → draftUuid "${draftUuid}": ${error instanceof Error ? error.message : "unknown error"}`);
+            }
+          }
+        }
+
+        // 处理 dependsOnTaskUuids（已有 Task 依赖）
+        if (task.dependsOnTaskUuids) {
+          for (const depUuid of task.dependsOnTaskUuids) {
+            try {
+              await taskService.addTaskDependency(auth.companyUuid, realUuid, depUuid);
+            } catch (error) {
+              warnings.push(`Task "${task.title}" → taskUuid "${depUuid}": ${error instanceof Error ? error.message : "unknown error"}`);
+            }
+          }
+        }
+      }
+
+      const result: {
+        tasks: typeof createdTasks;
+        count: number;
+        draftToTaskUuidMap?: Record<string, string>;
+        warnings?: string[];
+      } = { tasks: createdTasks, count: createdTasks.length };
+
+      if (Object.keys(draftToTaskUuidMap).length > 0) {
+        result.draftToTaskUuidMap = draftToTaskUuidMap;
+      }
+      if (warnings.length > 0) {
+        result.warnings = warnings;
+      }
+
       return {
-        content: [{ type: "text", text: JSON.stringify({ tasks: createdTasks, count: createdTasks.length }, null, 2) }],
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
     }
   );
@@ -588,6 +647,56 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
       } catch (error) {
         return {
           content: [{ type: "text", text: `删除任务草稿失败: ${error instanceof Error ? error.message : "未知错误"}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // chorus_add_task_dependency - 添加任务依赖
+  server.registerTool(
+    "chorus_add_task_dependency",
+    {
+      description: "添加任务依赖关系（taskUuid 依赖于 dependsOnTaskUuid）。含同项目校验、自依赖校验、环检测。",
+      inputSchema: z.object({
+        taskUuid: z.string().describe("Task UUID（被依赖方的下游任务）"),
+        dependsOnTaskUuid: z.string().describe("依赖的 Task UUID（上游任务）"),
+      }),
+    },
+    async ({ taskUuid, dependsOnTaskUuid }) => {
+      try {
+        const dep = await taskService.addTaskDependency(auth.companyUuid, taskUuid, dependsOnTaskUuid);
+        return {
+          content: [{ type: "text", text: JSON.stringify(dep, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: "text", text: `添加依赖失败: ${error instanceof Error ? error.message : "未知错误"}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // chorus_remove_task_dependency - 删除任务依赖
+  server.registerTool(
+    "chorus_remove_task_dependency",
+    {
+      description: "删除任务依赖关系",
+      inputSchema: z.object({
+        taskUuid: z.string().describe("Task UUID"),
+        dependsOnTaskUuid: z.string().describe("要移除的依赖 Task UUID"),
+      }),
+    },
+    async ({ taskUuid, dependsOnTaskUuid }) => {
+      try {
+        await taskService.removeTaskDependency(auth.companyUuid, taskUuid, dependsOnTaskUuid);
+        return {
+          content: [{ type: "text", text: JSON.stringify({ success: true, taskUuid, dependsOnTaskUuid }, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: "text", text: `删除依赖失败: ${error instanceof Error ? error.message : "未知错误"}` }],
           isError: true,
         };
       }

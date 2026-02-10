@@ -24,10 +24,14 @@ PM Agent is responsible for **analyzing Ideas, producing Proposals (with PRD doc
 **Task Assignment:**
 - `chorus_pm_assign_task` - Assign a task to a Developer Agent (task must be open or assigned; target agent must have developer role)
 
-**Document Management:**
+**Document & Task Management:**
 - `chorus_pm_create_document` - Create standalone document (PRD, tech_design, ADR, spec, guide)
 - `chorus_pm_update_document` - Update document content (increments version)
-- `chorus_pm_create_tasks` - Batch create tasks (outside proposal flow)
+- `chorus_pm_create_tasks` - Batch create tasks (supports intra-batch dependencies via draftUuid)
+
+**Task Dependency Management:**
+- `chorus_add_task_dependency` - Add dependency between two existing tasks (with cycle detection)
+- `chorus_remove_task_dependency` - Remove a task dependency
 
 **Public Tools (shared with all roles):** see [00-common-tools.md](00-common-tools.md) for full list (checkin, query, comment tools)
 
@@ -101,9 +105,9 @@ Gather context before writing a proposal:
    chorus_get_comments({ targetType: "idea", targetUuid: "<idea-uuid>" })
    ```
 
-### Step 5: Create a Proposal
+### Step 5: Create an Empty Proposal
 
-Create a proposal with document drafts (PRD, tech design) and task drafts:
+**Recommended approach:** Create the proposal container first without any drafts, then incrementally add document and task drafts one by one. This avoids overly large tool calls, lets you build the proposal iteratively, and makes it easier to review/adjust each draft individually.
 
 ```
 chorus_pm_create_proposal({
@@ -111,62 +115,94 @@ chorus_pm_create_proposal({
   title: "Implement <feature name>",
   description: "Analysis and implementation plan for Idea #xxx",
   inputType: "idea",
-  inputUuids: ["<idea-uuid>"],
-  documentDrafts: [
-    {
-      type: "prd",
-      title: "PRD: <Feature Name>",
-      content: "# PRD: <Feature Name>\n\n## Background\n...\n## Requirements\n..."
-    },
-    {
-      type: "tech_design",
-      title: "Tech Design: <Feature Name>",
-      content: "# Technical Design\n\n## Architecture\n...\n## Implementation\n..."
-    }
-  ],
-  taskDrafts: [
-    {
-      title: "Implement <component>",
-      description: "Detailed description of what to build...",
-      priority: "high",
-      storyPoints: 3,
-      acceptanceCriteria: "- [ ] Criteria 1\n- [ ] Criteria 2"
-    },
-    {
-      title: "Write tests for <component>",
-      description: "Unit and integration tests...",
-      priority: "medium",
-      storyPoints: 2,
-      acceptanceCriteria: "- [ ] Test coverage > 80%"
-    }
-  ]
+  inputUuids: ["<idea-uuid>"]
 })
 ```
 
-**Document types:** `prd`, `tech_design`, `adr`, `spec`, `guide`
-
-**Task priority:** `low`, `medium`, `high`
-
 **Multiple Ideas:** You can combine multiple ideas into one proposal by passing multiple UUIDs in `inputUuids`.
 
-### Step 6: Iterate on Drafts (if needed)
+### Step 6: Add Document Drafts
 
-After creating the proposal, you can refine drafts before submitting:
+Add document drafts to the proposal one at a time using `chorus_pm_add_document_draft`:
 
 ```
-# Add another document draft
+# Add PRD
+chorus_pm_add_document_draft({
+  proposalUuid: "<proposal-uuid>",
+  type: "prd",
+  title: "PRD: <Feature Name>",
+  content: "# PRD: <Feature Name>\n\n## Background\n...\n## Requirements\n..."
+})
+
+# Add Tech Design
+chorus_pm_add_document_draft({
+  proposalUuid: "<proposal-uuid>",
+  type: "tech_design",
+  title: "Tech Design: <Feature Name>",
+  content: "# Technical Design\n\n## Architecture\n...\n## Implementation\n..."
+})
+
+# Add ADR (if needed)
 chorus_pm_add_document_draft({
   proposalUuid: "<proposal-uuid>",
   type: "adr",
   title: "ADR: Choice of <technology>",
   content: "# ADR: ...\n\n## Context\n...\n## Decision\n..."
 })
+```
+
+**Document types:** `prd`, `tech_design`, `adr`, `spec`, `guide`
+
+### Step 7: Add Task Drafts
+
+Add task drafts one at a time using `chorus_pm_add_task_draft`. Each draft gets a UUID on creation — use these UUIDs for `dependsOnDraftUuids` in later drafts.
+
+```
+# Add first task
+chorus_pm_add_task_draft({
+  proposalUuid: "<proposal-uuid>",
+  title: "Implement <component>",
+  description: "Detailed description of what to build...",
+  priority: "high",
+  storyPoints: 3,
+  acceptanceCriteria: "- [ ] Criteria 1\n- [ ] Criteria 2"
+})
+
+# Add second task (depends on the first)
+chorus_pm_add_task_draft({
+  proposalUuid: "<proposal-uuid>",
+  title: "Write tests for <component>",
+  description: "Unit and integration tests...",
+  priority: "medium",
+  storyPoints: 2,
+  acceptanceCriteria: "- [ ] Test coverage > 80%",
+  dependsOnDraftUuids: ["<uuid-of-first-task-draft>"]
+})
+```
+
+**Task priority:** `low`, `medium`, `high`
+
+### Step 8: Review and Refine Drafts
+
+After adding all drafts, review the full proposal and refine as needed:
+
+```
+# Review current state
+chorus_get_proposal({ proposalUuid: "<proposal-uuid>" })
+
+# Update a document draft
+chorus_pm_update_document_draft({
+  proposalUuid: "<proposal-uuid>",
+  draftUuid: "<draft-uuid>",
+  content: "Updated content with more detail..."
+})
 
 # Update a task draft
 chorus_pm_update_task_draft({
   proposalUuid: "<proposal-uuid>",
   draftUuid: "<draft-uuid>",
-  description: "Updated description with more detail..."
+  description: "Updated description with more detail...",
+  dependsOnDraftUuids: ["<other-draft-uuid>"]
 })
 
 # Remove a draft that's no longer needed
@@ -176,7 +212,7 @@ chorus_pm_remove_task_draft({
 })
 ```
 
-### Step 7: Submit Proposal for Review
+### Step 9: Submit Proposal for Review
 
 When the proposal is ready:
 
@@ -196,7 +232,7 @@ chorus_add_comment({
 })
 ```
 
-### Step 8: Update Idea Status
+### Step 10: Update Idea Status
 
 Mark the idea as pending review:
 
@@ -204,7 +240,7 @@ Mark the idea as pending review:
 chorus_update_idea_status({ ideaUuid: "<idea-uuid>", status: "pending_review" })
 ```
 
-### Step 9: Handle Feedback
+### Step 11: Handle Feedback
 
 If the proposal is rejected, check the review note:
 
@@ -215,7 +251,7 @@ chorus_get_comments({ targetType: "proposal", targetUuid: "<proposal-uuid>" })
 
 Revise the drafts and resubmit.
 
-### Step 10: Post-Approval
+### Step 12: Post-Approval
 
 When the Admin approves the proposal:
 - Document drafts are automatically materialized into real Documents
@@ -228,7 +264,61 @@ Mark the idea as completed:
 chorus_update_idea_status({ ideaUuid: "<idea-uuid>", status: "completed" })
 ```
 
-### Step 11: Assign Tasks to Developer Agents (Optional)
+### Step 13: Manage Task Dependencies (Optional)
+
+After tasks are created (either via proposal approval or `chorus_pm_create_tasks`), you can manage dependencies between them.
+
+**Add dependency using `chorus_pm_create_tasks` with intra-batch dependencies:**
+
+```
+chorus_pm_create_tasks({
+  projectUuid: "<project-uuid>",
+  tasks: [
+    {
+      draftUuid: "draft-db",
+      title: "Create database schema",
+      priority: "high",
+      storyPoints: 2
+    },
+    {
+      draftUuid: "draft-api",
+      title: "Implement API endpoints",
+      priority: "high",
+      storyPoints: 4,
+      dependsOnDraftUuids: ["draft-db"]
+    },
+    {
+      title: "Write integration tests",
+      priority: "medium",
+      storyPoints: 2,
+      dependsOnDraftUuids: ["draft-api"],
+      dependsOnTaskUuids: ["<existing-task-uuid>"]
+    }
+  ]
+})
+```
+
+**Add/remove dependencies on existing tasks:**
+
+```
+# Add dependency: task B depends on task A
+chorus_add_task_dependency({
+  taskUuid: "<task-B-uuid>",
+  dependsOnTaskUuid: "<task-A-uuid>"
+})
+
+# Remove dependency
+chorus_remove_task_dependency({
+  taskUuid: "<task-B-uuid>",
+  dependsOnTaskUuid: "<task-A-uuid>"
+})
+```
+
+**Notes:**
+- Dependencies are validated: same project, no self-dependency, no cycles (DFS detection)
+- Use `chorus_get_task` to see `dependsOn` and `dependedBy` arrays
+
+### Step 14: Assign Tasks to Developer Agents (Optional)
 
 After approval, you can directly assign tasks to specific Developer Agents instead of waiting for them to self-claim:
 
@@ -305,7 +395,7 @@ Good tasks are:
 - **Atomic** - One clear deliverable per task
 - **Testable** - Clear acceptance criteria
 - **Sized** - 1-8 story points (hours of agent work)
-- **Independent** - Minimize dependencies between tasks
+- **Ordered** - Use `dependsOnDraftUuids` / `dependsOnTaskUuids` to express execution order when tasks have real prerequisites
 - **Descriptive** - Include enough context for a developer agent to start without questions
 
 ---

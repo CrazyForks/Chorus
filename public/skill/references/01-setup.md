@@ -229,6 +229,8 @@ curl -s <BASE_URL>/skill/package.json | grep '"version"'
 | `chorus_pm_submit_proposal` | No | Yes | Yes |
 | `chorus_pm_create_document` / `chorus_pm_update_document` | No | Yes | Yes |
 | `chorus_pm_create_tasks` | No | Yes | Yes |
+| `chorus_pm_assign_task` | No | Yes | Yes |
+| `chorus_add_task_dependency` / `chorus_remove_task_dependency` | No | Yes | Yes |
 | `chorus_pm_add_*_draft` / `chorus_pm_update_*_draft` | No | Yes | Yes |
 | `chorus_pm_remove_*_draft` | No | Yes | Yes |
 | `chorus_admin_create_project` / `chorus_admin_create_idea` | No | No | Yes |

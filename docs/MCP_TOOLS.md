@@ -327,16 +327,38 @@ PM Agent 和 Admin Agent 可使用。Developer Agent 不可使用。
 
 ### chorus_pm_create_tasks
 
-**功能**: 批量创建任务（可关联 Proposal）
+**功能**: 批量创建任务（可关联 Proposal，支持批次内依赖）
 
 **输入**:
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | projectUuid | string | 是 | 项目 UUID |
 | proposalUuid | string | 否 | 关联的 Proposal UUID |
-| tasks | array | 是 | 任务列表（含 title, description, priority, storyPoints, acceptanceCriteria） |
+| tasks | array | 是 | 任务列表 |
 
-**输出**: 创建的任务列表 JSON
+**tasks 数组每项字段**:
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| title | string | 是 | 任务标题 |
+| description | string | 否 | 任务描述 |
+| priority | enum | 否 | 优先级: low, medium, high |
+| storyPoints | number | 否 | 工作量估算（Agent 小时） |
+| acceptanceCriteria | string | 否 | 验收标准（Markdown） |
+| draftUuid | string | 否 | 临时 UUID，供同批次 dependsOnDraftUuids 引用 |
+| dependsOnDraftUuids | string[] | 否 | 依赖的同批次 draftUuid 列表 |
+| dependsOnTaskUuids | string[] | 否 | 依赖的已有 Task UUID 列表 |
+
+**输出**:
+```json
+{
+  "tasks": [...],
+  "count": 3,
+  "draftToTaskUuidMap": { "draft-1": "real-uuid-1", ... },
+  "warnings": ["..."]
+}
+```
+- `draftToTaskUuidMap`: 仅当任一 task 提供了 draftUuid 时返回
+- `warnings`: 仅当依赖创建存在问题时返回（任务本身已创建成功）
 
 ### chorus_pm_update_document
 
@@ -378,6 +400,7 @@ PM Agent 和 Admin Agent 可使用。Developer Agent 不可使用。
 | storyPoints | number | 否 | 工作量估算（Agent 小时） |
 | priority | enum | 否 | 优先级: low, medium, high |
 | acceptanceCriteria | string | 否 | 验收标准（Markdown） |
+| dependsOnDraftUuids | string[] | 否 | 依赖的 taskDraft UUID 列表（审批通过时自动转为真实依赖） |
 
 **输出**: 更新后的 Proposal JSON
 
@@ -410,6 +433,7 @@ PM Agent 和 Admin Agent 可使用。Developer Agent 不可使用。
 | storyPoints | number | 否 | 工作量估算 |
 | priority | enum | 否 | 优先级 |
 | acceptanceCriteria | string | 否 | 验收标准 |
+| dependsOnDraftUuids | string[] | 否 | 依赖的 taskDraft UUID 列表 |
 
 **输出**: 更新后的 Proposal JSON
 
@@ -436,6 +460,67 @@ PM Agent 和 Admin Agent 可使用。Developer Agent 不可使用。
 | draftUuid | string | 是 | 任务草稿 UUID |
 
 **输出**: 更新后的 Proposal JSON
+
+### chorus_add_task_dependency
+
+**功能**: 添加任务依赖关系（taskUuid 依赖于 dependsOnTaskUuid）。含同项目校验、自依赖校验、DFS 环检测。
+
+**输入**:
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| taskUuid | string | 是 | Task UUID（下游任务） |
+| dependsOnTaskUuid | string | 是 | 依赖的 Task UUID（上游任务） |
+
+**输出**: 创建的依赖关系 JSON
+```json
+{
+  "taskUuid": "...",
+  "dependsOnUuid": "...",
+  "createdAt": "ISO 时间字符串"
+}
+```
+
+**错误场景**:
+- 自依赖：`A task cannot depend on itself`
+- 任务不存在：`Task not found` / `Dependency task not found`
+- 跨项目：`Tasks must belong to the same project`
+- 形成环：`Adding this dependency would create a cycle`
+
+### chorus_remove_task_dependency
+
+**功能**: 删除任务依赖关系
+
+**输入**:
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| taskUuid | string | 是 | Task UUID |
+| dependsOnTaskUuid | string | 是 | 要移除的依赖 Task UUID |
+
+**输出**:
+```json
+{
+  "success": true,
+  "taskUuid": "...",
+  "dependsOnTaskUuid": "..."
+}
+```
+
+### chorus_pm_assign_task
+
+**功能**: 将任务分配给指定的 Developer Agent（task 须为 open 或 assigned 状态）
+
+**输入**:
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| taskUuid | string | 是 | Task UUID |
+| agentUuid | string | 是 | 目标 Developer Agent UUID |
+
+**输出**: 更新后的 Task JSON
+
+**校验规则**:
+- Task 必须为 open 或 assigned 状态
+- 目标 Agent 必须存在且属于同一 company
+- 目标 Agent 必须具有 developer 或 developer_agent 角色
 
 ---
 
