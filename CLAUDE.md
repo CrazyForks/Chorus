@@ -130,10 +130,29 @@ Use `withErrorHandler<T>()` from `src/lib/api-handler.ts` to wrap route handlers
 
 ## i18n Rules
 
+**CRITICAL: Every user-facing string in the frontend MUST use i18n.** Never hardcode English text directly in JSX — always use `t("key")` and add the key to both locale files. This includes:
+- Page titles, subtitles, descriptions
+- Button labels, form labels, placeholders
+- Error messages, success messages, confirmation dialogs
+- Status labels, priority labels, entity type labels
+- Relative time strings ("just now", "5 min ago", etc.)
+
+Rules:
 - Two locales: `en`, `zh` (messages in `/messages/en.json`, `/messages/zh.json`)
 - Always add keys to **both** locale files when adding UI strings
 - Use `useTranslations()` hook in client components, `getTranslations()` in server components
 - Keys are nested objects: `common.save`, `sessions.reopen`, `activity.taskAssigned`
+- Server Components read the locale from the `chorus-locale` cookie (set by `LocaleProvider`). The `src/i18n/request.ts` config reads this cookie — do not hardcode `defaultLocale` there.
+- When adding error fallback strings (e.g., `result.error || "Something failed"`), the fallback must also use `t()`: `result.error || t("some.errorKey")`
+
+## Frontend UI Rules
+
+**CRITICAL: Always use shadcn/ui components instead of custom HTML elements.** The project uses shadcn/ui (built on Radix UI) as its component library under `src/components/ui/`. When building UI:
+- Use `<Button>`, `<Input>`, `<Label>`, `<Card>`, `<Dialog>`, `<Select>`, `<Table>`, `<Badge>`, etc. from `@/components/ui/*`
+- Never write raw `<button>`, `<input>`, `<select>`, `<table>`, or `<dialog>` HTML elements — always use the corresponding shadcn/ui component
+- For layout and spacing, use Tailwind CSS utility classes
+- If a needed component doesn't exist yet, add it via `npx shadcn@latest add <component>` — do not create custom implementations
+- Follow existing component usage patterns in the codebase for consistency
 
 ## Skill Documentation
 
