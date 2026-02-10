@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { LayoutGrid, GitBranch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KanbanBoard } from "./kanban-board";
@@ -33,11 +33,16 @@ interface TaskViewToggleProps {
 export function TaskViewToggle({ projectUuid, initialTasks, currentUserUuid }: TaskViewToggleProps) {
   const [view, setView] = useState<"kanban" | "dag">("kanban");
   const [selectedTaskUuid, setSelectedTaskUuid] = useState<string | null>(null);
+  const [dagRefreshKey, setDagRefreshKey] = useState(0);
 
   const selectedTask = useMemo(
     () => (selectedTaskUuid ? initialTasks.find(t => t.uuid === selectedTaskUuid) ?? null : null),
     [selectedTaskUuid, initialTasks]
   );
+
+  const handleDependencyChange = useCallback(() => {
+    setDagRefreshKey(prev => prev + 1);
+  }, []);
 
   return (
     <>
@@ -83,6 +88,7 @@ export function TaskViewToggle({ projectUuid, initialTasks, currentUserUuid }: T
           <DagView
             projectUuid={projectUuid}
             onTaskSelect={(taskUuid) => setSelectedTaskUuid(taskUuid)}
+            refreshKey={dagRefreshKey}
           />
           {selectedTask && (
             <TaskDetailPanel
@@ -90,6 +96,7 @@ export function TaskViewToggle({ projectUuid, initialTasks, currentUserUuid }: T
               projectUuid={projectUuid}
               currentUserUuid={currentUserUuid}
               onClose={() => setSelectedTaskUuid(null)}
+              onDependencyChange={handleDependencyChange}
             />
           )}
         </div>

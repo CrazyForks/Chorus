@@ -82,6 +82,7 @@ interface TaskDetailPanelProps {
   currentUserUuid: string;
   onClose: () => void;
   onCreated?: () => void;
+  onDependencyChange?: () => void;
 }
 
 // 状态颜色配置
@@ -192,6 +193,7 @@ export function TaskDetailPanel({
   currentUserUuid,
   onClose,
   onCreated,
+  onDependencyChange,
 }: TaskDetailPanelProps) {
   const t = useTranslations();
   const router = useRouter();
@@ -418,6 +420,7 @@ export function TaskDetailPanel({
         setDependsOn(prev => [...prev, addedTask]);
       }
       setShowDepDropdown(false);
+      onDependencyChange?.();
     } else {
       setDepError(result.error || "Failed to add dependency");
     }
@@ -429,6 +432,20 @@ export function TaskDetailPanel({
     const result = await removeTaskDependencyAction(task.uuid, dependsOnUuid);
     if (result.success) {
       setDependsOn(prev => prev.filter(d => d.uuid !== dependsOnUuid));
+      onDependencyChange?.();
+    } else {
+      setDepError(result.error || "Failed to remove dependency");
+    }
+  };
+
+  const handleRemoveDependedBy = async (taskUuid: string) => {
+    if (!task) return;
+    setDepError(null);
+    // Reverse: the other task depends on us, so remove from the other task's perspective
+    const result = await removeTaskDependencyAction(taskUuid, task.uuid);
+    if (result.success) {
+      setDependedBy(prev => prev.filter(d => d.uuid !== taskUuid));
+      onDependencyChange?.();
     } else {
       setDepError(result.error || "Failed to remove dependency");
     }
@@ -738,15 +755,23 @@ export function TaskDetailPanel({
                             {dependedBy.map((dep) => (
                               <div
                                 key={dep.uuid}
-                                className="flex items-center gap-2 rounded-lg bg-[#FAF8F4] p-3"
+                                className="group flex items-center justify-between rounded-lg bg-[#FAF8F4] p-3"
                               >
-                                <GitBranch className="h-3.5 w-3.5 shrink-0 text-[#6B6B6B]" />
-                                <span className="text-xs text-[#2C2C2C] truncate">
-                                  {dep.title}
-                                </span>
-                                <Badge className={`shrink-0 text-[10px] ${statusColors[dep.status] || ""}`}>
-                                  {dep.status.replace("_", " ")}
-                                </Badge>
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <GitBranch className="h-3.5 w-3.5 shrink-0 text-[#6B6B6B]" />
+                                  <span className="text-xs text-[#2C2C2C] truncate">
+                                    {dep.title}
+                                  </span>
+                                  <Badge className={`shrink-0 text-[10px] ${statusColors[dep.status] || ""}`}>
+                                    {dep.status.replace("_", " ")}
+                                  </Badge>
+                                </div>
+                                <button
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0"
+                                  onClick={() => handleRemoveDependedBy(dep.uuid)}
+                                >
+                                  <X className="h-3.5 w-3.5 text-[#9A9A9A] hover:text-[#D32F2F]" />
+                                </button>
                               </div>
                             ))}
                           </div>

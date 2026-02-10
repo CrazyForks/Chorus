@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   ReactFlow,
   Background,
@@ -8,6 +8,7 @@ import {
   type Node,
   type Edge,
   type NodeProps,
+  type Connection,
   Handle,
   Position,
   useNodesState,
@@ -18,6 +19,7 @@ import dagre from "dagre";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { getProjectDependenciesAction } from "./actions";
+import { addTaskDependencyAction } from "./[taskUuid]/dependency-actions";
 
 // Status colors matching existing patterns
 const statusColors: Record<string, string> = {
@@ -125,46 +127,71 @@ function getLayoutedElements(
 interface DagViewProps {
   projectUuid: string;
   onTaskSelect: (taskUuid: string) => void;
+  refreshKey?: number;
 }
 
-export function DagView({ projectUuid, onTaskSelect }: DagViewProps) {
+const defaultEdgeStyle = {
+  animated: true,
+  style: { stroke: "#C67A52", strokeWidth: 2 },
+  markerEnd: { type: "arrowclosed" as const, color: "#C67A52" },
+};
+
+export function DagView({ projectUuid, onTaskSelect, refreshKey }: DagViewProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<TaskNodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadDag = useCallback(async () => {
+    setIsLoading(true);
+    const data = await getProjectDependenciesAction(projectUuid);
+
+    const rawNodes: Node<TaskNodeData>[] = data.nodes.map((n) => ({
+      id: n.uuid,
+      type: "taskNode",
+      position: { x: 0, y: 0 },
+      data: { title: n.title, status: n.status, priority: n.priority },
+    }));
+
+    // edges: from = taskUuid (depends on), to = dependsOnUuid
+    // In visualization: dependsOnUuid -> taskUuid (arrow from dependency to dependent)
+    const rawEdges: Edge[] = data.edges.map((e, i) => ({
+      id: `e-${i}`,
+      source: e.to,    // dependsOnUuid (the upstream task)
+      target: e.from,   // taskUuid (the task that depends on it)
+      ...defaultEdgeStyle,
+    }));
+
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(rawNodes, rawEdges);
+    setNodes(layoutedNodes);
+    setEdges(layoutedEdges);
+    setIsLoading(false);
+  }, [projectUuid, setNodes, setEdges]);
 
   useEffect(() => {
-    async function loadDag() {
-      setIsLoading(true);
-      const data = await getProjectDependenciesAction(projectUuid);
-
-      const rawNodes: Node<TaskNodeData>[] = data.nodes.map((n) => ({
-        id: n.uuid,
-        type: "taskNode",
-        position: { x: 0, y: 0 },
-        data: { title: n.title, status: n.status, priority: n.priority },
-      }));
-
-      // edges: from = taskUuid (depends on), to = dependsOnUuid
-      // In visualization: dependsOnUuid -> taskUuid (arrow from dependency to dependent)
-      const rawEdges: Edge[] = data.edges.map((e, i) => ({
-        id: `e-${i}`,
-        source: e.to,    // dependsOnUuid (the upstream task)
-        target: e.from,   // taskUuid (the task that depends on it)
-        animated: true,
-        style: { stroke: "#C67A52", strokeWidth: 2 },
-        markerEnd: {
-          type: "arrowclosed" as const,
-          color: "#C67A52",
-        },
-      }));
-
-      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(rawNodes, rawEdges);
-      setNodes(layoutedNodes);
-      setEdges(layoutedEdges);
-      setIsLoading(false);
-    }
     loadDag();
-  }, [projectUuid, setNodes, setEdges]);
+  }, [loadDag, refreshKey]);
+
+  const onConnect = useCallback(
+    async (connection: Connection) => {
+      if (!connection.source || !connection.target) return;
+      setError(null);
+
+      // source = upstream task (dependsOnUuid), target = downstream task (taskUuid)
+      const taskUuid = connection.target;
+      const dependsOnUuid = connection.source;
+
+      const result = await addTaskDependencyAction(taskUuid, dependsOnUuid);
+      if (!result.success) {
+        setError(result.error || "Failed to add dependency");
+        return;
+      }
+
+      // Reload the full DAG to get proper layout
+      await loadDag();
+    },
+    [loadDag]
+  );
 
   const onNodeClick = useCallback(
     (_event: React.MouseEvent, node: Node<TaskNodeData>) => {
@@ -190,12 +217,19 @@ export function DagView({ projectUuid, onTaskSelect }: DagViewProps) {
   }
 
   return (
-    <div className="flex-1 rounded-xl border border-[#E5E0D8] bg-[#FAFAF8]">
+    <div className="flex-1 rounded-xl border border-[#E5E0D8] bg-[#FAFAF8] relative">
+      {error && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-xs text-red-700 shadow-sm">
+          {error}
+          <button className="ml-2 font-medium hover:text-red-900" onClick={() => setError(null)}>x</button>
+        </div>
+      )}
       <ReactFlow
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
         onNodeClick={onNodeClick}
         nodeTypes={nodeTypes}
         fitView
