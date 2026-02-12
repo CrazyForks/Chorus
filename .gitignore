@@ -56,6 +56,3 @@ packages/chorus-cdk/lib/*.d.ts
 
 #demo
 dev-story-demo/
-
-#claude
-.claude/

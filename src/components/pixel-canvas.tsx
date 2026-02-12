@@ -27,92 +27,103 @@ export interface PixelCanvasProps {
   onEffectsConsumed?: () => void;
 }
 
+// ────────────────────────── Sprite Types ──────────────────────────
+
+interface SpriteRegion {
+  srcX: number;
+  srcY: number;
+  srcW: number;
+  srcH: number;
+  destW: number;
+  destH: number;
+}
+
+interface OffsetSprite extends SpriteRegion {
+  dx: number;
+  dy: number;
+}
+
 // ────────────────────────── Constants ──────────────────────────
 
 const SCALE = 3;
 const CANVAS_W = 240;
 const CANVAS_H = 240;
-const TICK_MS = 16; // ~60fps tick
+const FLOOR_H = 177; // Floor background visible height
+const TICK_MS = 10;
 const CELEBRATE_MS = 3000;
 const LOOKING_MS = 1500;
 
-// 5 workstation positions (from game.html)
+// ────────────────────────── Station Layout (from game.html) ──────────────────────────
+
 const STATION_DEFS = [
-  { index: 0, baseX: 47, baseY: 47, variant: 1 as const },
-  { index: 1, baseX: 114, baseY: 71, variant: 1 as const },
-  { index: 2, baseX: 78, baseY: 89, variant: 1 as const },
-  { index: 3, baseX: 130, baseY: 79, variant: 0 as const },
-  { index: 4, baseX: 94, baseY: 97, variant: 0 as const },
+  { index: 0, baseX: 141, baseY: 117, variant: 1 as const },
+  { index: 1, baseX: 101, baseY: 77, variant: 1 as const },
+  { index: 2, baseX: 63, baseY: 96, variant: 1 as const },
+  { index: 3, baseX: 114, baseY: 80, variant: 0 as const },
+  { index: 4, baseX: 77, baseY: 99, variant: 0 as const },
 ];
 
 const EMP_POSITIONS = [
-  { x: 52, y: 36 },
-  { x: 119, y: 60 },
-  { x: 83, y: 78 },
-  { x: 154, y: 82 },
-  { x: 118, y: 100 },
+  { x: 146, y: 107 },
+  { x: 106, y: 67 },
+  { x: 68, y: 86 },
+  { x: 135, y: 78 },
+  { x: 98, y: 97 },
 ];
 
-// 5 preset appearances, cycled by slot index
-const EMP_APPEARANCES = [
-  { bodyImg: "body5", faceImg: "face_5" },
-  { bodyImg: "body1", faceImg: "face_6" },
-  { bodyImg: "body3", faceImg: "face_3" },
-  { bodyImg: "body2", faceImg: "face_34" },
-  { bodyImg: "body4", faceImg: "face_0" },
-];
-
-// Frame data: body + face sprite regions for each animation frame
-const FRAME_DATA: Record<
-  number,
-  {
-    body: { dx: number; dy: number; srcX: number; srcY: number; srcW: number; srcH: number };
-    face: { dx: number; dy: number; srcX: number; srcY: number; srcW: number; srcH: number };
-  }
-> = {
-  // Variant 0: right-facing desk
-  25: {
-    body: { dx: 0, dy: 12, srcX: 48, srcY: 51, srcW: 17, srcH: 15 },
-    face: { dx: 2, dy: 0, srcX: 32, srcY: 0, srcW: 16, srcH: 15 },
-  },
-  26: {
-    body: { dx: 0, dy: 13, srcX: 65, srcY: 46, srcW: 17, srcH: 13 },
-    face: { dx: 2, dy: 0, srcX: 32, srcY: 0, srcW: 16, srcH: 15 },
-  },
-  // Variant 1: left-facing desk
-  30: {
-    body: { dx: 1, dy: 12, srcX: 65, srcY: 20, srcW: 16, srcH: 13 },
-    face: { dx: 0, dy: 0, srcX: 16, srcY: 0, srcW: 16, srcH: 15 },
-  },
-  31: {
-    body: { dx: 1, dy: 12, srcX: 65, srcY: 33, srcW: 16, srcH: 13 },
-    face: { dx: 0, dy: 0, srcX: 16, srcY: 0, srcW: 16, srcH: 15 },
-  },
-};
-
-// Animation cycles by variant
-const IDLE_CYCLES: Record<number, number[]> = {
-  0: [25],
-  1: [30],
-};
-const TYPING_CYCLES: Record<number, number[]> = {
-  0: [25, 26],
-  1: [30, 31],
-};
-
-// Desk variant offsets
-function getOffsets(v: number) {
+// Desk/chair offsets — source regions from AI-generated sprites
+function getOffsets(v: number): {
+  desk: OffsetSprite;
+  chair: OffsetSprite;
+  chairBack: OffsetSprite | null;
+} {
   if (v === 1) {
     return {
-      desk: { dx: 0, dy: -7, srcX: 0, srcY: 0, srcW: 50, srcH: 46 },
-      chair: { dx: 4, dy: -10, srcX: 14, srcY: 0, srcW: 15, srcH: 27 },
-      chairBack: null as null | { dx: number; dy: number; srcX: number; srcY: number; srcW: number; srcH: number },
+      desk: {
+        dx: 0,
+        dy: -7,
+        srcX: 99,
+        srcY: 268,
+        srcW: 430,
+        srcH: 620,
+        destW: 37,
+        destH: 54,
+      },
+      chair: {
+        dx: 4,
+        dy: -10,
+        srcX: 512,
+        srcY: 457,
+        srcW: 222,
+        srcH: 334,
+        destW: 18,
+        destH: 27,
+      },
+      chairBack: null,
     };
   }
   return {
-    desk: { dx: 0, dy: -7, srcX: 50, srcY: 0, srcW: 50, srcH: 46 },
-    chair: { dx: 29, dy: 11, srcX: 0, srcY: 0, srcW: 14, srcH: 27 },
-    chairBack: { dx: 34, dy: 15, srcX: 44, srcY: 0, srcW: 9, srcH: 15 },
+    desk: {
+      dx: 0,
+      dy: -7,
+      srcX: 676,
+      srcY: 232,
+      srcW: 524,
+      srcH: 664,
+      destW: 50,
+      destH: 63,
+    },
+    chair: {
+      dx: 29,
+      dy: 11,
+      srcX: 112,
+      srcY: 473,
+      srcW: 241,
+      srcH: 298,
+      destW: 20,
+      destH: 25,
+    },
+    chairBack: null,
   };
 }
 
@@ -121,12 +132,47 @@ const STATIONS = STATION_DEFS.map((def) => ({
   offsets: getOffsets(def.variant),
 }));
 
-// PC screen absolute positions — matching game.html exactly
-// Only variant-0 stations (3, 4) have PC screen positions defined
-const PC_SCREEN_DEFS: Record<number, { x: number; y: number; col: number }> = {
-  3: { x: 152, y: 78, col: 0 },
-  4: { x: 116, y: 96, col: 1 },
+// ────────────────────────── Combined FaceBody Sprites ──────────────────────────
+
+const FACEBODY_SPRITES: Record<string, SpriteRegion> = {
+  fb12: {
+    srcX: 135,
+    srcY: 125,
+    srcW: 558,
+    srcH: 991,
+    destW: 15,
+    destH: 27,
+  },
+  fb34: {
+    srcX: 67,
+    srcY: 59,
+    srcW: 634,
+    srcH: 1113,
+    destW: 19,
+    destH: 32,
+  },
 };
+
+// Each employee uses combined sit/type facebody images
+const EMP_APPEARANCES = [
+  { sit: "facebody1", type: "facebody2", sprite: "fb12" }, // #0 variant 1
+  { sit: "facebody1", type: "facebody2", sprite: "fb12" }, // #1 variant 1
+  { sit: "facebody1", type: "facebody2", sprite: "fb12" }, // #2 variant 1
+  { sit: "facebody3", type: "facebody4", sprite: "fb34" }, // #3 variant 0
+  { sit: "facebody3", type: "facebody4", sprite: "fb34" }, // #4 variant 0
+];
+
+// ────────────────────────── PC Screen ──────────────────────────
+
+const PC_SCREEN_DEFS: {
+  stationIndex: number;
+  x: number;
+  y: number;
+  col: number;
+}[] = [
+  { stationIndex: 3, x: 130, y: 82, col: 0 },
+  { stationIndex: 4, x: 93, y: 101, col: 1 },
+];
 
 // ────────────────────────── Internal State Types ──────────────────────────
 
@@ -135,7 +181,7 @@ interface SlotMachine {
   cycleIndex: number;
   frameTicks: number;
   ticksPerFrame: number;
-  stateTimer: number; // ms elapsed in current state
+  stateTimer: number;
 }
 
 interface ActiveEffect {
@@ -152,58 +198,65 @@ const EFFECT_DURATIONS: Record<EffectType, number> = {
   flash: 400,
 };
 
-// ────────────────────────── Sprite Helpers ──────────────────────────
+// ────────────────────────── Image Loading ──────────────────────────
 
 const SPRITE_BASE = "/sprites/";
-const IMAGE_NAMES = [
-  "floor0",
-  "desk0",
-  "chair",
-  "pc",
-  "body1",
-  "body2",
-  "body3",
-  "body4",
-  "body5",
-  "face_0",
-  "face_3",
-  "face_5",
-  "face_6",
-  "face_34",
-];
+const IMAGE_SOURCES: Record<string, string> = {
+  floor: "floor.jpeg",
+  desk: "desk0new.png",
+  chair: "chair_new.png",
+  facebody1: "facebody1.png",
+  facebody2: "facebody2.png",
+  facebody3: "facebody3.png",
+  facebody4: "facebody4.png",
+  pc: "pc.png",
+};
 
 function loadImages(): Promise<Record<string, HTMLImageElement>> {
   return new Promise((resolve) => {
     const images: Record<string, HTMLImageElement> = {};
+    const entries = Object.entries(IMAGE_SOURCES);
     let loaded = 0;
-    const total = IMAGE_NAMES.length;
+    const total = entries.length;
 
-    IMAGE_NAMES.forEach((name) => {
+    entries.forEach(([name, file]) => {
       const img = new Image();
       img.onload = () => {
         loaded++;
         if (loaded === total) resolve(images);
       };
       img.onerror = () => {
-        console.warn("Failed to load sprite:", name);
+        console.warn("Failed to load sprite:", name, file);
         loaded++;
         if (loaded === total) resolve(images);
       };
-      img.src = `${SPRITE_BASE}${name}.png`;
+      img.src = `${SPRITE_BASE}${file}`;
       images[name] = img;
     });
   });
 }
+
+// ────────────────────────── Sprite Drawing ──────────────────────────
 
 function drawSprite(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement | undefined,
   x: number,
   y: number,
-  sp: { srcX: number; srcY: number; srcW: number; srcH: number }
+  sp: SpriteRegion
 ) {
   if (!img || !img.complete || !img.naturalWidth) return;
-  ctx.drawImage(img, sp.srcX, sp.srcY, sp.srcW, sp.srcH, x, y, sp.srcW, sp.srcH);
+  ctx.drawImage(
+    img,
+    sp.srcX,
+    sp.srcY,
+    sp.srcW,
+    sp.srcH,
+    x,
+    y,
+    sp.destW,
+    sp.destH
+  );
 }
 
 // ────────────────────────── Component ──────────────────────────
@@ -251,12 +304,10 @@ export function PixelCanvas({
   // Sync props to refs
   useEffect(() => {
     slotsDataRef.current = slots;
-    // Sync external state to slot machines
     for (let i = 0; i < 5; i++) {
       const externalState = slots[i]?.state ?? "empty";
       const machine = slotsRef.current[i];
       if (machine.state !== externalState) {
-        // State changed externally
         machine.state = externalState;
         machine.cycleIndex = 0;
         machine.frameTicks = 0;
@@ -305,14 +356,13 @@ export function PixelCanvas({
     ctx.font = "bold 7px monospace";
     ctx.textBaseline = "middle";
 
-    // Left: project name (truncated)
     ctx.fillStyle = "#333";
     ctx.textAlign = "left";
     const name = projectNameRef.current;
-    const displayName = name.length > 20 ? name.slice(0, 18) + ".." : name;
+    const displayName =
+      name.length > 20 ? name.slice(0, 18) + ".." : name;
     ctx.fillText(displayName, 6, H / 2);
 
-    // Right: agent count
     ctx.textAlign = "right";
     ctx.fillStyle = "#336";
     const count = agentCountRef.current;
@@ -330,8 +380,10 @@ export function PixelCanvas({
       ctx.font = "5px monospace";
       ctx.textAlign = "center";
       ctx.textBaseline = "bottom";
-      // Background pill
-      const text = sd.sessionName.length > 12 ? sd.sessionName.slice(0, 10) + ".." : sd.sessionName;
+      const text =
+        sd.sessionName.length > 12
+          ? sd.sessionName.slice(0, 10) + ".."
+          : sd.sessionName;
       const tw = ctx.measureText(text).width;
       const px = pos.x + 8;
       const py = pos.y - 4;
@@ -353,43 +405,40 @@ export function PixelCanvas({
 
       switch (eff.type) {
         case "bulb": {
-          // Light bulb above head
-          const alpha = progress < 0.1 ? progress / 0.1 : progress > 0.8 ? (1 - progress) / 0.2 : 1;
+          const alpha =
+            progress < 0.1
+              ? progress / 0.1
+              : progress > 0.8
+                ? (1 - progress) / 0.2
+                : 1;
           const bx = pos.x + 8;
           const by = pos.y - 14 - Math.sin(progress * Math.PI * 4) * 2;
-          // Glow
           ctx.fillStyle = `rgba(255, 220, 50, ${alpha * 0.3})`;
           ctx.beginPath();
           ctx.arc(bx, by, 8, 0, Math.PI * 2);
           ctx.fill();
-          // Bulb body
           ctx.fillStyle = `rgba(255, 230, 80, ${alpha})`;
           ctx.beginPath();
           ctx.arc(bx, by, 4, 0, Math.PI * 2);
           ctx.fill();
-          // Filament
           ctx.fillStyle = `rgba(255, 255, 200, ${alpha})`;
           ctx.fillRect(bx - 1, by - 1, 2, 2);
-          // Base
           ctx.fillStyle = `rgba(180, 180, 180, ${alpha})`;
           ctx.fillRect(bx - 2, by + 3, 4, 2);
           break;
         }
         case "document": {
-          // Document flying in from right
           const startX = CANVAS_W;
           const endX = pos.x;
           const curX = startX + (endX - startX) * Math.min(progress * 2, 1);
           const curY = pos.y - 10 + Math.sin(progress * Math.PI) * -15;
           const alpha = progress > 0.8 ? (1 - progress) / 0.2 : 1;
           ctx.globalAlpha = alpha;
-          // Paper
           ctx.fillStyle = "#f8f8f0";
           ctx.fillRect(curX, curY, 8, 10);
           ctx.strokeStyle = "#aaa";
           ctx.lineWidth = 0.5;
           ctx.strokeRect(curX, curY, 8, 10);
-          // Lines on paper
           ctx.fillStyle = "#ccc";
           ctx.fillRect(curX + 1.5, curY + 2, 5, 1);
           ctx.fillRect(curX + 1.5, curY + 4, 4, 1);
@@ -398,27 +447,30 @@ export function PixelCanvas({
           break;
         }
         case "stars": {
-          // Celebration stars around the slot
           const alpha = progress > 0.7 ? (1 - progress) / 0.3 : 1;
           const cx = pos.x + 8;
           const cy = pos.y + 5;
           for (let i = 0; i < 8; i++) {
-            const angle = (i / 8) * Math.PI * 2 + progress * Math.PI * 3;
+            const angle =
+              (i / 8) * Math.PI * 2 + progress * Math.PI * 3;
             const radius = 10 + progress * 15;
             const sx = cx + Math.cos(angle) * radius;
             const sy = cy + Math.sin(angle) * radius;
             const colors = ["#FFD700", "#FF6B6B", "#4ECDC4", "#A78BFA"];
             ctx.fillStyle = colors[i % colors.length];
-            ctx.globalAlpha = alpha * (0.5 + Math.sin(progress * Math.PI * 6 + i) * 0.5);
-            const size = 1.5 + Math.sin(progress * Math.PI * 4 + i) * 0.5;
+            ctx.globalAlpha =
+              alpha *
+              (0.5 + Math.sin(progress * Math.PI * 6 + i) * 0.5);
+            const size =
+              1.5 + Math.sin(progress * Math.PI * 4 + i) * 0.5;
             ctx.fillRect(sx - size / 2, sy - size / 2, size, size);
           }
           ctx.globalAlpha = 1;
           break;
         }
         case "flash": {
-          // Scene flash overlay
-          const alpha = progress < 0.3 ? progress / 0.3 : (1 - progress) / 0.7;
+          const alpha =
+            progress < 0.3 ? progress / 0.3 : (1 - progress) / 0.7;
           ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.6})`;
           ctx.fillRect(0, 16, CANVAS_W, CANVAS_H - 16);
           break;
@@ -428,27 +480,34 @@ export function PixelCanvas({
   }, []);
 
   const render = useCallback(
-    (ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>) => {
+    (
+      ctx: CanvasRenderingContext2D,
+      images: Record<string, HTMLImageElement>
+    ) => {
       ctx.clearRect(0, 0, CANVAS_W * SCALE, CANVAS_H * SCALE);
       ctx.save();
       ctx.scale(SCALE, SCALE);
 
-      // Background
-      if (images.floor0?.complete && images.floor0.naturalWidth) {
-        ctx.drawImage(images.floor0, 0, 0);
+      // Floor background (scaled from 1200x880 source to 240x177)
+      if (images.floor?.complete && images.floor.naturalWidth) {
+        ctx.drawImage(images.floor, 0, 0, CANVAS_W, FLOOR_H);
       }
 
-      // Top bar
+      // Dark bottom area below the floor
+      ctx.fillStyle = "#1a1a2e";
+      ctx.fillRect(0, FLOOR_H, CANVAS_W, CANVAS_H - FLOOR_H);
+
+      // Top bar overlay
       renderTopBar(ctx);
 
-      // Collect sprites for Y-sort
+      // Collect all sprites for Y-sort
       const sprites: { type: string; y: number; draw: () => void }[] = [];
 
       STATIONS.forEach((st, si) => {
         const o = st.offsets;
         const bx = st.baseX;
         const by = st.baseY;
-        const deskSortY = by + o.desk.dy + o.desk.srcH;
+        const deskSortY = by + o.desk.dy + o.desk.destH;
         const chairInFront = st.variant === 0;
 
         // Chair
@@ -456,7 +515,13 @@ export function PixelCanvas({
           type: "chair",
           y: chairInFront ? deskSortY + 2 : deskSortY - 2,
           draw() {
-            drawSprite(ctx, images.chair, bx + o.chair.dx, by + o.chair.dy, o.chair);
+            drawSprite(
+              ctx,
+              images.chair,
+              bx + o.chair.dx,
+              by + o.chair.dy,
+              o.chair
+            );
           },
         });
         if (o.chairBack) {
@@ -465,55 +530,55 @@ export function PixelCanvas({
             type: "chairBack",
             y: chairInFront ? deskSortY + 3 : deskSortY - 3,
             draw() {
-              drawSprite(ctx, images.chair, bx + cb.dx, by + cb.dy, cb);
+              drawSprite(
+                ctx,
+                images.chair,
+                bx + cb.dx,
+                by + cb.dy,
+                cb
+              );
             },
           });
         }
 
-        // Employee (only if not empty)
+        // Employee (only if slot is not empty)
         const machine = slotsRef.current[si];
         if (machine.state !== "empty") {
-          const appearance = EMP_APPEARANCES[si % EMP_APPEARANCES.length];
+          const app = EMP_APPEARANCES[si];
+          const fbSprite = FACEBODY_SPRITES[app.sprite];
           const pos = EMP_POSITIONS[si];
-
-          // Determine which frame to use
-          let cycle: number[];
-          switch (machine.state) {
-            case "typing":
-              cycle = TYPING_CYCLES[st.variant];
-              break;
-            case "celebrate":
-              // Use idle frame but with color overlay effect
-              cycle = IDLE_CYCLES[st.variant];
-              break;
-            case "looking":
-              // Use idle frame (placeholder for look-around animation)
-              cycle = IDLE_CYCLES[st.variant];
-              break;
-            default:
-              // idle
-              cycle = IDLE_CYCLES[st.variant];
-              break;
-          }
-
-          const frameId = cycle[machine.cycleIndex % cycle.length];
-          const f = FRAME_DATA[frameId];
           const empAboveDesk = si === 3 || si === 4;
 
           sprites.push({
             type: "employee",
-            y: empAboveDesk ? deskSortY + 1 : deskSortY - 1,
+            y: empAboveDesk ? deskSortY + 3 : deskSortY - 1,
             draw() {
-              // Celebrate: golden tint overlay
+              // Celebrate: golden tint via alpha pulsing
               if (machine.state === "celebrate") {
                 ctx.save();
-                ctx.globalAlpha = 0.85 + Math.sin(Date.now() / 200) * 0.15;
+                ctx.globalAlpha =
+                  0.85 + Math.sin(Date.now() / 200) * 0.15;
               }
-              // Looking: slight head bob
-              const lookOffset = machine.state === "looking" ? Math.sin(Date.now() / 300) * 1 : 0;
 
-              drawSprite(ctx, images[appearance.bodyImg], pos.x + f.body.dx, pos.y + f.body.dy + lookOffset, f.body);
-              drawSprite(ctx, images[appearance.faceImg], pos.x + f.face.dx, pos.y + f.face.dy + lookOffset, f.face);
+              // Looking: slight head bob
+              const lookOffset =
+                machine.state === "looking"
+                  ? Math.sin(Date.now() / 300) * 1
+                  : 0;
+
+              // Combined facebody: toggle sit/type image based on cycleIndex
+              const isTyping =
+                machine.state === "typing" &&
+                machine.cycleIndex % 2 === 1;
+              const imgName = isTyping ? app.type : app.sit;
+
+              drawSprite(
+                ctx,
+                images[imgName],
+                pos.x,
+                pos.y + lookOffset,
+                fbSprite
+              );
 
               if (machine.state === "celebrate") {
                 ctx.restore();
@@ -530,25 +595,47 @@ export function PixelCanvas({
           type: "desk",
           y: deskSortY,
           draw() {
-            drawSprite(ctx, images.desk0, bx + o.desk.dx, by + o.desk.dy, o.desk);
+            drawSprite(
+              ctx,
+              images.desk,
+              bx + o.desk.dx,
+              by + o.desk.dy,
+              o.desk
+            );
           },
         });
+      });
 
-        // PC screen (for typing slots with defined positions)
-        const pcDef = PC_SCREEN_DEFS[si];
-        if (machine.state === "typing" && pcDef) {
-          sprites.push({
-            type: "pc",
-            y: deskSortY + 0.5,
-            draw() {
-              const img = images.pc;
-              if (!img?.complete || !img.naturalWidth) return;
-              const fw = img.naturalWidth / 2;
-              const fh = img.naturalHeight / 4;
-              ctx.drawImage(img, pcDef.col * fw, pcFrameRef.current * fh, fw, fh, pcDef.x, pcDef.y, fw, fh);
-            },
-          });
-        }
+      // PC screens on variant-0 desks (visible when typing)
+      PC_SCREEN_DEFS.forEach((pc) => {
+        const machine = slotsRef.current[pc.stationIndex];
+        if (machine.state !== "typing") return;
+
+        const st = STATIONS[pc.stationIndex];
+        const o = st.offsets;
+        const deskSortY = st.baseY + o.desk.dy + o.desk.destH;
+
+        sprites.push({
+          type: "pc",
+          y: deskSortY + 0.5,
+          draw() {
+            const img = images.pc;
+            if (!img?.complete || !img.naturalWidth) return;
+            const fw = img.naturalWidth / 2;
+            const fh = img.naturalHeight / 4;
+            ctx.drawImage(
+              img,
+              pc.col * fw,
+              pcFrameRef.current * fh,
+              fw,
+              fh,
+              pc.x,
+              pc.y,
+              8,
+              11
+            );
+          },
+        });
       });
 
       // Y-sort and draw
@@ -566,7 +653,6 @@ export function PixelCanvas({
   // ── Game Loop ──
 
   const tick = useCallback((deltaMs: number) => {
-    // Update slot state machines
     for (let i = 0; i < 5; i++) {
       const machine = slotsRef.current[i];
       if (machine.state === "empty") continue;
@@ -574,32 +660,36 @@ export function PixelCanvas({
       machine.stateTimer += deltaMs;
 
       // Auto-transitions
-      if (machine.state === "celebrate" && machine.stateTimer >= CELEBRATE_MS) {
+      if (
+        machine.state === "celebrate" &&
+        machine.stateTimer >= CELEBRATE_MS
+      ) {
         machine.state = "idle";
         machine.cycleIndex = 0;
         machine.frameTicks = 0;
         machine.stateTimer = 0;
       }
-      if (machine.state === "looking" && machine.stateTimer >= LOOKING_MS) {
+      if (
+        machine.state === "looking" &&
+        machine.stateTimer >= LOOKING_MS
+      ) {
         machine.state = "idle";
         machine.cycleIndex = 0;
         machine.frameTicks = 0;
         machine.stateTimer = 0;
       }
 
-      // Frame cycling for typing
+      // Frame cycling for typing (toggle between sit/type frames)
       if (machine.state === "typing") {
         machine.frameTicks++;
         if (machine.frameTicks >= machine.ticksPerFrame) {
           machine.frameTicks = 0;
-          const variant = STATION_DEFS[i].variant;
-          const cycle = TYPING_CYCLES[variant];
-          machine.cycleIndex = (machine.cycleIndex + 1) % cycle.length;
+          machine.cycleIndex = (machine.cycleIndex + 1) % 2;
         }
       }
     }
 
-    // PC screen frame cycling (shared across all typing screens)
+    // PC screen frame cycling
     pcTickCountRef.current++;
     if (pcTickCountRef.current >= PC_TICKS_PER_FRAME) {
       pcTickCountRef.current = 0;
@@ -619,7 +709,6 @@ export function PixelCanvas({
   const gameLoop = useCallback(
     (now: number) => {
       if (collapsedRef.current) {
-        // Paused - still request next frame to resume later
         animFrameRef.current = requestAnimationFrame(gameLoop);
         lastTimeRef.current = now;
         return;
@@ -659,7 +748,6 @@ export function PixelCanvas({
       imagesRef.current = images;
       imagesLoadedRef.current = true;
 
-      // Initial render
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d");
       if (ctx) {
@@ -667,7 +755,6 @@ export function PixelCanvas({
         render(ctx, images);
       }
 
-      // Start game loop
       lastTimeRef.current = performance.now();
       animFrameRef.current = requestAnimationFrame(gameLoop);
     });
