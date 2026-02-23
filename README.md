@@ -183,8 +183,8 @@ cd chorus
 DEFAULT_USER=admin@example.com DEFAULT_PASSWORD=changeme \
   docker compose up -d
 ```
-3.Then open your browser with http://localhost:3000, login with default user and password
 
+Then open your browser with http://localhost:3000, login with default user and password
 
 This pulls [`chorusaidlc/chorus-app`](https://hub.docker.com/repository/docker/chorusaidlc/chorus-app/general) (supports amd64 & arm64), starts PostgreSQL and Redis alongside it, and runs database migrations automatically.
 
