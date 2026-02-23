@@ -13,7 +13,7 @@ export async function getTaskActivitiesAction(
   }
 
   try {
-    // 验证 task 存在
+    // Validate task exists
     const task = await getTaskByUuid(auth.companyUuid, taskUuid);
     if (!task) {
       return { activities: [], total: 0 };

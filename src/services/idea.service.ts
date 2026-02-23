@@ -1,5 +1,5 @@
 // src/services/idea.service.ts
-// Idea 服务层 (ARCHITECTURE.md §3.1 Service Layer)
+// Idea Service Layer (ARCHITECTURE.md §3.1 Service Layer)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { prisma } from "@/lib/prisma";
@@ -7,7 +7,7 @@ import { formatAssigneeComplete, formatCreatedBy } from "@/lib/uuid-resolver";
 import { eventBus } from "@/lib/event-bus";
 import { AlreadyClaimedError, NotClaimedError, isPrismaNotFound } from "@/lib/errors";
 
-// ===== 类型定义 =====
+// ===== Type Definitions =====
 
 export interface IdeaListParams {
   companyUuid: string;
@@ -37,7 +37,7 @@ export interface IdeaClaimParams {
   assignedByUuid?: string | null;
 }
 
-// API 响应格式
+// API response format
 export interface IdeaResponse {
   uuid: string;
   title: string;
@@ -57,7 +57,7 @@ export interface IdeaResponse {
   updatedAt: string;
 }
 
-// Idea 状态转换规则 (ARCHITECTURE.md §7.3)
+// Idea status transition rules (ARCHITECTURE.md §7.3)
 export const IDEA_STATUS_TRANSITIONS: Record<string, string[]> = {
   open: ["assigned", "closed"],
   assigned: ["open", "in_progress", "closed"],
@@ -67,15 +67,15 @@ export const IDEA_STATUS_TRANSITIONS: Record<string, string[]> = {
   closed: [],
 };
 
-// 验证状态转换是否有效
+// Validate whether a status transition is valid
 export function isValidIdeaStatusTransition(from: string, to: string): boolean {
   const allowed = IDEA_STATUS_TRANSITIONS[from] || [];
   return allowed.includes(to);
 }
 
-// ===== 内部辅助函数 =====
+// ===== Internal Helper Functions =====
 
-// 格式化单个 Idea 为 API 响应格式
+// Format a single Idea into API response format
 async function formatIdeaResponse(
   idea: {
     uuid: string;
@@ -112,9 +112,9 @@ async function formatIdeaResponse(
   };
 }
 
-// ===== Service 方法 =====
+// ===== Service Methods =====
 
-// Ideas 列表查询
+// List ideas query
 export async function listIdeas({
   companyUuid,
   projectUuid,
@@ -171,7 +171,7 @@ export async function listIdeas({
   return { ideas, total };
 }
 
-// 获取 Idea 详情
+// Get Idea details
 export async function getIdea(
   companyUuid: string,
   uuid: string
@@ -187,14 +187,14 @@ export async function getIdea(
   return formatIdeaResponse(idea);
 }
 
-// 通过 UUID 获取 Idea 原始数据（内部使用，用于权限检查等）
+// Get raw Idea data by UUID (internal use, for permission checks etc.)
 export async function getIdeaByUuid(companyUuid: string, uuid: string) {
   return prisma.idea.findFirst({
     where: { uuid, companyUuid },
   });
 }
 
-// 创建 Idea
+// Create Idea
 export async function createIdea(params: IdeaCreateParams): Promise<IdeaResponse> {
   const idea = await prisma.idea.create({
     data: {
@@ -227,7 +227,7 @@ export async function createIdea(params: IdeaCreateParams): Promise<IdeaResponse
   return formatIdeaResponse(idea);
 }
 
-// 更新 Idea
+// Update Idea
 export async function updateIdea(
   uuid: string,
   companyUuid: string,
@@ -246,7 +246,7 @@ export async function updateIdea(
   return formatIdeaResponse(idea);
 }
 
-// 认领 Idea (atomic: only succeeds if status is "open")
+// Claim Idea (atomic: only succeeds if status is "open")
 export async function claimIdea({
   ideaUuid,
   companyUuid,
@@ -280,7 +280,7 @@ export async function claimIdea({
   }
 }
 
-// 放弃认领 Idea (atomic: only succeeds if status is "assigned")
+// Release Idea (atomic: only succeeds if status is "assigned")
 export async function releaseIdea(uuid: string): Promise<IdeaResponse> {
   try {
     const idea = await prisma.idea.update({
@@ -308,7 +308,7 @@ export async function releaseIdea(uuid: string): Promise<IdeaResponse> {
   }
 }
 
-// 删除 Idea
+// Delete Idea
 export async function deleteIdea(uuid: string) {
   const idea = await prisma.idea.delete({ where: { uuid } });
   eventBus.emitChange({ companyUuid: idea.companyUuid, projectUuid: idea.projectUuid, entityType: "idea", entityUuid: idea.uuid, action: "deleted" });

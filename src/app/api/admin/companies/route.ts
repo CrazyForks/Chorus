@@ -1,5 +1,5 @@
 // src/app/api/admin/companies/route.ts
-// Company 列表和创建 API (Super Admin Only)
+// Company List and Create API (Super Admin Only)
 
 import { NextRequest } from "next/server";
 import { withErrorHandler, parseBody, parsePagination } from "@/lib/api-handler";
@@ -8,7 +8,7 @@ import { requireSuperAdmin } from "@/lib/auth";
 import * as companyService from "@/services/company.service";
 import { CompanyCreateInput } from "@/types/admin";
 
-// GET /api/admin/companies - 列表
+// GET /api/admin/companies - List
 export const GET = withErrorHandler(
   requireSuperAdmin(async (request: NextRequest) => {
     const { page, pageSize, skip, take } = parsePagination(request);
@@ -32,17 +32,17 @@ export const GET = withErrorHandler(
   })
 );
 
-// POST /api/admin/companies - 创建
+// POST /api/admin/companies - Create
 export const POST = withErrorHandler(
   requireSuperAdmin(async (request: NextRequest) => {
     const body = await parseBody<CompanyCreateInput>(request);
 
-    // 验证输入
+    // Validate input
     if (!body.name || body.name.trim() === "") {
       return errors.validationError({ name: "Name is required" });
     }
 
-    // 验证邮箱域名唯一性
+    // Validate email domain uniqueness
     if (body.emailDomains && body.emailDomains.length > 0) {
       for (const domain of body.emailDomains) {
         const isTaken = await companyService.isEmailDomainTaken(domain);
@@ -52,7 +52,7 @@ export const POST = withErrorHandler(
       }
     }
 
-    // 验证 OIDC 配置（必须同时提供 issuer 和 clientId）
+    // Validate OIDC config (issuer and clientId must be provided together)
     if (body.oidcIssuer && !body.oidcClientId) {
       return errors.validationError({ oidcClientId: "Client ID is required when OIDC Issuer is provided" });
     }

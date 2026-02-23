@@ -1,5 +1,5 @@
 // src/services/project.service.ts
-// Project 服务层 (ARCHITECTURE.md §3.1 Service Layer)
+// Project Service Layer (ARCHITECTURE.md §3.1 Service Layer)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { prisma } from "@/lib/prisma";
@@ -21,7 +21,7 @@ export interface ProjectUpdateParams {
   description?: string | null;
 }
 
-// 项目列表查询
+// List projects query
 export async function listProjects({ companyUuid, skip, take }: ProjectListParams) {
   const [projects, total] = await Promise.all([
     prisma.project.findMany({
@@ -51,7 +51,7 @@ export async function listProjects({ companyUuid, skip, take }: ProjectListParam
   return { projects, total };
 }
 
-// 获取项目详情
+// Get project details
 export async function getProject(companyUuid: string, uuid: string) {
   return prisma.project.findFirst({
     where: { uuid, companyUuid },
@@ -74,7 +74,7 @@ export async function getProject(companyUuid: string, uuid: string) {
   });
 }
 
-// 验证项目是否存在
+// Verify if project exists
 export async function projectExists(companyUuid: string, projectUuid: string): Promise<boolean> {
   const project = await prisma.project.findFirst({
     where: { uuid: projectUuid, companyUuid },
@@ -83,7 +83,7 @@ export async function projectExists(companyUuid: string, projectUuid: string): P
   return !!project;
 }
 
-// 通过 UUID 获取项目基本信息
+// Get basic project info by UUID
 export async function getProjectByUuid(companyUuid: string, uuid: string) {
   return prisma.project.findFirst({
     where: { uuid, companyUuid },
@@ -91,7 +91,7 @@ export async function getProjectByUuid(companyUuid: string, uuid: string) {
   });
 }
 
-// 创建项目
+// Create project
 export async function createProject({ companyUuid, name, description }: ProjectCreateParams) {
   return prisma.project.create({
     data: { companyUuid, name, description },
@@ -105,7 +105,7 @@ export async function createProject({ companyUuid, name, description }: ProjectC
   });
 }
 
-// 更新项目
+// Update project
 export async function updateProject(uuid: string, data: ProjectUpdateParams) {
   return prisma.project.update({
     where: { uuid },
@@ -120,12 +120,12 @@ export async function updateProject(uuid: string, data: ProjectUpdateParams) {
   });
 }
 
-// 删除项目
+// Delete project
 export async function deleteProject(uuid: string) {
   return prisma.project.delete({ where: { uuid } });
 }
 
-// 获取公司级别的概览统计（用于 Projects 列表页）
+// Get company-level overview stats (for Projects list page)
 export async function getCompanyOverviewStats(companyUuid: string) {
   const [projectCount, taskCount, openProposalCount, ideaCount] = await Promise.all([
     prisma.project.count({ where: { companyUuid } }),
@@ -142,11 +142,11 @@ export async function getCompanyOverviewStats(companyUuid: string) {
   };
 }
 
-// 获取项目列表（含任务完成率，用于 Projects 列表页）
+// Get project list with task completion stats (for Projects list page)
 export async function listProjectsWithStats({ companyUuid, skip, take }: ProjectListParams) {
   const { projects, total } = await listProjects({ companyUuid, skip, take });
 
-  // 批量查询每个项目的已完成任务数
+  // Batch query completed task count for each project
   const projectUuids = projects.map((p) => p.uuid);
   const doneCounts = await prisma.task.groupBy({
     by: ["projectUuid"],
@@ -164,39 +164,39 @@ export async function listProjectsWithStats({ companyUuid, skip, take }: Project
   };
 }
 
-// 获取项目统计数据（用于 Dashboard）
+// Get project statistics (for Dashboard)
 export async function getProjectStats(companyUuid: string, projectUuid: string) {
   const [ideasStats, tasksStats, proposalsStats, documentsCount] = await Promise.all([
-    // Ideas 统计
+    // Ideas stats
     prisma.idea.groupBy({
       by: ["status"],
       where: { projectUuid, companyUuid },
       _count: true,
     }),
-    // Tasks 统计
+    // Tasks stats
     prisma.task.groupBy({
       by: ["status"],
       where: { projectUuid, companyUuid },
       _count: true,
     }),
-    // Proposals 统计
+    // Proposals stats
     prisma.proposal.groupBy({
       by: ["status"],
       where: { projectUuid, companyUuid },
       _count: true,
     }),
-    // Documents 总数
+    // Documents total count
     prisma.document.count({
       where: { projectUuid, companyUuid },
     }),
   ]);
 
-  // 解析 Ideas 统计
+  // Parse Ideas stats
   const ideaStatusMap = new Map(ideasStats.map((s) => [s.status, s._count]));
   const ideasTotal = ideasStats.reduce((sum, s) => sum + s._count, 0);
   const ideasOpen = ideaStatusMap.get("open") || 0;
 
-  // 解析 Tasks 统计 (per-status for pipeline visualization)
+  // Parse Tasks stats (per-status for pipeline visualization)
   const taskStatusMap = new Map(tasksStats.map((s) => [s.status, s._count]));
   const tasksTotal = tasksStats.reduce((sum, s) => sum + s._count, 0);
   const tasksInProgress = taskStatusMap.get("in_progress") || 0;
@@ -204,7 +204,7 @@ export async function getProjectStats(companyUuid: string, projectUuid: string) 
   const tasksToVerify = taskStatusMap.get("to_verify") || 0;
   const tasksDone = (taskStatusMap.get("done") || 0) + (taskStatusMap.get("closed") || 0);
 
-  // 解析 Proposals 统计
+  // Parse Proposals stats
   const proposalStatusMap = new Map(proposalsStats.map((s) => [s.status, s._count]));
   const proposalsTotal = proposalsStats.reduce((sum, s) => sum + s._count, 0);
   const proposalsPending = proposalStatusMap.get("pending") || 0;

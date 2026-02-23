@@ -1,5 +1,5 @@
 // src/app/api/projects/[uuid]/tasks/route.ts
-// Tasks API - 列表和创建 (ARCHITECTURE.md §5.1, PRD §3.3.1)
+// Tasks API - List and Create (ARCHITECTURE.md §5.1, PRD §3.3.1)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest } from "next/server";
@@ -11,7 +11,7 @@ import { listTasks, createTask } from "@/services/task.service";
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// GET /api/projects/[uuid]/tasks - Tasks 列表
+// GET /api/projects/[uuid]/tasks - List Tasks
 export const GET = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -22,12 +22,12 @@ export const GET = withErrorHandler<{ uuid: string }>(
     const { uuid: projectUuid } = await context.params;
     const { page, pageSize, skip, take } = parsePagination(request);
 
-    // 解析筛选参数
+    // Parse filter parameters
     const url = new URL(request.url);
     const statusFilter = url.searchParams.get("status") || undefined;
     const priorityFilter = url.searchParams.get("priority") || undefined;
 
-    // 验证项目存在
+    // Validate project exists
     if (!(await projectExists(auth.companyUuid, projectUuid))) {
       return errors.notFound("Project");
     }
@@ -45,7 +45,7 @@ export const GET = withErrorHandler<{ uuid: string }>(
   }
 );
 
-// POST /api/projects/[uuid]/tasks - 创建 Task
+// POST /api/projects/[uuid]/tasks - Create Task
 export const POST = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -53,14 +53,14 @@ export const POST = withErrorHandler<{ uuid: string }>(
       return errors.unauthorized();
     }
 
-    // 用户和 PM Agent 可以创建 Task
+    // Users and PM Agents can create Tasks
     if (!isUser(auth) && !isPmAgent(auth)) {
       return errors.forbidden("Only users and PM agents can create tasks");
     }
 
     const { uuid: projectUuid } = await context.params;
 
-    // 验证项目存在
+    // Validate project exists
     if (!(await projectExists(auth.companyUuid, projectUuid))) {
       return errors.notFound("Project");
     }
@@ -72,12 +72,12 @@ export const POST = withErrorHandler<{ uuid: string }>(
       storyPoints?: number;
     }>(request);
 
-    // 验证必填字段
+    // Validate required fields
     if (!body.title || body.title.trim() === "") {
       return errors.validationError({ title: "Title is required" });
     }
 
-    // 验证优先级
+    // Validate priority
     const validPriorities = ["low", "medium", "high"];
     const priority = body.priority || "medium";
     if (!validPriorities.includes(priority)) {
@@ -86,7 +86,7 @@ export const POST = withErrorHandler<{ uuid: string }>(
       });
     }
 
-    // 验证 storyPoints（单位：Agent 小时）
+    // Validate storyPoints (unit: agent hours)
     const storyPoints = body.storyPoints;
     if (storyPoints !== undefined && (storyPoints < 0 || storyPoints > 1000)) {
       return errors.validationError({

@@ -1,5 +1,5 @@
 // src/app/(dashboard)/projects/[uuid]/activity/page.tsx
-// Server Component - UUID 从 URL 获取
+// Server Component - UUID obtained from URL
 
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -94,13 +94,13 @@ export default async function ActivityPage({ params }: PageProps) {
   const { uuid: projectUuid } = await params;
   const t = await getTranslations();
 
-  // 验证项目存在
+  // Validate project exists
   const exists = await projectExists(auth.companyUuid, projectUuid);
   if (!exists) {
     redirect("/projects");
   }
 
-  // 获取 Activities
+  // Get Activities
   const { activities: rawActivities } = await listActivities({
     companyUuid: auth.companyUuid,
     projectUuid,
@@ -108,7 +108,7 @@ export default async function ActivityPage({ params }: PageProps) {
     take: 100,
   });
 
-  // 获取 Actor 信息
+  // Get Actor information
   const actorUuids = [...new Set(rawActivities.map((a) => a.actorUuid))];
 
   const [users, agents] = await Promise.all([
@@ -125,7 +125,7 @@ export default async function ActivityPage({ params }: PageProps) {
   const userMap = new Map(users.map((u) => [u.uuid, { name: u.name || t("common.unknown"), isAgent: false }]));
   const agentMap = new Map(agents.map((a) => [a.uuid, { name: a.name, isAgent: true }]));
 
-  // 格式化 Activities
+  // Format Activities
   const activities: ActivityWithActor[] = rawActivities.map((activity) => {
     const actor = userMap.get(activity.actorUuid) || agentMap.get(activity.actorUuid) || { name: t("common.system"), isAgent: false };
 

@@ -1,5 +1,5 @@
 // src/app/api/tasks/[uuid]/dependencies/[dependsOnUuid]/route.ts
-// Task Dependency DELETE API - 删除依赖
+// Task Dependency DELETE API - Remove Dependency
 
 import { NextRequest } from "next/server";
 import { withErrorHandler } from "@/lib/api-handler";
@@ -9,7 +9,7 @@ import { getTaskByUuid, removeTaskDependency } from "@/services/task.service";
 
 type RouteContext = { params: Promise<{ uuid: string; dependsOnUuid: string }> };
 
-// DELETE /api/tasks/[uuid]/dependencies/[dependsOnUuid] - 删除依赖
+// DELETE /api/tasks/[uuid]/dependencies/[dependsOnUuid] - Remove Dependency
 export const DELETE = withErrorHandler<{ uuid: string; dependsOnUuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -19,7 +19,7 @@ export const DELETE = withErrorHandler<{ uuid: string; dependsOnUuid: string }>(
 
     const { uuid, dependsOnUuid } = await context.params;
 
-    // 验证任务存在
+    // Validate task exists
     const task = await getTaskByUuid(auth.companyUuid, uuid);
     if (!task) {
       return errors.notFound("Task");

@@ -23,13 +23,13 @@ export async function approveProposalAction(proposalUuid: string) {
   }
 
   try {
-    // 验证 proposal 存在且属于该公司
+    // Validate proposal exists and belongs to this company
     const proposal = await getProposalByUuid(auth.companyUuid, proposalUuid);
     if (!proposal) {
       return { success: false, error: "Proposal not found" };
     }
 
-    // 只有 pending 状态的 proposal 可以被审批
+    // Only pending proposals can be approved
     if (proposal.status !== "pending") {
       return { success: false, error: "Proposal is not pending review" };
     }
@@ -53,13 +53,13 @@ export async function submitProposalAction(proposalUuid: string) {
   }
 
   try {
-    // 验证 proposal 存在且属于该公司
+    // Validate proposal exists and belongs to this company
     const proposal = await getProposalByUuid(auth.companyUuid, proposalUuid);
     if (!proposal) {
       return { success: false, error: "Proposal not found" };
     }
 
-    // 只有 draft 状态的 proposal 可以被提交审批
+    // Only draft proposals can be submitted for review
     if (proposal.status !== "draft") {
       return { success: false, error: "Proposal is not in draft status" };
     }
@@ -83,13 +83,13 @@ export async function rejectProposalAction(proposalUuid: string, reviewNote?: st
   }
 
   try {
-    // 验证 proposal 存在且属于该公司
+    // Validate proposal exists and belongs to this company
     const proposal = await getProposalByUuid(auth.companyUuid, proposalUuid);
     if (!proposal) {
       return { success: false, error: "Proposal not found" };
     }
 
-    // 只有 pending 状态的 proposal 可以被拒绝
+    // Only pending proposals can be rejected
     if (proposal.status !== "pending") {
       return { success: false, error: "Proposal is not pending review" };
     }
@@ -134,9 +134,9 @@ export async function closeProposalAction(proposalUuid: string, reviewNote: stri
   }
 }
 
-// ===== Draft 管理 Actions =====
+// ===== Draft Management Actions =====
 
-// 添加文档草稿
+// Add document draft
 export async function addDocumentDraftAction(
   proposalUuid: string,
   draft: { type: string; title: string; content: string }
@@ -163,7 +163,7 @@ export async function addDocumentDraftAction(
   }
 }
 
-// 添加任务草稿
+// Add task draft
 export async function addTaskDraftAction(
   proposalUuid: string,
   draft: {
@@ -197,7 +197,7 @@ export async function addTaskDraftAction(
   }
 }
 
-// 更新文档草稿
+// Update document draft
 export async function updateDocumentDraftAction(
   proposalUuid: string,
   draftUuid: string,
@@ -225,7 +225,7 @@ export async function updateDocumentDraftAction(
   }
 }
 
-// 更新任务草稿
+// Update task draft
 export async function updateTaskDraftAction(
   proposalUuid: string,
   draftUuid: string,
@@ -260,7 +260,7 @@ export async function updateTaskDraftAction(
   }
 }
 
-// 删除文档草稿
+// Remove document draft
 export async function removeDocumentDraftAction(proposalUuid: string, draftUuid: string) {
   const auth = await getServerAuthContext();
   if (!auth) {
@@ -284,7 +284,7 @@ export async function removeDocumentDraftAction(proposalUuid: string, draftUuid:
   }
 }
 
-// 删除任务草稿
+// Remove task draft
 export async function removeTaskDraftAction(proposalUuid: string, draftUuid: string) {
   const auth = await getServerAuthContext();
   if (!auth) {

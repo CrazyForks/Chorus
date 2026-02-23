@@ -1,5 +1,5 @@
 // src/services/activity.service.ts
-// Activity 服务层 (ARCHITECTURE.md §3.1 Service Layer)
+// Activity Service Layer (ARCHITECTURE.md §3.1 Service Layer)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { prisma } from "@/lib/prisma";
@@ -30,7 +30,7 @@ export interface ActivityCreateParams {
   sessionName?: string;
 }
 
-// 带有 actor 名称的 Activity 响应格式
+// Activity response format with actor names
 export interface ActivityResponse {
   uuid: string;
   targetType: string;
@@ -44,7 +44,7 @@ export interface ActivityResponse {
   createdAt: string;
 }
 
-// Activities 列表查询
+// List activities query
 export async function listActivities({
   companyUuid,
   projectUuid,
@@ -85,13 +85,13 @@ export async function listActivities({
   return { activities, total };
 }
 
-// Activities 列表查询（带 actor 名称解析）
+// List activities query (with actor name resolution)
 export async function listActivitiesWithActorNames(
   params: ActivityListParams
 ): Promise<{ activities: ActivityResponse[]; total: number }> {
   const { activities: rawActivities, total } = await listActivities(params);
 
-  // 批量解析 actor 名称
+  // Batch resolve actor names
   const activities: ActivityResponse[] = await Promise.all(
     rawActivities.map(async (activity) => {
       const actorName = await getActorName(activity.actorType, activity.actorUuid);
@@ -113,7 +113,7 @@ export async function listActivitiesWithActorNames(
   return { activities, total };
 }
 
-// 创建 Activity
+// Create Activity
 export async function createActivity({
   companyUuid,
   projectUuid,

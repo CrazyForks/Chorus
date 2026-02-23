@@ -11,7 +11,7 @@ import type { TargetType } from "@/lib/uuid-resolver";
 
 const validTargetTypes = ["idea", "proposal", "task", "document"];
 
-// GET /api/comments?targetType=&targetUuid= - 获取评论
+// GET /api/comments?targetType=&targetUuid= - Get Comments
 export const GET = withErrorHandler(async (request: NextRequest) => {
   const auth = await getAuthContext(request);
   if (!auth) {
@@ -21,7 +21,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   const query = parseQuery(request);
   const { page, pageSize, skip, take } = parsePagination(request);
 
-  // 验证必填参数
+  // Validate required parameters
   if (!query.targetType || !query.targetUuid) {
     return errors.validationError({
       targetType: "targetType is required",
@@ -46,7 +46,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   return paginated(comments, page, pageSize, total);
 });
 
-// POST /api/comments - 添加评论
+// POST /api/comments - Add Comment
 export const POST = withErrorHandler(async (request: NextRequest) => {
   const auth = await getAuthContext(request);
   if (!auth) {
@@ -59,7 +59,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     content: string;
   }>(request);
 
-  // 验证必填字段
+  // Validate required fields
   if (!body.targetType || !validTargetTypes.includes(body.targetType)) {
     return errors.validationError({
       targetType: "Invalid target type",

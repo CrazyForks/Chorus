@@ -1,9 +1,9 @@
 // src/lib/api-response.ts
-// API 响应格式标准 (ARCHITECTURE.md §5.1)
+// API Response Format Standard (ARCHITECTURE.md §5.1)
 
 import { NextResponse } from "next/server";
 
-// 成功响应
+// Success response
 export interface ApiSuccessResponse<T> {
   success: true;
   data: T;
@@ -14,7 +14,7 @@ export interface ApiSuccessResponse<T> {
   };
 }
 
-// 错误响应
+// Error response
 export interface ApiErrorResponse {
   success: false;
   error: {
@@ -26,7 +26,7 @@ export interface ApiErrorResponse {
 
 export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
 
-// 成功响应工具函数
+// Success response utility function
 export function success<T>(
   data: T,
   meta?: ApiSuccessResponse<T>["meta"]
@@ -34,7 +34,7 @@ export function success<T>(
   return NextResponse.json({ success: true, data, meta });
 }
 
-// 分页成功响应
+// Paginated success response
 export function paginated<T>(
   data: T[],
   page: number,
@@ -48,9 +48,9 @@ export function paginated<T>(
   });
 }
 
-// 错误码定义
+// Error code definitions
 export const ErrorCode = {
-  // 通用错误 (4xx)
+  // Common errors (4xx)
   BAD_REQUEST: "BAD_REQUEST",
   UNAUTHORIZED: "UNAUTHORIZED",
   FORBIDDEN: "FORBIDDEN",
@@ -58,20 +58,20 @@ export const ErrorCode = {
   CONFLICT: "CONFLICT",
   VALIDATION_ERROR: "VALIDATION_ERROR",
 
-  // 业务错误
+  // Business errors
   ALREADY_CLAIMED: "ALREADY_CLAIMED",
   NOT_CLAIMED: "NOT_CLAIMED",
   INVALID_STATUS_TRANSITION: "INVALID_STATUS_TRANSITION",
   PERMISSION_DENIED: "PERMISSION_DENIED",
 
-  // 服务器错误 (5xx)
+  // Server errors (5xx)
   INTERNAL_ERROR: "INTERNAL_ERROR",
   DATABASE_ERROR: "DATABASE_ERROR",
 } as const;
 
 export type ErrorCodeType = (typeof ErrorCode)[keyof typeof ErrorCode];
 
-// HTTP 状态码映射
+// HTTP status code mapping
 const statusCodeMap: Record<ErrorCodeType, number> = {
   [ErrorCode.BAD_REQUEST]: 400,
   [ErrorCode.UNAUTHORIZED]: 401,
@@ -87,7 +87,7 @@ const statusCodeMap: Record<ErrorCodeType, number> = {
   [ErrorCode.DATABASE_ERROR]: 500,
 };
 
-// 错误响应工具函数
+// Error response utility function
 export function error(
   code: ErrorCodeType,
   message: string,
@@ -103,7 +103,7 @@ export function error(
   );
 }
 
-// 常用错误快捷方法
+// Common error shortcut methods
 export const errors = {
   badRequest: (message: string, details?: unknown) =>
     error(ErrorCode.BAD_REQUEST, message, details),

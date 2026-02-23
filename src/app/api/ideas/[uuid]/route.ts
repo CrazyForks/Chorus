@@ -1,5 +1,5 @@
 // src/app/api/ideas/[uuid]/route.ts
-// Ideas API - 详情、更新、删除 (ARCHITECTURE.md §5.1)
+// Ideas API - Detail, Update, Delete (ARCHITECTURE.md §5.1)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest } from "next/server";
@@ -16,7 +16,7 @@ import {
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// GET /api/ideas/[uuid] - Idea 详情
+// GET /api/ideas/[uuid] - Idea Detail
 export const GET = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -35,7 +35,7 @@ export const GET = withErrorHandler<{ uuid: string }>(
   }
 );
 
-// PATCH /api/ideas/[uuid] - 更新 Idea
+// PATCH /api/ideas/[uuid] - Update Idea
 export const PATCH = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -45,7 +45,7 @@ export const PATCH = withErrorHandler<{ uuid: string }>(
 
     const { uuid } = await context.params;
 
-    // 获取原始 Idea 数据用于权限检查
+    // Get original Idea data for permission check
     const idea = await getIdeaByUuid(auth.companyUuid, uuid);
     if (!idea) {
       return errors.notFound("Idea");
@@ -57,14 +57,14 @@ export const PATCH = withErrorHandler<{ uuid: string }>(
       status?: string;
     }>(request);
 
-    // 构建更新数据
+    // Build update data
     const updateData: {
       title?: string;
       content?: string | null;
       status?: string;
     } = {};
 
-    // 标题验证
+    // Title validation
     if (body.title !== undefined) {
       if (body.title.trim() === "") {
         return errors.validationError({ title: "Title cannot be empty" });
@@ -72,19 +72,19 @@ export const PATCH = withErrorHandler<{ uuid: string }>(
       updateData.title = body.title.trim();
     }
 
-    // 内容更新
+    // Content update
     if (body.content !== undefined) {
       updateData.content = body.content.trim() || null;
     }
 
-    // 状态更新
+    // Status update
     if (body.status !== undefined) {
-      // 检查状态转换是否有效
+      // Check if state transition is valid
       if (!isValidIdeaStatusTransition(idea.status, body.status)) {
         return errors.invalidStatusTransition(idea.status, body.status);
       }
 
-      // 非用户只能更新自己认领的 Idea 状态
+      // Non-users can only update the status of Ideas they have claimed
       if (!isUser(auth)) {
         if (!isAssignee(auth, idea.assigneeType, idea.assigneeUuid)) {
           return errors.permissionDenied("Only assignee can update status");
@@ -99,7 +99,7 @@ export const PATCH = withErrorHandler<{ uuid: string }>(
   }
 );
 
-// DELETE /api/ideas/[uuid] - 删除 Idea
+// DELETE /api/ideas/[uuid] - Delete Idea
 export const DELETE = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -107,7 +107,7 @@ export const DELETE = withErrorHandler<{ uuid: string }>(
       return errors.unauthorized();
     }
 
-    // 只有用户可以删除 Idea
+    // Only users can delete Ideas
     if (!isUser(auth)) {
       return errors.forbidden("Only users can delete ideas");
     }

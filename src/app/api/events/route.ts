@@ -1,6 +1,6 @@
 // src/app/api/events/route.ts
-// SSE 端点 — 推送实时变更事件到浏览器
-// Auth 通过 cookie 认证（EventSource 自动发送 cookie）
+// SSE Endpoint — Push real-time change events to the browser
+// Auth via cookie (EventSource automatically sends cookies)
 
 import { getAuthContext } from "@/lib/auth";
 import { eventBus, type RealtimeEvent } from "@/lib/event-bus";

@@ -40,7 +40,7 @@ interface KanbanBoardProps {
   initialSelectedTaskUuid?: string | null;
 }
 
-// 状态颜色配置
+// Status color configuration
 const statusColors: Record<string, string> = {
   open: "bg-[#FFF3E0] text-[#E65100]",
   assigned: "bg-[#E3F2FD] text-[#1976D2]",
@@ -50,7 +50,7 @@ const statusColors: Record<string, string> = {
   closed: "bg-[#F5F5F5] text-[#9A9A9A]",
 };
 
-// 状态到翻译 key 的映射
+// Status to i18n key mapping
 const statusI18nKeys: Record<string, string> = {
   open: "open",
   assigned: "assigned",
@@ -60,7 +60,7 @@ const statusI18nKeys: Record<string, string> = {
   closed: "closed",
 };
 
-// 看板列配置
+// Kanban column configuration
 const columnConfigs = [
   { id: "todo", labelKey: "todo", statuses: ["open", "assigned"] },
   { id: "in_progress", labelKey: "inProgress", statuses: ["in_progress"] },

@@ -1,5 +1,5 @@
 // src/services/proposal.service.ts
-// Proposal 服务层 (ARCHITECTURE.md §3.1 Service Layer)
+// Proposal Service Layer (ARCHITECTURE.md §3.1 Service Layer)
 // UUID-Based Architecture: All operations use UUIDs
 // Container Model: Proposal contains documentDrafts and taskDrafts
 
@@ -11,9 +11,9 @@ import { eventBus } from "@/lib/event-bus";
 import { createDocumentFromProposal } from "./document.service";
 import { createTasksFromProposal } from "./task.service";
 
-// ===== UUID 辅助函数 =====
+// ===== UUID Helper Functions =====
 
-// 确保 DocumentDraft 有 UUID
+// Ensure DocumentDraft has a UUID
 function ensureDocumentDraftUuid(draft: Omit<DocumentDraft, "uuid"> & { uuid?: string }): DocumentDraft {
   return {
     ...draft,
@@ -21,7 +21,7 @@ function ensureDocumentDraftUuid(draft: Omit<DocumentDraft, "uuid"> & { uuid?: s
   };
 }
 
-// 确保 TaskDraft 有 UUID
+// Ensure TaskDraft has a UUID
 function ensureTaskDraftUuid(draft: Omit<TaskDraft, "uuid"> & { uuid?: string }): TaskDraft {
   return {
     ...draft,
@@ -29,7 +29,7 @@ function ensureTaskDraftUuid(draft: Omit<TaskDraft, "uuid"> & { uuid?: string })
   };
 }
 
-// ===== 类型定义 =====
+// ===== Type Definitions =====
 
 export interface ProposalListParams {
   companyUuid: string;
@@ -39,7 +39,7 @@ export interface ProposalListParams {
   status?: string;
 }
 
-// 文档草稿类型（带 UUID 以便追踪和修改）
+// Document draft type (with UUID for tracking and modification)
 export interface DocumentDraft {
   uuid: string;      // Draft UUID for tracking
   type: string;
@@ -47,18 +47,18 @@ export interface DocumentDraft {
   content: string;
 }
 
-// 任务草稿类型（带 UUID 以便追踪和修改）
+// Task draft type (with UUID for tracking and modification)
 export interface TaskDraft {
   uuid: string;      // Draft UUID for tracking
   title: string;
   description?: string;
   storyPoints?: number;
   priority?: string;
-  acceptanceCriteria?: string;  // 验收标准
-  dependsOnDraftUuids?: string[];  // 依赖的 taskDraft UUID 列表
+  acceptanceCriteria?: string;  // acceptance criteria
+  dependsOnDraftUuids?: string[];  // list of dependent taskDraft UUIDs
 }
 
-// 输入类型（uuid 可选，会自动生成）
+// Input types (uuid is optional, will be auto-generated)
 export type DocumentDraftInput = Omit<DocumentDraft, "uuid"> & { uuid?: string };
 export type TaskDraftInput = Omit<TaskDraft, "uuid"> & { uuid?: string };
 
@@ -75,7 +75,7 @@ export interface ProposalCreateParams {
   createdByType?: string;  // agent | user
 }
 
-// API 响应格式
+// API response format
 export interface ProposalResponse {
   uuid: string;
   title: string;
@@ -97,9 +97,9 @@ export interface ProposalResponse {
   updatedAt: string;
 }
 
-// ===== 内部辅助函数 =====
+// ===== Internal Helper Functions =====
 
-// 格式化单个 Proposal 为 API 响应格式
+// Format a single Proposal into API response format
 async function formatProposalResponse(
   proposal: {
     uuid: string;
@@ -149,9 +149,9 @@ async function formatProposalResponse(
   return response;
 }
 
-// ===== 验证函数 =====
+// ===== Validation Functions =====
 
-// 检查 Ideas 是否已被其他 Proposal 使用
+// Check if Ideas are already used by other Proposals
 export async function checkIdeasAvailability(
   companyUuid: string,
   ideaUuids: string[]
@@ -190,7 +190,7 @@ export async function checkIdeasAvailability(
   };
 }
 
-// 检查当前用户是否是 Ideas 的认领者
+// Check if the current user is the assignee of the Ideas
 export async function checkIdeasAssignee(
   companyUuid: string,
   ideaUuids: string[],
@@ -227,9 +227,9 @@ export async function checkIdeasAssignee(
   };
 }
 
-// ===== Service 方法 =====
+// ===== Service Methods =====
 
-// Proposals 列表查询
+// List proposals query
 export async function listProposals({
   companyUuid,
   projectUuid,
@@ -276,7 +276,7 @@ export async function listProposals({
   return { proposals, total };
 }
 
-// 获取 Proposal 详情
+// Get Proposal details
 export async function getProposal(
   companyUuid: string,
   uuid: string
@@ -292,14 +292,14 @@ export async function getProposal(
   return formatProposalResponse(proposal);
 }
 
-// 通过 UUID 获取 Proposal 原始数据（内部使用）
+// Get raw Proposal data by UUID (internal use)
 export async function getProposalByUuid(companyUuid: string, uuid: string) {
   return prisma.proposal.findFirst({
     where: { uuid, companyUuid },
   });
 }
 
-// 创建 Proposal（容器）
+// Create Proposal (container)
 export async function createProposal(
   params: ProposalCreateParams
 ): Promise<ProposalResponse> {
@@ -346,7 +346,7 @@ export async function createProposal(
   return formatProposalResponse(proposal);
 }
 
-// 更新 Proposal 内容（添加/修改文档草稿和任务）
+// Update Proposal content (add/modify document drafts and tasks)
 export async function updateProposalContent(
   proposalUuid: string,
   companyUuid: string,
@@ -388,7 +388,7 @@ export async function updateProposalContent(
   return formatProposalResponse(proposal);
 }
 
-// 审批通过 Proposal
+// Approve Proposal
 export async function approveProposal(
   proposalUuid: string,
   companyUuid: string,
@@ -403,9 +403,9 @@ export async function approveProposal(
     throw new Error("Proposal not found");
   }
 
-  // 开启事务处理
+  // Start transaction
   const updatedProposal = await prisma.$transaction(async (tx) => {
-    // 更新 Proposal 状态
+    // Update Proposal status
     const updated = await tx.proposal.update({
       where: { uuid: proposalUuid },
       data: {
@@ -419,11 +419,11 @@ export async function approveProposal(
       },
     });
 
-    // 根据容器内容创建产物
+    // Create artifacts from container content
     const documentDrafts = proposal.documentDrafts as DocumentDraft[] | null;
     const taskDrafts = proposal.taskDrafts as TaskDraft[] | null;
 
-    // 创建文档（如果有文档草稿）
+    // Create documents (if document drafts exist)
     if (documentDrafts && documentDrafts.length > 0) {
       for (const draft of documentDrafts) {
         await createDocumentFromProposal(
@@ -436,7 +436,7 @@ export async function approveProposal(
       }
     }
 
-    // 创建任务（如果有任务草稿）
+    // Create tasks (if task drafts exist)
     if (taskDrafts && taskDrafts.length > 0) {
       const { draftToTaskUuidMap } = await createTasksFromProposal(
         proposal.companyUuid,
@@ -446,7 +446,7 @@ export async function approveProposal(
         taskDrafts
       );
 
-      // 物化依赖关系：将 draftUuid 引用转换为真实 taskUuid
+      // Materialize dependencies: convert draftUuid references to real taskUuids
       for (const draft of taskDrafts) {
         if (draft.dependsOnDraftUuids && draft.dependsOnDraftUuids.length > 0) {
           const taskUuid = draftToTaskUuidMap.get(draft.uuid);
@@ -472,8 +472,8 @@ export async function approveProposal(
   return formatProposalResponse(updatedProposal);
 }
 
-// 打回 Proposal（reject → draft，可重新编辑）
-// 保留 reviewedByUuid/reviewedAt/reviewNote 作为修改参考
+// Reject Proposal (reject -> draft, can be re-edited)
+// Preserve reviewedByUuid/reviewedAt/reviewNote as revision reference
 export async function rejectProposal(
   proposalUuid: string,
   reviewedByUuid: string,
@@ -497,7 +497,7 @@ export async function rejectProposal(
   return formatProposalResponse(proposal);
 }
 
-// 关闭 Proposal（终态）
+// Close Proposal (terminal state)
 export async function closeProposal(
   proposalUuid: string,
   closedByUuid: string,
@@ -521,9 +521,9 @@ export async function closeProposal(
   return formatProposalResponse(proposal);
 }
 
-// ===== Draft 管理函数 =====
+// ===== Draft Management Functions =====
 
-// 提交 Proposal 审批（draft → pending）
+// Submit Proposal for review (draft -> pending)
 export async function submitProposal(
   proposalUuid: string,
   companyUuid: string
@@ -555,7 +555,7 @@ export async function submitProposal(
   return formatProposalResponse(updated);
 }
 
-// 添加文档草稿到 Proposal
+// Add document draft to Proposal
 export async function addDocumentDraft(
   proposalUuid: string,
   companyUuid: string,
@@ -586,7 +586,7 @@ export async function addDocumentDraft(
   return formatProposalResponse(updated);
 }
 
-// 添加任务草稿到 Proposal
+// Add task draft to Proposal
 export async function addTaskDraft(
   proposalUuid: string,
   companyUuid: string,
@@ -617,7 +617,7 @@ export async function addTaskDraft(
   return formatProposalResponse(updated);
 }
 
-// 更新文档草稿
+// Update document draft
 export async function updateDocumentDraft(
   proposalUuid: string,
   companyUuid: string,
@@ -654,7 +654,7 @@ export async function updateDocumentDraft(
   return formatProposalResponse(updated);
 }
 
-// 更新任务草稿
+// Update task draft
 export async function updateTaskDraft(
   proposalUuid: string,
   companyUuid: string,
@@ -691,7 +691,7 @@ export async function updateTaskDraft(
   return formatProposalResponse(updated);
 }
 
-// 删除文档草稿
+// Remove document draft
 export async function removeDocumentDraft(
   proposalUuid: string,
   companyUuid: string,
@@ -723,7 +723,7 @@ export async function removeDocumentDraft(
   return formatProposalResponse(updated);
 }
 
-// 删除任务草稿
+// Remove task draft
 export async function removeTaskDraft(
   proposalUuid: string,
   companyUuid: string,

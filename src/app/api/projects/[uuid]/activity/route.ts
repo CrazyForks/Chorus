@@ -1,5 +1,5 @@
 // src/app/api/projects/[uuid]/activity/route.ts
-// Activity API - 项目活动流 (ARCHITECTURE.md §4.2)
+// Activity API - Project Activity Stream (ARCHITECTURE.md §4.2)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest } from "next/server";
@@ -10,7 +10,7 @@ import { getAuthContext } from "@/lib/auth";
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// GET /api/projects/[uuid]/activity - 项目活动流
+// GET /api/projects/[uuid]/activity - Project Activity Stream
 export const GET = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -21,7 +21,7 @@ export const GET = withErrorHandler<{ uuid: string }>(
     const { uuid: projectUuid } = await context.params;
     const { page, pageSize, skip, take } = parsePagination(request);
 
-    // 查找项目 (query by UUID)
+    // Find project (query by UUID)
     const project = await prisma.project.findFirst({
       where: { uuid: projectUuid, companyUuid: auth.companyUuid },
       select: { uuid: true },

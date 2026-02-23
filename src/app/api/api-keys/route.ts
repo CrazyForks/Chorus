@@ -1,5 +1,5 @@
 // src/app/api/api-keys/route.ts
-// API Keys API - 列表和创建 (ARCHITECTURE.md §5.1, §9.1)
+// API Keys API - List and Create (ARCHITECTURE.md §5.1, §9.1)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest } from "next/server";
@@ -9,14 +9,14 @@ import { success, paginated, errors } from "@/lib/api-response";
 import { getAuthContext, isUser } from "@/lib/auth";
 import { generateApiKey } from "@/lib/api-key";
 
-// GET /api/api-keys - API Key 列表
+// GET /api/api-keys - List API Keys
 export const GET = withErrorHandler(async (request: NextRequest) => {
   const auth = await getAuthContext(request);
   if (!auth) {
     return errors.unauthorized();
   }
 
-  // 只有用户可以查看 API Key 列表
+  // Only users can view the API Key list
   if (!isUser(auth)) {
     return errors.forbidden("Only users can view API keys");
   }
@@ -64,14 +64,14 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   return paginated(data, page, pageSize, total);
 });
 
-// POST /api/api-keys - 创建 API Key
+// POST /api/api-keys - Create API Key
 export const POST = withErrorHandler(async (request: NextRequest) => {
   const auth = await getAuthContext(request);
   if (!auth) {
     return errors.unauthorized();
   }
 
-  // 只有用户可以创建 API Key
+  // Only users can create API Keys
   if (!isUser(auth)) {
     return errors.forbidden("Only users can create API keys");
   }
@@ -82,12 +82,12 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     expiresAt?: string;
   }>(request);
 
-  // 验证必填字段
+  // Validate required fields
   if (!body.agentUuid) {
     return errors.validationError({ agentUuid: "Agent UUID is required" });
   }
 
-  // 验证 Agent 存在 (query by UUID)
+  // Validate Agent exists (query by UUID)
   const agent = await prisma.agent.findFirst({
     where: { uuid: body.agentUuid, companyUuid: auth.companyUuid },
     select: { uuid: true, name: true, roles: true },
@@ -97,10 +97,10 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     return errors.notFound("Agent");
   }
 
-  // 生成 API Key
+  // Generate API Key
   const { key, hash, prefix } = generateApiKey();
 
-  // 解析过期时间
+  // Parse expiration time
   let expiresAt: Date | null = null;
   if (body.expiresAt) {
     expiresAt = new Date(body.expiresAt);
@@ -127,10 +127,10 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     },
   });
 
-  // 只在创建时返回明文 key（之后无法恢复）
+  // Only return the plaintext key at creation time (cannot be recovered later)
   return success({
     uuid: apiKey.uuid,
-    key, // 只有这一次能看到完整的 key
+    key, // This is the only time the full key is visible
     prefix: apiKey.keyPrefix,
     name: apiKey.name,
     agent: {

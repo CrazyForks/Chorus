@@ -1,5 +1,5 @@
 // src/app/api/auth/identify/route.ts
-// 邮箱识别 API - 判断是 Super Admin 还是 Company OIDC
+// Email Identification API - Determine if Super Admin or Company OIDC
 
 import { NextRequest } from "next/server";
 import { withErrorHandler, parseBody } from "@/lib/api-handler";
@@ -22,13 +22,13 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 
   const email = body.email.trim().toLowerCase();
 
-  // 验证邮箱格式
+  // Validate email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return errors.validationError({ email: "Invalid email format" });
   }
 
-  // 检查是否是 Super Admin
+  // Check if this is a Super Admin
   if (isSuperAdminEmail(email)) {
     const response: IdentifyResponse = {
       type: "super_admin",
@@ -44,7 +44,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     return success(response);
   }
 
-  // 查找 Company by 邮箱域名
+  // Find Company by email domain
   const company = await companyService.getCompanyByEmailDomain(email);
 
   if (company && company.oidcIssuer && company.oidcClientId) {
@@ -60,7 +60,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     return success(response);
   }
 
-  // 未找到对应的 Company
+  // No matching Company found
   const response: IdentifyResponse = {
     type: "not_found",
     message: "No organization found for this email domain",

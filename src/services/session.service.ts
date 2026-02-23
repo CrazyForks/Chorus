@@ -1,11 +1,11 @@
 // src/services/session.service.ts
-// Agent Session 服务层 — 子会话管理（swarm 模式可观测性）
+// Agent Session Service Layer — sub-session management (swarm mode observability)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { prisma } from "@/lib/prisma";
 import { eventBus } from "@/lib/event-bus";
 
-// ===== 类型定义 =====
+// ===== Type Definitions =====
 
 export interface SessionCreateParams {
   companyUuid: string;
@@ -42,7 +42,7 @@ export interface TaskSessionInfo {
   checkinAt: string;
 }
 
-// ===== 内部辅助函数 =====
+// ===== Internal Helper Functions =====
 
 function formatSessionResponse(
   session: {
@@ -80,9 +80,9 @@ function formatSessionResponse(
   };
 }
 
-// ===== Service 方法 =====
+// ===== Service Methods =====
 
-// 创建 Session
+// Create Session
 export async function createSession(params: SessionCreateParams): Promise<SessionResponse> {
   const session = await prisma.agentSession.create({
     data: {
@@ -98,7 +98,7 @@ export async function createSession(params: SessionCreateParams): Promise<Sessio
   return formatSessionResponse(session);
 }
 
-// 获取 Session 详情（含活跃 checkins）
+// Get Session details (including active checkins)
 export async function getSession(
   companyUuid: string,
   sessionUuid: string
@@ -117,7 +117,7 @@ export async function getSession(
   return formatSessionResponse(session);
 }
 
-// 列出 Agent 的 Sessions
+// List Agent's Sessions
 export async function listAgentSessions(
   companyUuid: string,
   agentUuid: string,
@@ -141,7 +141,7 @@ export async function listAgentSessions(
   return sessions.map(formatSessionResponse);
 }
 
-// 关闭 Session（status→closed，批量 checkout 所有 checkins）
+// Close Session (status->closed, batch checkout all checkins)
 export async function closeSession(
   companyUuid: string,
   sessionUuid: string
@@ -158,7 +158,7 @@ export async function closeSession(
     select: { task: { select: { uuid: true, projectUuid: true } } },
   });
 
-  // 批量 checkout 所有活跃 checkins
+  // Batch checkout all active checkins
   await prisma.sessionTaskCheckin.updateMany({
     where: { sessionUuid, checkoutAt: null },
     data: { checkoutAt: new Date() },
@@ -181,25 +181,25 @@ export async function closeSession(
   return formatSessionResponse(updated);
 }
 
-// Session checkin 到 Task
+// Session checkin to Task
 export async function sessionCheckinToTask(
   companyUuid: string,
   sessionUuid: string,
   taskUuid: string
 ): Promise<SessionCheckinInfo> {
-  // 验证 session 存在且属于该公司
+  // Verify session exists and belongs to this company
   const session = await prisma.agentSession.findFirst({
     where: { uuid: sessionUuid, companyUuid, status: "active" },
   });
   if (!session) throw new Error("Session not found or not active");
 
-  // 验证 task 存在且属于该公司
+  // Verify task exists and belongs to this company
   const task = await prisma.task.findFirst({
     where: { uuid: taskUuid, companyUuid },
   });
   if (!task) throw new Error("Task not found");
 
-  // Upsert: 如果已存在则重新激活
+  // Upsert: reactivate if already exists
   const checkin = await prisma.sessionTaskCheckin.upsert({
     where: {
       sessionUuid_taskUuid: { sessionUuid, taskUuid },
@@ -208,7 +208,7 @@ export async function sessionCheckinToTask(
     update: { checkoutAt: null, checkinAt: new Date() },
   });
 
-  // 更新 lastActiveAt
+  // Update lastActiveAt
   await prisma.agentSession.update({
     where: { uuid: sessionUuid },
     data: { lastActiveAt: new Date() },
@@ -229,7 +229,7 @@ export async function sessionCheckoutFromTask(
   sessionUuid: string,
   taskUuid: string
 ): Promise<void> {
-  // 验证 session 属于该公司
+  // Verify session belongs to this company
   const session = await prisma.agentSession.findFirst({
     where: { uuid: sessionUuid, companyUuid },
   });
@@ -250,7 +250,7 @@ export async function sessionCheckoutFromTask(
   }
 }
 
-// 获取 Task 上所有活跃 Sessions
+// Get all active Sessions for a Task
 export async function getSessionsForTask(
   companyUuid: string,
   taskUuid: string
@@ -282,7 +282,7 @@ export async function getSessionsForTask(
   }));
 }
 
-// 心跳更新 lastActiveAt
+// Heartbeat update lastActiveAt
 export async function heartbeatSession(
   companyUuid: string,
   sessionUuid: string
@@ -296,13 +296,13 @@ export async function heartbeatSession(
     where: { uuid: sessionUuid },
     data: {
       lastActiveAt: new Date(),
-      // 如果是 inactive 状态，心跳后恢复为 active
+      // If status is inactive, restore to active after heartbeat
       ...(session.status === "inactive" && { status: "active" }),
     },
   });
 }
 
-// 重新打开已关闭的 Session（closed → active）
+// Reopen a closed Session (closed -> active)
 export async function reopenSession(
   companyUuid: string,
   sessionUuid: string
@@ -331,7 +331,7 @@ export async function reopenSession(
   return formatSessionResponse(updated);
 }
 
-// 批量标记不活跃 sessions（1 小时无心跳）
+// Batch mark inactive sessions (no heartbeat for 1 hour)
 export async function markInactiveSessions(): Promise<number> {
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
 
@@ -346,7 +346,7 @@ export async function markInactiveSessions(): Promise<number> {
   return result.count;
 }
 
-// 获取 Session 名称（用于 Activity 显示）
+// Get Session name (for Activity display)
 export async function getSessionName(sessionUuid: string): Promise<string | null> {
   const session = await prisma.agentSession.findUnique({
     where: { uuid: sessionUuid },

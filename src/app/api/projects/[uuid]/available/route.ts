@@ -1,5 +1,5 @@
 // src/app/api/projects/[uuid]/available/route.ts
-// Agent 自助 API - 获取可认领的 Ideas + Tasks (PRD §5.4)
+// Agent Self-Service API - Get Claimable Ideas + Tasks (PRD §5.4)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest } from "next/server";
@@ -11,7 +11,7 @@ import { getAvailableItems } from "@/services/assignment.service";
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// GET /api/projects/[uuid]/available - 获取可认领的 Ideas + Tasks
+// GET /api/projects/[uuid]/available - Get claimable Ideas + Tasks
 export const GET = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -21,16 +21,16 @@ export const GET = withErrorHandler<{ uuid: string }>(
 
     const { uuid: projectUuid } = await context.params;
 
-    // 查找项目
+    // Find project
     const project = await getProjectByUuid(auth.companyUuid, projectUuid);
     if (!project) {
       return errors.notFound("Project");
     }
 
-    // 根据角色返回不同内容
-    // PM Agent: 可认领 Ideas
-    // Developer Agent: 可认领 Tasks
-    // User: 可看到所有
+    // Return different content based on role
+    // PM Agent: can claim Ideas
+    // Developer Agent: can claim Tasks
+    // User: can see everything
     const canClaimIdeas = isAgent(auth) ? isPmAgent(auth) : true;
     const canClaimTasks = isAgent(auth) ? isDeveloperAgent(auth) : true;
 

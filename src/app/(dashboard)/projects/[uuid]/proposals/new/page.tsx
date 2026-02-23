@@ -1,5 +1,5 @@
 // src/app/(dashboard)/projects/[uuid]/proposals/new/page.tsx
-// Server Component - 创建新的 Proposal
+// Server Component - Create New Proposal
 
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -24,13 +24,13 @@ export default async function NewProposalPage({ params, searchParams }: PageProp
   const { ideaUuid } = await searchParams;
   const t = await getTranslations();
 
-  // 验证项目存在
+  // Validate project exists
   const exists = await projectExists(auth.companyUuid, projectUuid);
   if (!exists) {
     redirect("/projects");
   }
 
-  // 获取用户已认领的 Ideas（只有认领者可以创建 Proposal）
+  // Get user's claimed Ideas (only assignees can create Proposals)
   const { ideas } = await listIdeas({
     companyUuid: auth.companyUuid,
     projectUuid,
@@ -41,7 +41,7 @@ export default async function NewProposalPage({ params, searchParams }: PageProp
     actorType: auth.type,
   });
 
-  // 过滤出尚未被使用的 ideas
+  // Filter out ideas that have not been used yet
   const ideaUuids = ideas.map(idea => idea.uuid);
   const availabilityCheck = ideaUuids.length > 0
     ? await checkIdeasAvailability(auth.companyUuid, ideaUuids)

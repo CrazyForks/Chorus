@@ -1,13 +1,13 @@
 // src/lib/uuid-resolver.ts
-// UUID 解析器 - 简化版 (UUID-Based Architecture)
-// 大部分转换功能已不需要，仅保留格式化显示工具
+// UUID Resolver - Simplified (UUID-Based Architecture)
+// Most conversion functions are no longer needed; only formatting display utilities remain
 
 import { prisma } from "@/lib/prisma";
 
 export type TargetType = "idea" | "proposal" | "task" | "document";
 export type ActorType = "user" | "agent";
 
-// 根据 UUID 获取 Actor 名称（用于显示）
+// Get Actor name by UUID (for display)
 export async function getActorName(
   actorType: string,
   actorUuid: string
@@ -18,7 +18,7 @@ export async function getActorName(
       select: { name: true, email: true },
     });
     if (!user) return "Unknown";
-    // 优先使用 name，否则使用 email
+    // Prefer name, fall back to email
     return user.name || user.email || "Unknown";
   } else if (actorType === "agent") {
     const agent = await prisma.agent.findUnique({
@@ -30,7 +30,7 @@ export async function getActorName(
   return null;
 }
 
-// 格式化 assignee 信息（直接使用 UUID）
+// Format assignee info (using UUID directly)
 export async function formatAssignee(
   assigneeType: string | null,
   assigneeUuid: string | null
@@ -47,8 +47,8 @@ export async function formatAssignee(
   };
 }
 
-// 格式化 createdBy 信息（直接使用 UUID）
-// 如果未指定类型，会先尝试查找 user，再尝试 agent
+// Format createdBy info (using UUID directly)
+// If type is not specified, tries user first, then agent
 export async function formatCreatedBy(
   createdByUuid: string,
   creatorType?: "user" | "agent"
@@ -59,7 +59,7 @@ export async function formatCreatedBy(
     return { type: creatorType, uuid: createdByUuid, name };
   }
 
-  // 未指定类型，先尝试 user
+  // Type not specified, try user first
   const user = await prisma.user.findUnique({
     where: { uuid: createdByUuid },
     select: { name: true, email: true },
@@ -68,7 +68,7 @@ export async function formatCreatedBy(
     return { type: "user", uuid: createdByUuid, name: user.name || user.email || "Unknown" };
   }
 
-  // 再尝试 agent
+  // Then try agent
   const agent = await prisma.agent.findUnique({
     where: { uuid: createdByUuid },
     select: { name: true },
@@ -80,7 +80,7 @@ export async function formatCreatedBy(
   return null;
 }
 
-// 完整的 assignee 格式化（包含 assignedAt 和 assignedBy）
+// Complete assignee formatting (including assignedAt and assignedBy)
 export interface AssigneeInfo {
   type: string;
   uuid: string;
@@ -93,7 +93,7 @@ export async function formatAssigneeComplete(
   assigneeType: string | null,
   assigneeUuid: string | null,
   assignedAt: Date | null,
-  assignedByUuid: string | null // assignedBy 总是 user
+  assignedByUuid: string | null // assignedBy is always user
 ): Promise<AssigneeInfo | null> {
   if (!assigneeType || !assigneeUuid) return null;
 
@@ -121,7 +121,7 @@ export async function formatAssigneeComplete(
   };
 }
 
-// 格式化 Proposal 的 review 信息
+// Format Proposal review info
 export interface ReviewInfo {
   reviewedBy: { type: string; uuid: string; name: string };
   reviewNote: string | null;
@@ -149,7 +149,7 @@ export async function formatReview(
   };
 }
 
-// 根据 UUID 获取 Session 名称
+// Get Session name by UUID
 export async function getSessionName(sessionUuid: string): Promise<string | null> {
   const session = await prisma.agentSession.findUnique({
     where: { uuid: sessionUuid },
@@ -158,7 +158,7 @@ export async function getSessionName(sessionUuid: string): Promise<string | null
   return session?.name ?? null;
 }
 
-// 验证目标实体是否存在（直接使用 UUID）
+// Validate target entity exists (using UUID directly)
 export async function validateTargetExists(
   targetType: TargetType,
   targetUuid: string,

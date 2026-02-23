@@ -1,5 +1,5 @@
 // src/app/(dashboard)/projects/[uuid]/ideas/page.tsx
-// Server Component - UUID 从 URL 获取
+// Server Component - UUID obtained from URL
 
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -15,7 +15,7 @@ import { batchCommentCounts } from "@/services/comment.service";
 import { IdeaCreateForm } from "./idea-create-form";
 import { IdeasList } from "./ideas-list";
 
-// 状态颜色配置
+// Status color configuration
 const statusColors: Record<string, string> = {
   open: "bg-[#FFF3E0] text-[#E65100]",
   assigned: "bg-[#E3F2FD] text-[#1976D2]",
@@ -25,7 +25,7 @@ const statusColors: Record<string, string> = {
   closed: "bg-[#F5F5F5] text-[#9A9A9A]",
 };
 
-// 状态到翻译 key 的映射
+// Status to i18n key mapping
 const statusI18nKeys: Record<string, string> = {
   open: "open",
   assigned: "assigned",
@@ -52,13 +52,13 @@ export default async function IdeasPage({ params, searchParams }: PageProps) {
   const isAssignedToMeFilter = assignedToMe === "true";
   const t = await getTranslations();
 
-  // 验证项目存在
+  // Validate project exists
   const exists = await projectExists(auth.companyUuid, projectUuid);
   if (!exists) {
     redirect("/projects");
   }
 
-  // 获取所有 Ideas（用于计数）
+  // Get all Ideas (for counting)
   const { ideas: allIdeas } = await listIdeas({
     companyUuid: auth.companyUuid,
     projectUuid,
@@ -66,7 +66,7 @@ export default async function IdeasPage({ params, searchParams }: PageProps) {
     take: 1000,
   });
 
-  // 获取分配给我的 Ideas（用于计数）
+  // Get Ideas assigned to me (for counting)
   const { ideas: myIdeas } = await listIdeas({
     companyUuid: auth.companyUuid,
     projectUuid,
@@ -77,13 +77,13 @@ export default async function IdeasPage({ params, searchParams }: PageProps) {
     actorType: auth.type,
   });
 
-  // 计算各状态数量
+  // Calculate count per status
   const statusCounts = allIdeas.reduce((acc, idea) => {
     acc[idea.status] = (acc[idea.status] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  // 获取所有 Ideas 的可用性（是否已被 Proposal 使用）
+  // Get availability of all Ideas (whether already used by a Proposal)
   const allIdeaUuids = allIdeas.map(idea => idea.uuid);
   const availabilityCheck = allIdeaUuids.length > 0
     ? await checkIdeasAvailability(auth.companyUuid, allIdeaUuids)
@@ -95,12 +95,12 @@ export default async function IdeasPage({ params, searchParams }: PageProps) {
     ideaProposalMap[u.uuid] = u.proposalUuid;
   }
 
-  // 批量获取评论数量
+  // Batch get comment counts
   const commentCounts = allIdeaUuids.length > 0
     ? await batchCommentCounts(auth.companyUuid, "idea", allIdeaUuids)
     : {};
 
-  // 根据 filter 过滤
+  // Filter by selected status
   let filteredIdeas = allIdeas;
 
   // First apply assignedToMe filter if active

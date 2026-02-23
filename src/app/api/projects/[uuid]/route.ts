@@ -1,5 +1,5 @@
 // src/app/api/projects/[uuid]/route.ts
-// Projects API - 详情、更新、删除 (ARCHITECTURE.md §5.1)
+// Projects API - Detail, Update, Delete (ARCHITECTURE.md §5.1)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest } from "next/server";
@@ -10,7 +10,7 @@ import { getAuthContext, isUser } from "@/lib/auth";
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// GET /api/projects/[uuid] - 项目详情
+// GET /api/projects/[uuid] - Project Detail
 export const GET = withErrorHandler(async (request: NextRequest, context: RouteContext) => {
   const auth = await getAuthContext(request);
   if (!auth) {
@@ -62,21 +62,21 @@ export const GET = withErrorHandler(async (request: NextRequest, context: RouteC
   });
 });
 
-// PATCH /api/projects/[uuid] - 更新项目
+// PATCH /api/projects/[uuid] - Update Project
 export const PATCH = withErrorHandler(async (request: NextRequest, context: RouteContext) => {
   const auth = await getAuthContext(request);
   if (!auth) {
     return errors.unauthorized();
   }
 
-  // 只有用户可以更新项目
+  // Only users can update projects
   if (!isUser(auth)) {
     return errors.forbidden("Only users can update projects");
   }
 
   const { uuid } = await context.params;
 
-  // 验证项目存在且属于当前公司 (query by UUID)
+  // Validate project exists and belongs to the current company (query by UUID)
   const existing = await prisma.project.findFirst({
     where: { uuid, companyUuid: auth.companyUuid },
     select: { uuid: true },
@@ -91,7 +91,7 @@ export const PATCH = withErrorHandler(async (request: NextRequest, context: Rout
     description?: string;
   }>(request);
 
-  // 构建更新数据
+  // Build update data
   const updateData: { name?: string; description?: string | null } = {};
 
   if (body.name !== undefined) {
@@ -126,21 +126,21 @@ export const PATCH = withErrorHandler(async (request: NextRequest, context: Rout
   });
 });
 
-// DELETE /api/projects/[uuid] - 删除项目
+// DELETE /api/projects/[uuid] - Delete Project
 export const DELETE = withErrorHandler(async (request: NextRequest, context: RouteContext) => {
   const auth = await getAuthContext(request);
   if (!auth) {
     return errors.unauthorized();
   }
 
-  // 只有用户可以删除项目
+  // Only users can delete projects
   if (!isUser(auth)) {
     return errors.forbidden("Only users can delete projects");
   }
 
   const { uuid } = await context.params;
 
-  // 验证项目存在且属于当前公司 (query by UUID)
+  // Validate project exists and belongs to the current company (query by UUID)
   const existing = await prisma.project.findFirst({
     where: { uuid, companyUuid: auth.companyUuid },
     select: { uuid: true },
@@ -150,7 +150,7 @@ export const DELETE = withErrorHandler(async (request: NextRequest, context: Rou
     return errors.notFound("Project");
   }
 
-  // 删除项目（Prisma 会在应用层处理级联删除）
+  // Delete project (Prisma handles cascade deletes at the application level)
   await prisma.project.delete({
     where: { uuid: existing.uuid },
   });

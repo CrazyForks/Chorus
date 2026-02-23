@@ -1,5 +1,5 @@
 // src/lib/super-admin.ts
-// Super Admin 认证工具
+// Super Admin Authentication Utilities
 
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcrypt";
@@ -9,7 +9,7 @@ import { SuperAdminAuthContext } from "@/types/auth";
 const COOKIE_NAME = "admin_session";
 const TOKEN_EXPIRY = "24h";
 
-// 获取 JWT 签名密钥
+// Get JWT signing secret
 function getSecret(): Uint8Array {
   const secret = process.env.NEXTAUTH_SECRET;
   if (!secret) {
@@ -18,7 +18,7 @@ function getSecret(): Uint8Array {
   return new TextEncoder().encode(secret);
 }
 
-// 检查邮箱是否是 Super Admin
+// Check if email is Super Admin
 export function isSuperAdminEmail(email: string): boolean {
   const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
   if (!superAdminEmail) {
@@ -27,7 +27,7 @@ export function isSuperAdminEmail(email: string): boolean {
   return email.toLowerCase() === superAdminEmail.toLowerCase();
 }
 
-// 验证 Super Admin 密码
+// Verify Super Admin password
 export async function verifySuperAdminPassword(
   password: string
 ): Promise<boolean> {
@@ -44,7 +44,7 @@ export async function verifySuperAdminPassword(
   }
 }
 
-// 创建 Admin JWT Token
+// Create Admin JWT Token
 export async function createAdminToken(): Promise<string> {
   const email = process.env.SUPER_ADMIN_EMAIL;
   if (!email) {
@@ -58,7 +58,7 @@ export async function createAdminToken(): Promise<string> {
     .sign(getSecret());
 }
 
-// 验证 Admin JWT Token
+// Verify Admin JWT Token
 export async function verifyAdminToken(
   token: string
 ): Promise<SuperAdminAuthContext | null> {
@@ -76,7 +76,7 @@ export async function verifyAdminToken(
   }
 }
 
-// 从请求中获取 Super Admin 认证上下文
+// Get Super Admin auth context from request
 export async function getSuperAdminFromRequest(
   request: NextRequest
 ): Promise<SuperAdminAuthContext | null> {
@@ -87,7 +87,7 @@ export async function getSuperAdminFromRequest(
   return verifyAdminToken(token);
 }
 
-// 设置 Admin Cookie
+// Set Admin Cookie
 export function setAdminCookie(response: NextResponse, token: string): void {
   response.cookies.set(COOKIE_NAME, token, {
     httpOnly: true,
@@ -98,7 +98,7 @@ export function setAdminCookie(response: NextResponse, token: string): void {
   });
 }
 
-// 清除 Admin Cookie
+// Clear Admin Cookie
 export function clearAdminCookie(response: NextResponse): void {
   response.cookies.set(COOKIE_NAME, "", {
     httpOnly: true,
@@ -109,7 +109,7 @@ export function clearAdminCookie(response: NextResponse): void {
   });
 }
 
-// 获取 Cookie 名称（用于客户端检查）
+// Get Cookie name (for client-side checks)
 export function getAdminCookieName(): string {
   return COOKIE_NAME;
 }

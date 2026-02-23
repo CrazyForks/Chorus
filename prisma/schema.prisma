@@ -7,17 +7,17 @@ generator client {
 
 datasource db {
   provider     = "postgresql"
-  relationMode = "prisma"  // 关系由 Prisma 管理，不创建数据库外键约束
+  relationMode = "prisma"  // Relations managed by Prisma, no DB-level foreign key constraints
 }
 
-// 租户
+// Tenant
 model Company {
   id           Int      @id @default(autoincrement())
   uuid         String   @unique @default(uuid())
   name         String
-  // 邮箱域名匹配（用于登录时识别 Company）
+  // Email domain matching (used to identify Company during login)
   emailDomains String[] @default([])  // e.g., ["example.com", "example.org"]
-  // OIDC 配置（每个 Company 独立的登录方式，仅支持 PKCE，无需 Client Secret）
+  // OIDC configuration (per-Company login, PKCE only, no Client Secret)
   oidcIssuer   String?  // OIDC Provider URL
   oidcClientId String?  // Client ID
   oidcEnabled  Boolean  @default(false)
@@ -37,7 +37,7 @@ model Company {
   sessions   AgentSession[]
 }
 
-// 用户（人类，OIDC 登录）
+// User (human, OIDC login)
 model User {
   id          Int      @id @default(autoincrement())
   uuid        String   @unique @default(uuid())
@@ -54,17 +54,17 @@ model User {
   @@index([companyUuid])
 }
 
-// Agent（Claude Code 等）
+// Agent (e.g., Claude Code)
 model Agent {
   id           Int       @id @default(autoincrement())
   uuid         String    @unique @default(uuid())
   companyUuid  String
   company      Company   @relation(fields: [companyUuid], references: [uuid])
   name         String
-  roles        String[]  @default(["developer"])  // pm | developer（可多选）
-  // Agent 人格定义（Zero Context Injection）
-  persona      String?   // 自定义人格描述（简短）
-  systemPrompt String?   // 完整系统提示（可选，覆盖默认模板）
+  roles        String[]  @default(["developer"])  // pm | developer (multi-select)
+  // Agent persona definition (Zero Context Injection)
+  persona      String?   // Custom persona description (brief)
+  systemPrompt String?   // Full system prompt (optional, overrides default template)
   ownerUuid    String?   // User's UUID
   owner        User?     @relation(fields: [ownerUuid], references: [uuid])
   lastActiveAt DateTime?
@@ -77,7 +77,7 @@ model Agent {
   @@index([ownerUuid])
 }
 
-// API Key（独立管理，支持轮换和撤销）
+// API Key (independently managed, supports rotation and revocation)
 model ApiKey {
   id          Int       @id @default(autoincrement())
   uuid        String    @unique @default(uuid())
@@ -85,9 +85,9 @@ model ApiKey {
   company     Company   @relation(fields: [companyUuid], references: [uuid])
   agentUuid   String    // Agent's UUID
   agent       Agent     @relation(fields: [agentUuid], references: [uuid], onDelete: Cascade)
-  keyHash     String    @unique    // API Key 哈希存储
-  keyPrefix   String               // Key 前缀，用于显示（如 "cho_xxx..."）
-  name        String?              // 可选的描述名称
+  keyHash     String    @unique    // API Key stored as hash
+  keyPrefix   String               // Key prefix for display (e.g., "cho_xxx...")
+  name        String?              // Optional descriptive name
   lastUsed    DateTime?
   expiresAt   DateTime?
   revokedAt   DateTime?
@@ -97,7 +97,7 @@ model ApiKey {
   @@index([agentUuid])
 }
 
-// 项目
+// Project
 model Project {
   id          Int      @id @default(autoincrement())
   uuid        String   @unique @default(uuid())
@@ -117,7 +117,7 @@ model Project {
   @@index([companyUuid])
 }
 
-// 想法（人类原始输入）
+// Idea (raw human input)
 model Idea {
   id             Int       @id @default(autoincrement())
   uuid           String    @unique @default(uuid())
@@ -126,13 +126,13 @@ model Idea {
   projectUuid    String
   project        Project   @relation(fields: [projectUuid], references: [uuid], onDelete: Cascade)
   title          String
-  content        String?   // 文本内容
-  attachments    Json?     // 附件列表 [{type, url, name}]
-  // 状态和认领 (ARCHITECTURE.md §7.3)
+  content        String?   // Text content
+  attachments    Json?     // Attachment list [{type, url, name}]
+  // Status and assignment (ARCHITECTURE.md §7.3)
   status         String    @default("open")  // open | assigned | in_progress | pending_review | completed | closed
   assigneeType   String?   // user | agent
   assigneeUuid   String?   // User or Agent UUID (polymorphic)
-  assignedAt     DateTime? // 认领时间
+  assignedAt     DateTime? // Assignment timestamp
   assignedByUuid String?   // User UUID (human assignment)
   createdByUuid  String    // User UUID
   createdAt      DateTime  @default(now())
@@ -144,7 +144,7 @@ model Idea {
   @@index([assigneeUuid])
 }
 
-// 文档（PRD、技术设计等，Proposal 产物）
+// Document (PRD, tech design, etc. — Proposal output)
 model Document {
   id            Int       @id @default(autoincrement())
   uuid          String    @unique @default(uuid())
@@ -154,7 +154,7 @@ model Document {
   project       Project   @relation(fields: [projectUuid], references: [uuid], onDelete: Cascade)
   type          String    // prd | tech_design | adr | ...
   title         String
-  content       String?   // Markdown 内容
+  content       String?   // Markdown content
   version       Int       @default(1)
   proposalUuid  String?   // Source Proposal UUID (traceable)
   createdByUuid String    // User or Agent UUID
@@ -166,7 +166,7 @@ model Document {
   @@index([proposalUuid])
 }
 
-// 任务（Proposal 产物或人工创建）
+// Task (Proposal output or manually created)
 model Task {
   id             Int       @id @default(autoincrement())
   uuid           String    @unique @default(uuid())
@@ -176,20 +176,20 @@ model Task {
   project        Project   @relation(fields: [projectUuid], references: [uuid], onDelete: Cascade)
   title          String
   description    String?
-  // 状态和认领 (ARCHITECTURE.md §7.2)
+  // Status and assignment (ARCHITECTURE.md §7.2)
   status         String    @default("open")  // open | assigned | in_progress | to_verify | done | closed
   priority       String    @default("medium") // low | medium | high
-  storyPoints    Float?    // 工作量估算（单位：Agent 小时）
-  acceptanceCriteria String? // 验收标准（Markdown 格式）
+  storyPoints    Float?    // Effort estimate (unit: Agent hours)
+  acceptanceCriteria String? // Acceptance criteria (Markdown)
   assigneeType   String?   // user | agent
   assigneeUuid   String?   // User or Agent UUID (polymorphic)
-  assignedAt     DateTime? // 认领时间
+  assignedAt     DateTime? // Assignment timestamp
   assignedByUuid String?   // User UUID (human assignment)
   proposalUuid   String?   // Source Proposal UUID (traceable, optional)
   createdByUuid  String    // User or Agent UUID
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-  // 任务依赖关系（DAG）
+  // Task dependencies (DAG)
   dependsOn        TaskDependency[] @relation("taskDependencies")
   dependedBy       TaskDependency[] @relation("taskDependedBy")
   // Session checkins
@@ -202,7 +202,7 @@ model Task {
   @@index([status])
 }
 
-// 任务依赖关系（DAG 边）
+// Task dependency (DAG edge)
 model TaskDependency {
   id            Int      @id @default(autoincrement())
   taskUuid      String
@@ -216,7 +216,7 @@ model TaskDependency {
   @@index([dependsOnUuid])
 }
 
-// 提议（容器模型：Agent/人类创建，人类审批，包含文档草稿和任务列表）
+// Proposal (container model: created by Agent/human, approved by human, contains document drafts and task drafts)
 model Proposal {
   id              Int       @id @default(autoincrement())
   uuid            String    @unique @default(uuid())
@@ -227,20 +227,20 @@ model Proposal {
   title           String
   description     String?
 
-  // 输入来源（Proposal 基于什么创建）
+  // Input source (what the Proposal is based on)
   inputType       String    // idea | document
   inputUuids      Json      // Array of UUID strings
 
-  // 容器内容（可同时包含文档和任务）
-  documentDrafts  Json?     // 文档草稿列表 [{type, title, content}]
-  taskDrafts      Json?     // 任务草稿列表 [{title, description, storyPoints, priority, acceptanceCriteria}]
+  // Container contents (can include both documents and tasks)
+  documentDrafts  Json?     // Document draft list [{type, title, content}]
+  taskDrafts      Json?     // Task draft list [{title, description, storyPoints, priority, acceptanceCriteria}]
 
-  // 状态与审批
+  // Status and approval
   status          String    @default("draft")  // draft | pending | approved | rejected | revised
   createdByUuid   String    // Agent or User UUID
   createdByType   String    @default("agent") // agent | user
   reviewedByUuid  String?   // User UUID
-  reviewNote      String?   // 审批备注
+  reviewNote      String?   // Review note
   reviewedAt      DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -250,7 +250,7 @@ model Proposal {
   @@index([status])
 }
 
-// 评论（可以评论 Idea、Proposal、Task、Document）
+// Comment (can comment on Idea, Proposal, Task, Document)
 model Comment {
   id          Int      @id @default(autoincrement())
   uuid        String   @unique @default(uuid())
@@ -268,7 +268,7 @@ model Comment {
   @@index([targetType, targetUuid])
 }
 
-// 活动流（项目级）- 通用设计
+// Activity stream (project-level) — generic design
 model Activity {
   id          Int      @id @default(autoincrement())
   uuid        String   @unique @default(uuid())
@@ -276,15 +276,15 @@ model Activity {
   company     Company  @relation(fields: [companyUuid], references: [uuid])
   projectUuid String
   project     Project  @relation(fields: [projectUuid], references: [uuid], onDelete: Cascade)
-  // 目标实体（通用设计）
+  // Target entity (generic design)
   targetType  String   // idea | task | proposal | document
-  targetUuid  String   // 目标实体 UUID
-  // 操作信息
+  targetUuid  String   // Target entity UUID
+  // Action info
   actorType   String   // user | agent
-  actorUuid   String   // 操作者 UUID
+  actorUuid   String   // Actor UUID
   action      String   // created | assigned | released | status_changed | submitted | approved | rejected | comment_added
-  value       Json?    // 操作结果值（如新状态、分配目标信息等）
-  // Session 归属（反范式化，避免 join）
+  value       Json?    // Action result value (e.g., new status, assignment target info)
+  // Session attribution (denormalized to avoid joins)
   sessionUuid String?
   sessionName String?
   createdAt   DateTime @default(now())
@@ -295,7 +295,7 @@ model Activity {
   @@index([createdAt])
 }
 
-// Agent Session（子会话，用于 swarm 模式可观测性）
+// Agent Session (sub-session for swarm mode observability)
 model AgentSession {
   id              Int       @id @default(autoincrement())
   uuid            String    @unique @default(uuid())
@@ -317,7 +317,7 @@ model AgentSession {
   @@index([status])
 }
 
-// Session-Task 签到关系（多对多）
+// Session-Task checkin relation (many-to-many)
 model SessionTaskCheckin {
   id              Int           @id @default(autoincrement())
   sessionUuid     String
@@ -332,27 +332,27 @@ model SessionTaskCheckin {
   @@index([taskUuid])
 }
 
-// 通知
+// Notification
 model Notification {
   id              Int       @id @default(autoincrement())
   uuid            String    @unique @default(uuid())
   companyUuid     String
   projectUuid     String
-  // 接收者（多态：user | agent）
+  // Recipient (polymorphic: user | agent)
   recipientType   String    // user | agent
   recipientUuid   String
-  // 关联实体
+  // Related entity
   entityType      String    // task | idea | proposal | document | comment
   entityUuid      String
-  entityTitle     String    // 反范式化，避免 join
-  projectName     String    // 反范式化，用于项目徽章 UI
-  // 操作信息
+  entityTitle     String    // Denormalized to avoid joins
+  projectName     String    // Denormalized for project badge UI
+  // Action info
   action          String    // assigned | status_changed | verified | reopened | submitted | approved | rejected | claimed | comment_added
-  message         String    // 人类可读消息
+  message         String    // Human-readable message
   actorType       String    // user | agent
   actorUuid       String
-  actorName       String    // 反范式化，避免 join
-  // 状态
+  actorName       String    // Denormalized to avoid joins
+  // Status
   readAt          DateTime?
   archivedAt      DateTime?
   createdAt       DateTime  @default(now())
@@ -364,14 +364,14 @@ model Notification {
   @@index([projectUuid])
 }
 
-// 通知偏好设置
+// Notification preferences
 model NotificationPreference {
   id                  Int      @id @default(autoincrement())
   uuid                String   @unique @default(uuid())
   companyUuid         String
   ownerType           String   // user | agent
   ownerUuid           String
-  // 各通知类型开关（默认全部开启）
+  // Toggle for each notification type (all enabled by default)
   taskAssigned        Boolean  @default(true)
   taskStatusChanged   Boolean  @default(true)
   taskVerified        Boolean  @default(true)

@@ -1,11 +1,11 @@
 // src/services/notification.service.ts
-// Notification 服务层 — 通知创建、查询、标记已读、偏好管理
+// Notification Service Layer — creation, querying, marking as read, preference management
 // All operations scoped by companyUuid for multi-tenancy
 
 import { prisma } from "@/lib/prisma";
 import { eventBus } from "@/lib/event-bus";
 
-// ===== 类型定义 =====
+// ===== Type Definitions =====
 
 export interface NotificationCreateParams {
   companyUuid: string;
@@ -80,7 +80,7 @@ export interface NotificationPreferenceResponse {
   commentAdded: boolean;
 }
 
-// ===== 内部辅助函数 =====
+// ===== Internal Helper Functions =====
 
 function formatNotification(n: {
   uuid: string;
@@ -120,7 +120,7 @@ function formatNotification(n: {
   };
 }
 
-// ===== Service 方法 =====
+// ===== Service Methods =====
 
 /**
  * Create a single notification and emit SSE event

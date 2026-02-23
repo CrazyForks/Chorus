@@ -1,5 +1,5 @@
 // src/app/api/proposals/[uuid]/approve/route.ts
-// Proposals API - 审批通过 (ARCHITECTURE.md §7.4)
+// Proposals API - Approve (ARCHITECTURE.md §7.4)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest } from "next/server";
@@ -10,7 +10,7 @@ import { getProposalByUuid, approveProposal } from "@/services/proposal.service"
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// POST /api/proposals/[uuid]/approve - 审批通过 Proposal
+// POST /api/proposals/[uuid]/approve - Approve Proposal
 export const POST = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -18,7 +18,7 @@ export const POST = withErrorHandler<{ uuid: string }>(
       return errors.unauthorized();
     }
 
-    // 只有用户可以审批
+    // Only users can approve
     if (!isUser(auth)) {
       return errors.forbidden("Only users can approve proposals");
     }
@@ -30,7 +30,7 @@ export const POST = withErrorHandler<{ uuid: string }>(
       return errors.notFound("Proposal");
     }
 
-    // 只有 pending 状态的 Proposal 可以审批
+    // Only pending Proposals can be approved
     if (proposal.status !== "pending") {
       return errors.badRequest("Can only approve pending proposals");
     }

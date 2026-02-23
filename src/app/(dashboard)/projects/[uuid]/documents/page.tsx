@@ -1,5 +1,5 @@
 // src/app/(dashboard)/projects/[uuid]/documents/page.tsx
-// Server Component - UUID 从 URL 获取
+// Server Component - UUID obtained from URL
 
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -36,13 +36,13 @@ export default async function DocumentsPage({ params, searchParams }: PageProps)
   const { type: filter = "all" } = await searchParams;
   const t = await getTranslations();
 
-  // 验证项目存在
+  // Validate project exists
   const exists = await projectExists(auth.companyUuid, projectUuid);
   if (!exists) {
     redirect("/projects");
   }
 
-  // 获取所有 Documents
+  // Get all Documents
   const { documents: allDocuments } = await listDocuments({
     companyUuid: auth.companyUuid,
     projectUuid,
@@ -50,13 +50,13 @@ export default async function DocumentsPage({ params, searchParams }: PageProps)
     take: 1000,
   });
 
-  // 计算各类型数量
+  // Calculate count per type
   const typeCounts = allDocuments.reduce((acc, doc) => {
     acc[doc.type] = (acc[doc.type] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  // 根据 filter 过滤
+  // Filter by selected type
   const filteredDocuments = filter === "all"
     ? allDocuments
     : allDocuments.filter((doc) => doc.type === filter);

@@ -1,5 +1,5 @@
 // src/mcp/server.ts
-// MCP Server 实例 (ARCHITECTURE.md §5.2)
+// MCP Server instance (ARCHITECTURE.md §5.2)
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerPublicTools } from "./tools/public";
@@ -9,23 +9,23 @@ import { registerAdminTools } from "./tools/admin";
 import { registerSessionTools } from "./tools/session";
 import type { AgentAuthContext } from "@/types/auth";
 
-// 创建 MCP Server 工厂函数
+// MCP Server factory function
 export function createMcpServer(auth: AgentAuthContext): McpServer {
   const server = new McpServer({
     name: "chorus",
     version: "1.0.0",
   });
 
-  // 注册公共工具（所有 Agent 可用）
+  // Register public tools (available to all Agents)
   registerPublicTools(server, auth);
 
-  // 注册 Session 工具（所有 Agent 可用）
+  // Register Session tools (available to all Agents)
   registerSessionTools(server, auth);
 
-  // 根据角色注册专属工具
+  // Register role-specific tools based on agent roles
   const roles = auth.roles || [];
 
-  // 支持两种角色格式: "pm" / "pm_agent", "developer" / "developer_agent", "admin" / "admin_agent"
+  // Support two role formats: "pm" / "pm_agent", "developer" / "developer_agent", "admin" / "admin_agent"
   const hasPmRole = roles.some(r => r === "pm" || r === "pm_agent");
   const hasDevRole = roles.some(r => r === "developer" || r === "developer_agent");
   const hasAdminRole = roles.some(r => r === "admin" || r === "admin_agent");

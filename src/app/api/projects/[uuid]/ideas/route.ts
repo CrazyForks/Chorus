@@ -1,5 +1,5 @@
 // src/app/api/projects/[uuid]/ideas/route.ts
-// Ideas API - 列表和创建 (ARCHITECTURE.md §5.1, PRD §4.1 F5)
+// Ideas API - List and Create (ARCHITECTURE.md §5.1, PRD §4.1 F5)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest } from "next/server";
@@ -11,7 +11,7 @@ import { listIdeas, createIdea } from "@/services/idea.service";
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// GET /api/projects/[uuid]/ideas - Ideas 列表
+// GET /api/projects/[uuid]/ideas - List Ideas
 export const GET = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -22,11 +22,11 @@ export const GET = withErrorHandler<{ uuid: string }>(
     const { uuid: projectUuid } = await context.params;
     const { page, pageSize, skip, take } = parsePagination(request);
 
-    // 解析筛选参数
+    // Parse filter parameters
     const url = new URL(request.url);
     const statusFilter = url.searchParams.get("status") || undefined;
 
-    // 验证项目存在
+    // Validate project exists
     if (!(await projectExists(auth.companyUuid, projectUuid))) {
       return errors.notFound("Project");
     }
@@ -43,7 +43,7 @@ export const GET = withErrorHandler<{ uuid: string }>(
   }
 );
 
-// POST /api/projects/[uuid]/ideas - 创建 Idea
+// POST /api/projects/[uuid]/ideas - Create Idea
 export const POST = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -51,14 +51,14 @@ export const POST = withErrorHandler<{ uuid: string }>(
       return errors.unauthorized();
     }
 
-    // 只有用户可以创建 Idea
+    // Only users can create Ideas
     if (!isUser(auth)) {
       return errors.forbidden("Only users can create ideas");
     }
 
     const { uuid: projectUuid } = await context.params;
 
-    // 验证项目存在
+    // Validate project exists
     if (!(await projectExists(auth.companyUuid, projectUuid))) {
       return errors.notFound("Project");
     }
@@ -69,7 +69,7 @@ export const POST = withErrorHandler<{ uuid: string }>(
       attachments?: unknown;
     }>(request);
 
-    // 验证必填字段
+    // Validate required fields
     if (!body.title || body.title.trim() === "") {
       return errors.validationError({ title: "Title is required" });
     }

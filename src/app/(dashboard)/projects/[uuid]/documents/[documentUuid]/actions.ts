@@ -15,7 +15,7 @@ export async function updateDocumentAction(
   }
 
   try {
-    // 验证 document 存在且属于该公司
+    // Validate document exists and belongs to this company
     const document = await getDocumentByUuid(auth.companyUuid, documentUuid);
     if (!document) {
       return { success: false, error: "Document not found" };

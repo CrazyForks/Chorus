@@ -1,17 +1,17 @@
 // src/services/company.service.ts
-// Company 服务层 (Super Admin Operations)
+// Company Service Layer (Super Admin Operations)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { prisma } from "@/lib/prisma";
 import { CompanyCreateInput, CompanyUpdateInput } from "@/types/admin";
 
-// ===== 分页参数 =====
+// ===== Pagination Params =====
 export interface PaginationParams {
   skip: number;
   take: number;
 }
 
-// ===== 列表 =====
+// ===== List =====
 export async function listCompanies({ skip, take }: PaginationParams) {
   const [companies, total] = await Promise.all([
     prisma.company.findMany({
@@ -39,7 +39,7 @@ export async function listCompanies({ skip, take }: PaginationParams) {
   return { companies, total };
 }
 
-// ===== 获取详情 (by UUID) =====
+// ===== Get Details (by UUID) =====
 export async function getCompanyByUuid(uuid: string) {
   return prisma.company.findFirst({
     where: { uuid },
@@ -64,15 +64,15 @@ export async function getCompanyByUuid(uuid: string) {
   });
 }
 
-// ===== 通过邮箱域名查找 Company =====
+// ===== Find Company by Email Domain =====
 export async function getCompanyByEmailDomain(email: string) {
-  // 提取邮箱域名
+  // Extract email domain
   const domain = email.split("@")[1]?.toLowerCase();
   if (!domain) {
     return null;
   }
 
-  // 查找包含该域名的 Company
+  // Find Company containing this domain
   return prisma.company.findFirst({
     where: {
       emailDomains: {
@@ -89,12 +89,12 @@ export async function getCompanyByEmailDomain(email: string) {
   });
 }
 
-// ===== 创建 =====
+// ===== Create =====
 export async function createCompany(data: CompanyCreateInput) {
-  // 处理邮箱域名（转小写）
+  // Process email domains (lowercase)
   const emailDomains = (data.emailDomains || []).map((d) => d.toLowerCase());
 
-  // 判断 OIDC 是否启用（需要 issuer 和 clientId）
+  // Determine if OIDC is enabled (requires issuer and clientId)
   const oidcEnabled = !!(data.oidcIssuer && data.oidcClientId);
 
   return prisma.company.create({
@@ -118,9 +118,9 @@ export async function createCompany(data: CompanyCreateInput) {
   });
 }
 
-// ===== 更新 =====
+// ===== Update =====
 export async function updateCompany(id: number, data: CompanyUpdateInput) {
-  // 处理邮箱域名（转小写）
+  // Process email domains (lowercase)
   const updateData: CompanyUpdateInput = { ...data };
   if (data.emailDomains) {
     updateData.emailDomains = data.emailDomains.map((d) => d.toLowerCase());
@@ -142,12 +142,12 @@ export async function updateCompany(id: number, data: CompanyUpdateInput) {
   });
 }
 
-// ===== 删除 =====
+// ===== Delete =====
 export async function deleteCompany(id: number) {
-  // 注意: 这会删除 Company 及其所有关联数据
-  // 由于使用 relationMode = "prisma"，需要手动处理级联删除
+  // Note: this will delete the Company and all associated data
+  // Since relationMode = "prisma" is used, cascade deletes must be handled manually
   return prisma.$transaction(async (tx) => {
-    // 获取 company 信息
+    // Get company info
     const company = await tx.company.findUnique({
       where: { id },
       select: { uuid: true },
@@ -157,7 +157,7 @@ export async function deleteCompany(id: number) {
       throw new Error("Company not found");
     }
 
-    // 删除关联数据（按依赖顺序）- use companyUuid
+    // Delete associated data (in dependency order) - use companyUuid
     const companyUuid = company.uuid;
     await tx.activity.deleteMany({ where: { companyUuid } });
     await tx.comment.deleteMany({ where: { companyUuid } });
@@ -170,12 +170,12 @@ export async function deleteCompany(id: number) {
     await tx.agent.deleteMany({ where: { companyUuid } });
     await tx.user.deleteMany({ where: { companyUuid } });
 
-    // 最后删除 Company
+    // Finally delete the Company
     return tx.company.delete({ where: { id } });
   });
 }
 
-// ===== 统计 =====
+// ===== Statistics =====
 export async function getCompanyStats() {
   const [totalCompanies, totalUsers, totalAgents] = await Promise.all([
     prisma.company.count(),
@@ -186,7 +186,7 @@ export async function getCompanyStats() {
   return { totalCompanies, totalUsers, totalAgents };
 }
 
-// ===== 通过邮箱域名查找 Company (不限制 oidcEnabled) =====
+// ===== Find Company by Email Domain (without oidcEnabled restriction) =====
 export async function getCompanyByEmailDomainAny(email: string) {
   const domain = email.split("@")[1]?.toLowerCase();
   if (!domain) {
@@ -210,7 +210,7 @@ export async function getCompanyByEmailDomainAny(email: string) {
   });
 }
 
-// ===== 检查邮箱域名是否已被使用 =====
+// ===== Check if Email Domain is Already Taken =====
 export async function isEmailDomainTaken(
   domain: string,
   excludeCompanyId?: number

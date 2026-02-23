@@ -1,5 +1,5 @@
 // src/app/api/ideas/[uuid]/claim/route.ts
-// Ideas API - 认领 Idea (PRD §4.1 F5 认领规则)
+// Ideas API - Claim Idea (PRD §4.1 F5 claiming rules)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest } from "next/server";
@@ -12,7 +12,7 @@ import { AlreadyClaimedError } from "@/lib/errors";
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// POST /api/ideas/[uuid]/claim - 认领 Idea
+// POST /api/ideas/[uuid]/claim - Claim Idea
 export const POST = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -32,26 +32,26 @@ export const POST = withErrorHandler<{ uuid: string }>(
     let assignedByUuid: string | null = null;
 
     if (isAgent(auth)) {
-      // Agent 认领 - 必须是 PM Agent
+      // Agent claim - must be a PM Agent
       if (!isPmAgent(auth)) {
         return errors.forbidden("Only PM agents can claim ideas");
       }
       assigneeType = "agent";
       assigneeUuid = auth.actorUuid;
     } else if (isUser(auth)) {
-      // 用户认领 - 可以选择分配给自己或特定 Agent
+      // User claim - can choose to assign to self or a specific Agent
       const body = await parseBody<{
         assignToSelf?: boolean;
         agentUuid?: string;
       }>(request);
 
       if (body.agentUuid) {
-        // 分配给特定 Agent（通过 UUID）
+        // Assign to a specific Agent (by UUID)
         const agent = await prisma.agent.findFirst({
           where: {
             uuid: body.agentUuid,
             companyUuid: auth.companyUuid,
-            roles: { has: "pm" }, // 只能分配给 PM Agent
+            roles: { has: "pm" }, // Can only assign to PM Agents
           },
         });
 
@@ -63,7 +63,7 @@ export const POST = withErrorHandler<{ uuid: string }>(
         assigneeUuid = agent.uuid;
         assignedByUuid = auth.actorUuid;
       } else {
-        // 分配给自己（所有自己的 PM Agent 都能处理）
+        // Assign to self (all owned PM Agents can handle it)
         assigneeType = "user";
         assigneeUuid = auth.actorUuid;
         assignedByUuid = auth.actorUuid;

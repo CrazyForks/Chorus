@@ -1,6 +1,6 @@
 // src/app/(dashboard)/projects/[uuid]/proposals/[proposalUuid]/page.tsx
-// Server Component - UUID 从 URL 获取
-// Container Model: Proposal 包含 documentDrafts 和 taskDrafts
+// Server Component - UUID obtained from URL
+// Container Model: Proposal contains documentDrafts and taskDrafts
 
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -30,7 +30,7 @@ import { ProposalEditor } from "./proposal-editor";
 import { ProposalComments } from "./proposal-comments";
 import { SourceIdeasCard } from "./source-ideas-card";
 
-// 状态颜色配置
+// Status color configuration
 const statusColors: Record<string, string> = {
   draft: "bg-[#F5F5F5] text-[#6B6B6B]",
   pending: "bg-[#FFF3E0] text-[#E65100]",
@@ -47,7 +47,7 @@ const reviewNoteColors: Record<string, string> = {
   closed: "bg-[#F5F5F5] text-[#6B6B6B]",
 };
 
-// 状态到翻译 key 的映射
+// Status to i18n key mapping
 const statusI18nKeys: Record<string, string> = {
   draft: "draft",
   pending: "pending",
@@ -57,7 +57,7 @@ const statusI18nKeys: Record<string, string> = {
   closed: "closed",
 };
 
-// 输入类型到翻译 key 的映射
+// Input type to i18n key mapping
 const inputTypeI18nKeys: Record<string, { key: string }> = {
   idea: { key: "ideas.title" },
   document: { key: "documents.title" },
@@ -76,13 +76,13 @@ export default async function ProposalDetailPage({ params }: PageProps) {
   const { uuid: projectUuid, proposalUuid } = await params;
   const t = await getTranslations();
 
-  // 验证项目存在
+  // Validate project exists
   const exists = await projectExists(auth.companyUuid, projectUuid);
   if (!exists) {
     redirect("/projects");
   }
 
-  // 获取 Proposal 详情
+  // Get Proposal details
   const proposal = await getProposal(auth.companyUuid, proposalUuid);
   if (!proposal) {
     return (

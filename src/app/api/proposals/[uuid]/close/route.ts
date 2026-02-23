@@ -1,5 +1,5 @@
 // src/app/api/proposals/[uuid]/close/route.ts
-// Proposals API - 关闭 Proposal (终态)
+// Proposals API - Close Proposal (terminal state)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest } from "next/server";
@@ -10,7 +10,7 @@ import { getProposalByUuid, closeProposal } from "@/services/proposal.service";
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// POST /api/proposals/[uuid]/close - 关闭 Proposal
+// POST /api/proposals/[uuid]/close - Close Proposal
 export const POST = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -18,7 +18,7 @@ export const POST = withErrorHandler<{ uuid: string }>(
       return errors.unauthorized();
     }
 
-    // 只有用户可以关闭
+    // Only users can close
     if (!isUser(auth)) {
       return errors.forbidden("Only users can close proposals");
     }
@@ -30,7 +30,7 @@ export const POST = withErrorHandler<{ uuid: string }>(
       return errors.notFound("Proposal");
     }
 
-    // 只有 pending 状态的 Proposal 可以关闭
+    // Only pending Proposals can be closed
     if (proposal.status !== "pending") {
       return errors.badRequest("Can only close pending proposals");
     }
@@ -39,7 +39,7 @@ export const POST = withErrorHandler<{ uuid: string }>(
       reviewNote?: string;
     }>(request);
 
-    // 关闭时必须提供原因
+    // A reason must be provided when closing
     if (!body.reviewNote || body.reviewNote.trim() === "") {
       return errors.validationError({
         reviewNote: "Review note is required when closing",

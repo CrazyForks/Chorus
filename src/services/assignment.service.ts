@@ -1,5 +1,5 @@
 // src/services/assignment.service.ts
-// Assignment 服务层 - Agent 自助查询 (PRD §5.4)
+// Assignment Service Layer - Agent self-service queries (PRD §5.4)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { prisma } from "@/lib/prisma";
@@ -7,9 +7,9 @@ import type { AuthContext } from "@/types/auth";
 import { isAgent } from "@/lib/auth";
 import { formatAssignee, formatCreatedBy } from "@/lib/uuid-resolver";
 
-// ===== 类型定义 =====
+// ===== Type Definitions =====
 
-// 认领的 Idea 响应格式
+// Claimed Idea response format
 export interface AssignedIdeaResponse {
   uuid: string;
   title: string;
@@ -22,7 +22,7 @@ export interface AssignedIdeaResponse {
   updatedAt: string;
 }
 
-// 认领的 Task 响应格式
+// Claimed Task response format
 export interface AssignedTaskResponse {
   uuid: string;
   title: string;
@@ -36,7 +36,7 @@ export interface AssignedTaskResponse {
   updatedAt: string;
 }
 
-// 可认领的 Idea 响应格式
+// Available Idea response format
 export interface AvailableIdeaResponse {
   uuid: string;
   title: string;
@@ -46,7 +46,7 @@ export interface AvailableIdeaResponse {
   createdAt: string;
 }
 
-// 可认领的 Task 响应格式
+// Available Task response format
 export interface AvailableTaskResponse {
   uuid: string;
   title: string;
@@ -57,40 +57,40 @@ export interface AvailableTaskResponse {
   createdAt: string;
 }
 
-// 我的认领响应
+// My assignments response
 export interface MyAssignmentsResponse {
   ideas: AssignedIdeaResponse[];
   tasks: AssignedTaskResponse[];
 }
 
-// 可认领项目响应
+// Available items response
 export interface AvailableItemsResponse {
   ideas: AvailableIdeaResponse[];
   tasks: AvailableTaskResponse[];
 }
 
-// ===== 内部辅助函数 =====
+// ===== Internal Helper Functions =====
 
-// 获取当前用户/Agent 的认领条件
+// Get assignment conditions for the current user/Agent
 function getAssignmentConditions(auth: AuthContext) {
   const conditions: Array<{ assigneeType: string; assigneeUuid: string }> = [];
 
   if (isAgent(auth)) {
-    // Agent 直接认领的
+    // Directly claimed by Agent
     conditions.push({ assigneeType: "agent", assigneeUuid: auth.actorUuid });
-    // Agent 的 Owner 认领的（"Assign to myself"）
+    // Claimed by Agent's Owner ("Assign to myself")
     if (auth.ownerUuid) {
       conditions.push({ assigneeType: "user", assigneeUuid: auth.ownerUuid });
     }
   } else {
-    // 用户直接认领的
+    // Directly claimed by user
     conditions.push({ assigneeType: "user", assigneeUuid: auth.actorUuid });
   }
 
   return conditions;
 }
 
-// 格式化认领的 Idea
+// Format claimed Idea
 async function formatAssignedIdea(idea: {
   uuid: string;
   title: string;
@@ -118,7 +118,7 @@ async function formatAssignedIdea(idea: {
   };
 }
 
-// 格式化认领的 Task
+// Format claimed Task
 async function formatAssignedTask(task: {
   uuid: string;
   title: string;
@@ -148,7 +148,7 @@ async function formatAssignedTask(task: {
   };
 }
 
-// 格式化可认领的 Idea
+// Format available Idea
 async function formatAvailableIdea(idea: {
   uuid: string;
   title: string;
@@ -169,7 +169,7 @@ async function formatAvailableIdea(idea: {
   };
 }
 
-// 格式化可认领的 Task
+// Format available Task
 async function formatAvailableTask(task: {
   uuid: string;
   title: string;
@@ -192,14 +192,14 @@ async function formatAvailableTask(task: {
   };
 }
 
-// ===== Service 方法 =====
+// ===== Service Methods =====
 
-// 获取自己认领的 Ideas + Tasks
+// Get my claimed Ideas + Tasks
 export async function getMyAssignments(auth: AuthContext): Promise<MyAssignmentsResponse> {
   const conditions = getAssignmentConditions(auth);
 
   const [rawIdeas, rawTasks] = await Promise.all([
-    // 获取认领的 Ideas
+    // Get claimed Ideas
     prisma.idea.findMany({
       where: {
         companyUuid: auth.companyUuid,
@@ -220,7 +220,7 @@ export async function getMyAssignments(auth: AuthContext): Promise<MyAssignments
       },
       orderBy: { assignedAt: "desc" },
     }),
-    // 获取认领的 Tasks
+    // Get claimed Tasks
     prisma.task.findMany({
       where: {
         companyUuid: auth.companyUuid,
@@ -252,7 +252,7 @@ export async function getMyAssignments(auth: AuthContext): Promise<MyAssignments
   return { ideas, tasks };
 }
 
-// 获取项目中可认领的 Ideas + Tasks
+// Get available Ideas + Tasks in a project
 export async function getAvailableItems(
   companyUuid: string,
   projectUuid: string,

@@ -1,5 +1,5 @@
 // src/services/index.ts
-// 服务层模块导出
+// Service layer module exports
 
 export * as projectService from "./project.service";
 export * as ideaService from "./idea.service";

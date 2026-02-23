@@ -1,5 +1,5 @@
 // src/app/api/proposals/[uuid]/route.ts
-// Proposals API - 详情 (ARCHITECTURE.md §5.1)
+// Proposals API - Detail (ARCHITECTURE.md §5.1)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest } from "next/server";
@@ -10,7 +10,7 @@ import { getProposal } from "@/services/proposal.service";
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// GET /api/proposals/[uuid] - Proposal 详情
+// GET /api/proposals/[uuid] - Proposal Detail
 export const GET = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);

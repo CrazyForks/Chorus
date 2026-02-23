@@ -1,5 +1,5 @@
 // src/services/comment.service.ts
-// Comment 服务层 (ARCHITECTURE.md §3.1 Service Layer)
+// Comment Service Layer (ARCHITECTURE.md §3.1 Service Layer)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { prisma } from "@/lib/prisma";
@@ -26,7 +26,7 @@ export interface CommentCreateParams {
   authorUuid: string;
 }
 
-// 评论响应格式（使用 UUID）
+// Comment response format (using UUIDs)
 export interface CommentResponse {
   uuid: string;
   targetType: string;
@@ -41,7 +41,7 @@ export interface CommentResponse {
   updatedAt: string;
 }
 
-// 查询评论列表
+// List comments
 export async function listComments({
   companyUuid,
   targetType,
@@ -49,7 +49,7 @@ export async function listComments({
   skip,
   take,
 }: CommentListParams): Promise<{ comments: CommentResponse[]; total: number }> {
-  // 验证目标存在
+  // Validate target exists
   const exists = await validateTargetExists(targetType, targetUuid, companyUuid);
   if (!exists) {
     return { comments: [], total: 0 };
@@ -77,7 +77,7 @@ export async function listComments({
     prisma.comment.count({ where }),
   ]);
 
-  // 转换为响应格式
+  // Convert to response format
   const comments: CommentResponse[] = await Promise.all(
     rawComments.map(async (c) => {
       const authorName = await getActorName(c.authorType, c.authorUuid);
@@ -100,7 +100,7 @@ export async function listComments({
   return { comments, total };
 }
 
-// 创建评论
+// Create comment
 export async function createComment({
   companyUuid,
   targetType,
@@ -109,7 +109,7 @@ export async function createComment({
   authorType,
   authorUuid,
 }: CommentCreateParams): Promise<CommentResponse> {
-  // 验证目标存在
+  // Validate target exists
   const exists = await validateTargetExists(targetType, targetUuid, companyUuid);
   if (!exists) {
     throw new Error(`Target ${targetType} with UUID ${targetUuid} not found`);
@@ -136,7 +136,7 @@ export async function createComment({
     },
   });
 
-  // 获取作者名称
+  // Get author name
   const authorName = await getActorName(comment.authorType, comment.authorUuid);
 
   return {
@@ -181,7 +181,7 @@ export async function resolveProjectUuid(
   }
 }
 
-// 批量获取评论数量
+// Batch get comment counts
 export async function batchCommentCounts(
   companyUuid: string,
   targetType: TargetType,

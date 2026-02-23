@@ -1,5 +1,5 @@
 // src/app/api/admin/companies/[uuid]/route.ts
-// Company 详情、更新、删除 API (Super Admin Only)
+// Company Detail, Update, Delete API (Super Admin Only)
 
 import { NextRequest } from "next/server";
 import { withErrorHandler, parseBody } from "@/lib/api-handler";
@@ -10,7 +10,7 @@ import { CompanyUpdateInput } from "@/types/admin";
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// GET /api/admin/companies/:uuid - 详情
+// GET /api/admin/companies/:uuid - Detail
 export const GET = withErrorHandler<{ uuid: string }>(
   requireSuperAdmin(async (_request: NextRequest, context: RouteContext) => {
     const { uuid } = await context.params;
@@ -37,7 +37,7 @@ export const GET = withErrorHandler<{ uuid: string }>(
   })
 );
 
-// PATCH /api/admin/companies/:uuid - 更新
+// PATCH /api/admin/companies/:uuid - Update
 export const PATCH = withErrorHandler<{ uuid: string }>(
   requireSuperAdmin(async (request: NextRequest, context: RouteContext) => {
     const { uuid } = await context.params;
@@ -50,12 +50,12 @@ export const PATCH = withErrorHandler<{ uuid: string }>(
 
     const body = await parseBody<CompanyUpdateInput>(request);
 
-    // 验证名称
+    // Validate name
     if (body.name !== undefined && body.name.trim() === "") {
       return errors.validationError({ name: "Name cannot be empty" });
     }
 
-    // 验证邮箱域名唯一性
+    // Validate email domain uniqueness
     if (body.emailDomains && body.emailDomains.length > 0) {
       for (const domain of body.emailDomains) {
         const isTaken = await companyService.isEmailDomainTaken(
@@ -68,7 +68,7 @@ export const PATCH = withErrorHandler<{ uuid: string }>(
       }
     }
 
-    // 构建更新数据
+    // Build update data
     const updateData: CompanyUpdateInput = {};
     if (body.name !== undefined) updateData.name = body.name.trim();
     if (body.emailDomains !== undefined)
@@ -94,7 +94,7 @@ export const PATCH = withErrorHandler<{ uuid: string }>(
   })
 );
 
-// DELETE /api/admin/companies/:uuid - 删除
+// DELETE /api/admin/companies/:uuid - Delete
 export const DELETE = withErrorHandler<{ uuid: string }>(
   requireSuperAdmin(async (_request: NextRequest, context: RouteContext) => {
     const { uuid } = await context.params;

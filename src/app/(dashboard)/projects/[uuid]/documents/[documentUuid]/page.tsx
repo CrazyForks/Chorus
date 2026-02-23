@@ -1,5 +1,5 @@
 // src/app/(dashboard)/projects/[uuid]/documents/[documentUuid]/page.tsx
-// Server Component - UUID 从 URL 获取
+// Server Component - UUID obtained from URL
 
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -34,13 +34,13 @@ export default async function DocumentDetailPage({ params }: PageProps) {
   const { uuid: projectUuid, documentUuid } = await params;
   const t = await getTranslations();
 
-  // 验证项目存在
+  // Validate project exists
   const exists = await projectExists(auth.companyUuid, projectUuid);
   if (!exists) {
     redirect("/projects");
   }
 
-  // 获取 Document 详情
+  // Get Document details
   const document = await getDocument(auth.companyUuid, documentUuid);
   if (!document) {
     return (

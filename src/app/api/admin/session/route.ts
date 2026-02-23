@@ -1,5 +1,5 @@
 // src/app/api/admin/session/route.ts
-// Super Admin 会话检查和登出 API
+// Super Admin Session Check and Logout API
 
 import { NextRequest, NextResponse } from "next/server";
 import { withErrorHandler } from "@/lib/api-handler";
@@ -9,7 +9,7 @@ import {
   clearAdminCookie,
 } from "@/lib/super-admin";
 
-// GET /api/admin/session - 检查当前会话
+// GET /api/admin/session - Check current session
 export const GET = withErrorHandler(async (request: NextRequest) => {
   const auth = await getSuperAdminFromRequest(request);
 
@@ -23,7 +23,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   });
 });
 
-// DELETE /api/admin/session - 登出
+// DELETE /api/admin/session - Logout
 export const DELETE = withErrorHandler(async () => {
   const response = NextResponse.json({
     success: true,

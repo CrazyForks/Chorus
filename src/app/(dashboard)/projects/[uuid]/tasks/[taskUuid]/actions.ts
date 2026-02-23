@@ -13,13 +13,13 @@ export async function claimTaskAction(taskUuid: string) {
   }
 
   try {
-    // 验证 task 存在且属于该公司
+    // Validate task exists and belongs to this company
     const task = await getTaskByUuid(auth.companyUuid, taskUuid);
     if (!task) {
       return { success: false, error: "Task not found" };
     }
 
-    // 只有 open 或 assigned 状态的 task 可以被认领/重新分配
+    // Only open or assigned tasks can be claimed/reassigned
     if (task.status !== "open" && task.status !== "assigned") {
       return { success: false, error: "Task is not available for claiming" };
     }
@@ -108,18 +108,18 @@ export async function releaseTaskAction(taskUuid: string) {
   }
 
   try {
-    // 验证 task 存在且属于该公司
+    // Validate task exists and belongs to this company
     const task = await getTaskByUuid(auth.companyUuid, taskUuid);
     if (!task) {
       return { success: false, error: "Task not found" };
     }
 
-    // 只有 assigned 或 in_progress 状态的 task 才能释放
+    // Only assigned or in_progress tasks can be released
     if (task.status !== "assigned" && task.status !== "in_progress") {
       return { success: false, error: "Task is not in assigned status" };
     }
 
-    // 释放 task
+    // Release task
     await releaseTask(taskUuid);
 
     // Record activity
@@ -150,7 +150,7 @@ export async function updateTaskStatusAction(taskUuid: string, newStatus: string
   }
 
   try {
-    // 验证 task 存在且属于该公司
+    // Validate task exists and belongs to this company
     const task = await getTaskByUuid(auth.companyUuid, taskUuid);
     if (!task) {
       return { success: false, error: "Task not found" };

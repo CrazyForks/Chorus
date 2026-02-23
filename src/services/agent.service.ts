@@ -1,5 +1,5 @@
 // src/services/agent.service.ts
-// Agent 服务层 (ARCHITECTURE.md §3.1 Service Layer)
+// Agent Service Layer (ARCHITECTURE.md §3.1 Service Layer)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { prisma } from "@/lib/prisma";
@@ -34,7 +34,7 @@ export interface ApiKeyCreateParams {
   expiresAt?: Date | null;
 }
 
-// Agents 列表查询
+// List agents query
 export async function listAgents({ companyUuid, skip, take }: AgentListParams) {
   const [agents, total] = await Promise.all([
     prisma.agent.findMany({
@@ -59,7 +59,7 @@ export async function listAgents({ companyUuid, skip, take }: AgentListParams) {
   return { agents, total };
 }
 
-// 获取 Agent 详情
+// Get Agent details
 export async function getAgent(companyUuid: string, uuid: string) {
   return prisma.agent.findFirst({
     where: { uuid, companyUuid },
@@ -79,7 +79,7 @@ export async function getAgent(companyUuid: string, uuid: string) {
   });
 }
 
-// 通过 UUID 获取 Agent（验证用）
+// Get Agent by UUID (for validation)
 export async function getAgentByUuid(companyUuid: string, uuid: string) {
   return prisma.agent.findFirst({
     where: { uuid, companyUuid },
@@ -87,7 +87,7 @@ export async function getAgentByUuid(companyUuid: string, uuid: string) {
   });
 }
 
-// 创建 Agent
+// Create Agent
 export async function createAgent({
   companyUuid,
   name,
@@ -110,7 +110,7 @@ export async function createAgent({
   });
 }
 
-// 更新 Agent (by UUID)
+// Update Agent (by UUID)
 export async function updateAgent(uuid: string, data: AgentUpdateParams) {
   return prisma.agent.update({
     where: { uuid },
@@ -128,12 +128,12 @@ export async function updateAgent(uuid: string, data: AgentUpdateParams) {
   });
 }
 
-// 删除 Agent (by UUID)
+// Delete Agent (by UUID)
 export async function deleteAgent(uuid: string) {
   return prisma.agent.delete({ where: { uuid } });
 }
 
-// 列出 API Keys
+// List API Keys
 export async function listApiKeys(companyUuid: string, skip: number, take: number, ownerUuid?: string) {
   const where = {
     companyUuid,
@@ -157,7 +157,7 @@ export async function listApiKeys(companyUuid: string, skip: number, take: numbe
   return { apiKeys, total };
 }
 
-// 创建 API Key (UUID-based)
+// Create API Key (UUID-based)
 export async function createApiKey({
   companyUuid,
   agentUuid,
@@ -184,11 +184,11 @@ export async function createApiKey({
     },
   });
 
-  // 返回明文 key（只有创建时能看到）
+  // Return plaintext key (only visible at creation time)
   return { ...apiKey, key };
 }
 
-// 获取 API Key 详情
+// Get API Key details
 export async function getApiKey(companyUuid: string, uuid: string, ownerUuid?: string) {
   return prisma.apiKey.findFirst({
     where: {
@@ -200,7 +200,7 @@ export async function getApiKey(companyUuid: string, uuid: string, ownerUuid?: s
   });
 }
 
-// 撤销 API Key (by UUID)
+// Revoke API Key (by UUID)
 export async function revokeApiKey(uuid: string) {
   return prisma.apiKey.update({
     where: { uuid },
@@ -208,7 +208,7 @@ export async function revokeApiKey(uuid: string) {
   });
 }
 
-// 获取用户拥有的 Agents (for claim modal)
+// Get Agents owned by user (for claim modal)
 export async function getAgentsByOwner(companyUuid: string, ownerUuid: string) {
   return prisma.agent.findMany({
     where: { companyUuid, ownerUuid },
@@ -221,9 +221,9 @@ export async function getAgentsByOwner(companyUuid: string, ownerUuid: string) {
   });
 }
 
-// 获取指定角色的 Agents (for assignment)
-// 支持两种角色格式: "developer" 和 "developer_agent"
-// ownerUuid: 传入时只返回该用户创建的 Agents
+// Get Agents by role (for assignment)
+// Supports two role formats: "developer" and "developer_agent"
+// ownerUuid: when provided, only returns Agents created by this user
 export async function getAgentsByRole(companyUuid: string, role: string, ownerUuid?: string) {
   return prisma.agent.findMany({
     where: {
@@ -244,7 +244,7 @@ export async function getAgentsByRole(companyUuid: string, role: string, ownerUu
   });
 }
 
-// 获取公司内所有用户 (for assignment)
+// Get all users in company (for assignment)
 export async function getCompanyUsers(companyUuid: string) {
   return prisma.user.findMany({
     where: { companyUuid },

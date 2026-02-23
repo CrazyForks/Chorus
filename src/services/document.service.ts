@@ -1,11 +1,11 @@
 // src/services/document.service.ts
-// Document 服务层 (ARCHITECTURE.md §3.1 Service Layer)
+// Document Service Layer (ARCHITECTURE.md §3.1 Service Layer)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { prisma } from "@/lib/prisma";
 import { formatCreatedBy } from "@/lib/uuid-resolver";
 
-// ===== 类型定义 =====
+// ===== Type Definitions =====
 
 export interface DocumentListParams {
   companyUuid: string;
@@ -31,7 +31,7 @@ export interface DocumentUpdateParams {
   incrementVersion?: boolean;
 }
 
-// API 响应格式
+// API response format
 export interface DocumentResponse {
   uuid: string;
   type: string;
@@ -45,9 +45,9 @@ export interface DocumentResponse {
   updatedAt: string;
 }
 
-// ===== 内部辅助函数 =====
+// ===== Internal Helper Functions =====
 
-// 格式化单个 Document 为 API 响应格式
+// Format a single Document into API response format
 async function formatDocumentResponse(
   doc: {
     uuid: string;
@@ -87,9 +87,9 @@ async function formatDocumentResponse(
   return response;
 }
 
-// ===== Service 方法 =====
+// ===== Service Methods =====
 
-// Documents 列表查询
+// List documents query
 export async function listDocuments({
   companyUuid,
   projectUuid,
@@ -129,7 +129,7 @@ export async function listDocuments({
   return { documents, total };
 }
 
-// 获取 Document 详情
+// Get Document details
 export async function getDocument(
   companyUuid: string,
   uuid: string
@@ -145,14 +145,14 @@ export async function getDocument(
   return formatDocumentResponse(doc, true);
 }
 
-// 通过 UUID 获取 Document 原始数据（内部使用）
+// Get raw Document data by UUID (internal use)
 export async function getDocumentByUuid(companyUuid: string, uuid: string) {
   return prisma.document.findFirst({
     where: { uuid, companyUuid },
   });
 }
 
-// 创建 Document
+// Create Document
 export async function createDocument(
   params: DocumentCreateParams
 ): Promise<DocumentResponse> {
@@ -183,7 +183,7 @@ export async function createDocument(
   return formatDocumentResponse(doc, true);
 }
 
-// 更新 Document
+// Update Document
 export async function updateDocument(
   uuid: string,
   { title, content, incrementVersion }: DocumentUpdateParams
@@ -211,12 +211,12 @@ export async function updateDocument(
   return formatDocumentResponse(doc, true);
 }
 
-// 删除 Document
+// Delete Document
 export async function deleteDocument(uuid: string) {
   return prisma.document.delete({ where: { uuid } });
 }
 
-// 从 Proposal 创建 Document
+// Create Document from Proposal
 export async function createDocumentFromProposal(
   companyUuid: string,
   projectUuid: string,

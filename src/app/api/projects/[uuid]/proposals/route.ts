@@ -1,7 +1,7 @@
 // src/app/api/projects/[uuid]/proposals/route.ts
-// Proposals API - 列表和创建 (ARCHITECTURE.md §5.1, PRD §4.1 F5)
+// Proposals API - List and Create (ARCHITECTURE.md §5.1, PRD §4.1 F5)
 // UUID-Based Architecture: All operations use UUIDs
-// Container Model: Proposal 包含 documentDrafts 和 taskDrafts
+// Container Model: Proposal contains documentDrafts and taskDrafts
 
 import { NextRequest } from "next/server";
 import { withErrorHandler, parseBody, parsePagination } from "@/lib/api-handler";
@@ -12,7 +12,7 @@ import { listProposals, createProposal, type DocumentDraft, type TaskDraft } fro
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// GET /api/projects/[uuid]/proposals - Proposals 列表
+// GET /api/projects/[uuid]/proposals - List Proposals
 export const GET = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -23,11 +23,11 @@ export const GET = withErrorHandler<{ uuid: string }>(
     const { uuid: projectUuid } = await context.params;
     const { page, pageSize, skip, take } = parsePagination(request);
 
-    // 解析筛选参数
+    // Parse filter parameters
     const url = new URL(request.url);
     const statusFilter = url.searchParams.get("status") || undefined;
 
-    // 验证项目存在
+    // Validate project exists
     if (!(await projectExists(auth.companyUuid, projectUuid))) {
       return errors.notFound("Project");
     }
@@ -44,7 +44,7 @@ export const GET = withErrorHandler<{ uuid: string }>(
   }
 );
 
-// POST /api/projects/[uuid]/proposals - 创建 Proposal（容器模型）
+// POST /api/projects/[uuid]/proposals - Create Proposal (container model)
 export const POST = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -52,7 +52,7 @@ export const POST = withErrorHandler<{ uuid: string }>(
       return errors.unauthorized();
     }
 
-    // PM Agent 或 User 可以创建 Proposal
+    // PM Agent or User can create Proposals
     const canCreate = isUser(auth) || (isAgent(auth) && isPmAgent(auth));
     if (!canCreate) {
       return errors.forbidden("Only PM agents or users can create proposals");
@@ -60,7 +60,7 @@ export const POST = withErrorHandler<{ uuid: string }>(
 
     const { uuid: projectUuid } = await context.params;
 
-    // 验证项目存在
+    // Validate project exists
     if (!(await projectExists(auth.companyUuid, projectUuid))) {
       return errors.notFound("Project");
     }
@@ -74,7 +74,7 @@ export const POST = withErrorHandler<{ uuid: string }>(
       taskDrafts?: TaskDraft[];
     }>(request);
 
-    // 验证必填字段
+    // Validate required fields
     if (!body.title || body.title.trim() === "") {
       return errors.validationError({ title: "Title is required" });
     }
@@ -85,7 +85,7 @@ export const POST = withErrorHandler<{ uuid: string }>(
       return errors.validationError({ inputUuids: "Input UUIDs are required" });
     }
 
-    // 确定创建者类型
+    // Determine creator type
     const createdByType = isUser(auth) ? "user" : "agent";
 
     const proposal = await createProposal({

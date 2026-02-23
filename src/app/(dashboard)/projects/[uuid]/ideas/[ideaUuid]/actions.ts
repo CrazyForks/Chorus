@@ -12,13 +12,13 @@ export async function claimIdeaAction(ideaUuid: string) {
   }
 
   try {
-    // 验证 idea 存在且属于该公司
+    // Validate idea exists and belongs to this company
     const idea = await getIdeaByUuid(auth.companyUuid, ideaUuid);
     if (!idea) {
       return { success: false, error: "Idea not found" };
     }
 
-    // open/assigned/in_progress 状态的 idea 可以被分配
+    // Ideas with open/assigned/in_progress status can be assigned
     if (idea.status !== "open" && idea.status !== "assigned" && idea.status !== "in_progress") {
       return { success: false, error: "Idea is not available for assignment" };
     }

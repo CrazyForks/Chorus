@@ -1,5 +1,5 @@
 // src/app/api/projects/route.ts
-// Projects API - 列表和创建 (ARCHITECTURE.md §5.1)
+// Projects API - List and Create (ARCHITECTURE.md §5.1)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest } from "next/server";
@@ -8,7 +8,7 @@ import { withErrorHandler, parseBody, parsePagination } from "@/lib/api-handler"
 import { success, paginated, errors } from "@/lib/api-response";
 import { getAuthContext, isUser } from "@/lib/auth";
 
-// GET /api/projects - 项目列表
+// GET /api/projects - List Projects
 export const GET = withErrorHandler(async (request: NextRequest) => {
   const auth = await getAuthContext(request);
   if (!auth) {
@@ -44,7 +44,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     }),
   ]);
 
-  // 转换为 API 响应格式
+  // Transform to API response format
   const data = projects.map((p) => ({
     uuid: p.uuid,
     name: p.name,
@@ -62,14 +62,14 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   return paginated(data, page, pageSize, total);
 });
 
-// POST /api/projects - 创建项目
+// POST /api/projects - Create Project
 export const POST = withErrorHandler(async (request: NextRequest) => {
   const auth = await getAuthContext(request);
   if (!auth) {
     return errors.unauthorized();
   }
 
-  // 只有用户可以创建项目
+  // Only users can create projects
   if (!isUser(auth)) {
     return errors.forbidden("Only users can create projects");
   }
@@ -79,7 +79,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     description?: string;
   }>(request);
 
-  // 验证必填字段
+  // Validate required fields
   if (!body.name || body.name.trim() === "") {
     return errors.validationError({ name: "Name is required" });
   }

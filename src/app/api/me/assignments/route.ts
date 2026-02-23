@@ -1,5 +1,5 @@
 // src/app/api/me/assignments/route.ts
-// Agent 自助 API - 获取自己认领的 Ideas + Tasks (PRD §5.4)
+// Agent Self-Service API - Get own claimed Ideas + Tasks (PRD §5.4)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest } from "next/server";
@@ -8,7 +8,7 @@ import { success, errors } from "@/lib/api-response";
 import { getAuthContext } from "@/lib/auth";
 import { getMyAssignments } from "@/services/assignment.service";
 
-// GET /api/me/assignments - 获取自己认领的 Ideas + Tasks
+// GET /api/me/assignments - Get own claimed Ideas + Tasks
 export const GET = withErrorHandler(async (request: NextRequest) => {
   const auth = await getAuthContext(request);
   if (!auth) {

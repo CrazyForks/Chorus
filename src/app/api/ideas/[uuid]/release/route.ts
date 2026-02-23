@@ -1,5 +1,5 @@
 // src/app/api/ideas/[uuid]/release/route.ts
-// Ideas API - 放弃认领 Idea (PRD §4.1 F5)
+// Ideas API - Release Idea (PRD §4.1 F5)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest } from "next/server";
@@ -11,7 +11,7 @@ import { NotClaimedError } from "@/lib/errors";
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// POST /api/ideas/[uuid]/release - 放弃认领 Idea
+// POST /api/ideas/[uuid]/release - Release Idea
 export const POST = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -26,7 +26,7 @@ export const POST = withErrorHandler<{ uuid: string }>(
       return errors.notFound("Idea");
     }
 
-    // 检查权限：用户可以释放任何 Idea，Agent 只能释放自己认领的
+    // Check permissions: users can release any Idea, Agents can only release their own
     if (!isUser(auth)) {
       if (!isAssignee(auth, idea.assigneeType, idea.assigneeUuid)) {
         return errors.permissionDenied("Only assignee can release this idea");

@@ -1,16 +1,16 @@
 // src/lib/api-handler.ts
-// API 错误处理中间件 (ARCHITECTURE.md §5.1)
+// API Error Handling Middleware (ARCHITECTURE.md §5.1)
 
 import { NextRequest, NextResponse } from "next/server";
 import { errors } from "./api-response";
 
-// API Handler 类型
+// API Handler type
 export type ApiHandler<T = Record<string, string>> = (
   request: NextRequest,
   context: { params: Promise<T> }
 ) => Promise<NextResponse>;
 
-// 自定义 API 错误类
+// Custom API Error class
 export class ApiError extends Error {
   constructor(
     public code: string,
@@ -23,14 +23,14 @@ export class ApiError extends Error {
   }
 }
 
-// Prisma 错误代码
+// Prisma error codes
 const PRISMA_ERROR_CODES = {
   P2002: "Unique constraint violation",
   P2025: "Record not found",
   P2003: "Foreign key constraint violation",
 };
 
-// 错误处理包装器
+// Error handling wrapper
 export function withErrorHandler<T = Record<string, string>>(
   handler: ApiHandler<T>
 ): ApiHandler<T> {
@@ -40,7 +40,7 @@ export function withErrorHandler<T = Record<string, string>>(
     } catch (err) {
       console.error("API Error:", err);
 
-      // 自定义 API 错误
+      // Custom API error
       if (err instanceof ApiError) {
         return NextResponse.json(
           {
@@ -55,7 +55,7 @@ export function withErrorHandler<T = Record<string, string>>(
         );
       }
 
-      // Prisma 错误
+      // Prisma error
       if (err && typeof err === "object" && "code" in err) {
         const prismaErr = err as { code: string; meta?: unknown };
         const errorMessage =
@@ -72,7 +72,7 @@ export function withErrorHandler<T = Record<string, string>>(
         }
       }
 
-      // 通用错误
+      // Generic error
       if (err instanceof Error) {
         return errors.internal(
           process.env.NODE_ENV === "development"
@@ -86,7 +86,7 @@ export function withErrorHandler<T = Record<string, string>>(
   };
 }
 
-// 请求体解析工具
+// Request body parser utility
 export async function parseBody<T>(request: NextRequest): Promise<T> {
   try {
     return (await request.json()) as T;
@@ -95,7 +95,7 @@ export async function parseBody<T>(request: NextRequest): Promise<T> {
   }
 }
 
-// 查询参数解析工具
+// Query parameter parser utility
 export function parseQuery(request: NextRequest) {
   const url = new URL(request.url);
   const params: Record<string, string> = {};
@@ -105,7 +105,7 @@ export function parseQuery(request: NextRequest) {
   return params;
 }
 
-// 分页参数解析
+// Pagination parameter parser
 export function parsePagination(request: NextRequest) {
   const query = parseQuery(request);
   const page = Math.max(1, parseInt(query.page || "1", 10));

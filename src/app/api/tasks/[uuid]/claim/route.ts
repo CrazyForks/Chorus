@@ -1,5 +1,5 @@
 // src/app/api/tasks/[uuid]/claim/route.ts
-// Tasks API - 认领 Task (PRD §3.3.1 认领规则)
+// Tasks API - Claim Task (PRD §3.3.1 claiming rules)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest } from "next/server";
@@ -12,7 +12,7 @@ import { AlreadyClaimedError } from "@/lib/errors";
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// POST /api/tasks/[uuid]/claim - 认领 Task
+// POST /api/tasks/[uuid]/claim - Claim Task
 export const POST = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -32,26 +32,26 @@ export const POST = withErrorHandler<{ uuid: string }>(
     let assignedByUuid: string | null = null;
 
     if (isAgent(auth)) {
-      // Agent 认领 - Developer Agent 可以认领
+      // Agent claim - Developer Agents can claim
       if (!isDeveloperAgent(auth)) {
         return errors.forbidden("Only developer agents can claim tasks");
       }
       assigneeType = "agent";
       assigneeUuid = auth.actorUuid;
     } else if (isUser(auth)) {
-      // 用户认领 - 可以选择分配给自己或特定 Agent
+      // User claim - can choose to assign to self or a specific Agent
       const body = await parseBody<{
         assignToSelf?: boolean;
         agentUuid?: string;
       }>(request);
 
       if (body.agentUuid) {
-        // 分配给特定 Agent（通过 UUID）
+        // Assign to a specific Agent (by UUID)
         const agent = await prisma.agent.findFirst({
           where: {
             uuid: body.agentUuid,
             companyUuid: auth.companyUuid,
-            roles: { has: "developer" }, // 只能分配给 Developer Agent
+            roles: { has: "developer" }, // Can only assign to Developer Agents
           },
         });
 
@@ -63,7 +63,7 @@ export const POST = withErrorHandler<{ uuid: string }>(
         assigneeUuid = agent.uuid;
         assignedByUuid = auth.actorUuid;
       } else {
-        // 分配给自己（所有自己的 Developer Agent 都能处理）
+        // Assign to self (all owned Developer Agents can handle it)
         assigneeType = "user";
         assigneeUuid = auth.actorUuid;
         assignedByUuid = auth.actorUuid;

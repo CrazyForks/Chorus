@@ -1,5 +1,5 @@
 // src/app/api/documents/[uuid]/route.ts
-// Documents API - 详情、更新、删除 (ARCHITECTURE.md §5.1)
+// Documents API - Detail, Update, Delete (ARCHITECTURE.md §5.1)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest } from "next/server";
@@ -15,7 +15,7 @@ import {
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// GET /api/documents/[uuid] - Document 详情
+// GET /api/documents/[uuid] - Document Detail
 export const GET = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -34,7 +34,7 @@ export const GET = withErrorHandler<{ uuid: string }>(
   }
 );
 
-// PATCH /api/documents/[uuid] - 更新 Document
+// PATCH /api/documents/[uuid] - Update Document
 export const PATCH = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -42,14 +42,14 @@ export const PATCH = withErrorHandler<{ uuid: string }>(
       return errors.unauthorized();
     }
 
-    // 只有用户可以更新 Document
+    // Only users can update Documents
     if (!isUser(auth)) {
       return errors.forbidden("Only users can update documents");
     }
 
     const { uuid } = await context.params;
 
-    // 获取原始 Document 数据
+    // Get the original Document data
     const document = await getDocumentByUuid(auth.companyUuid, uuid);
     if (!document) {
       return errors.notFound("Document");
@@ -61,7 +61,7 @@ export const PATCH = withErrorHandler<{ uuid: string }>(
       incrementVersion?: boolean;
     }>(request);
 
-    // 验证标题
+    // Validate title
     if (body.title !== undefined && body.title.trim() === "") {
       return errors.validationError({ title: "Title cannot be empty" });
     }
@@ -76,7 +76,7 @@ export const PATCH = withErrorHandler<{ uuid: string }>(
   }
 );
 
-// DELETE /api/documents/[uuid] - 删除 Document
+// DELETE /api/documents/[uuid] - Delete Document
 export const DELETE = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -84,7 +84,7 @@ export const DELETE = withErrorHandler<{ uuid: string }>(
       return errors.unauthorized();
     }
 
-    // 只有用户可以删除 Document
+    // Only users can delete Documents
     if (!isUser(auth)) {
       return errors.forbidden("Only users can delete documents");
     }

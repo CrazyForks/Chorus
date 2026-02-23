@@ -1,5 +1,5 @@
 // src/app/api/tasks/[uuid]/dependencies/route.ts
-// Task Dependencies API - 添加依赖、查询依赖
+// Task Dependencies API - Add Dependency, Query Dependencies
 
 import { NextRequest } from "next/server";
 import { withErrorHandler, parseBody } from "@/lib/api-handler";
@@ -13,7 +13,7 @@ import {
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// POST /api/tasks/[uuid]/dependencies - 添加依赖
+// POST /api/tasks/[uuid]/dependencies - Add Dependency
 export const POST = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -23,7 +23,7 @@ export const POST = withErrorHandler<{ uuid: string }>(
 
     const { uuid } = await context.params;
 
-    // 验证任务存在
+    // Validate task exists
     const task = await getTaskByUuid(auth.companyUuid, uuid);
     if (!task) {
       return errors.notFound("Task");
@@ -50,7 +50,7 @@ export const POST = withErrorHandler<{ uuid: string }>(
   }
 );
 
-// GET /api/tasks/[uuid]/dependencies - 查询任务依赖
+// GET /api/tasks/[uuid]/dependencies - Query Task Dependencies
 export const GET = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);

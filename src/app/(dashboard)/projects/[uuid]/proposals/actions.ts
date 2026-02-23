@@ -11,7 +11,7 @@ import {
 } from "@/services/proposal.service";
 import { projectExists } from "@/services/project.service";
 
-// 创建 Proposal
+// Create Proposal
 export async function createProposalAction(
   projectUuid: string,
   data: {
@@ -29,12 +29,12 @@ export async function createProposalAction(
   }
 
   try {
-    // 验证项目存在
+    // Validate project exists
     if (!(await projectExists(auth.companyUuid, projectUuid))) {
       return { success: false, error: "Project not found" };
     }
 
-    // 验证必填字段
+    // Validate required fields
     if (!data.title || data.title.trim() === "") {
       return { success: false, error: "Title is required" };
     }
@@ -42,9 +42,9 @@ export async function createProposalAction(
       return { success: false, error: "Input sources are required" };
     }
 
-    // 如果输入类型是 idea，需要额外验证
+    // If input type is idea, additional validation is needed
     if (data.inputType === "idea") {
-      // 验证用户是否是这些 Ideas 的认领者
+      // Validate if user is the assignee of these Ideas
       const assigneeCheck = await checkIdeasAssignee(
         auth.companyUuid,
         data.inputUuids,
@@ -58,7 +58,7 @@ export async function createProposalAction(
         };
       }
 
-      // 验证这些 Ideas 是否已被其他 Proposal 使用
+      // Validate whether these Ideas have already been used by another Proposal
       const availabilityCheck = await checkIdeasAvailability(
         auth.companyUuid,
         data.inputUuids

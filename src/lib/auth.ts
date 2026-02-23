@@ -1,5 +1,5 @@
 // src/lib/auth.ts
-// 认证中间件和工具函数 (ARCHITECTURE.md §6)
+// Authentication middleware and utility functions (ARCHITECTURE.md §6)
 // UUID-Based Architecture: All IDs are UUIDs
 
 import { NextRequest, NextResponse } from "next/server";
@@ -16,17 +16,17 @@ import { getSuperAdminFromRequest } from "./super-admin";
 import { getUserSessionFromRequest } from "./user-session";
 import { verifyOidcAccessToken, isOidcToken } from "./oidc-auth";
 
-// 从请求获取认证上下文 (UUID-based)
+// Get auth context from request (UUID-based)
 export async function getAuthContext(
   request: NextRequest
 ): Promise<AuthContext | null> {
   const authHeader = request.headers.get("authorization");
 
-  // 1. 尝试 Bearer Token 认证
+  // 1. Try Bearer Token authentication
   if (authHeader?.toLowerCase().startsWith("bearer ")) {
     const token = authHeader.substring(7).trim();
 
-    // 1a. API Key 认证（Agent）- API Key 以 "cho_" 开头
+    // 1a. API Key authentication (Agent) - API Key starts with "cho_"
     if (token.startsWith("cho_")) {
       const result = await validateApiKey(token);
       if (result.valid && result.agent) {
@@ -42,7 +42,7 @@ export async function getAuthContext(
       }
     }
 
-    // 1b. OIDC Access Token 认证（普通用户）
+    // 1b. OIDC Access Token authentication (regular user)
     if (isOidcToken(token)) {
       const userContext = await verifyOidcAccessToken(token);
       if (userContext) {
@@ -50,20 +50,20 @@ export async function getAuthContext(
       }
     }
 
-    // 1c. Chorus JWT Token 认证（SuperAdmin 或旧系统兼容）
+    // 1c. Chorus JWT Token authentication (SuperAdmin or legacy compatibility)
     const userSession = await getUserSessionFromRequest(request);
     if (userSession) {
       return userSession;
     }
   }
 
-  // 2. 尝试 Session Cookie 认证 — 无 Authorization header 时
+  // 2. Try Session Cookie authentication -- when no Authorization header
   const userSession = await getUserSessionFromRequest(request);
   if (userSession) {
     return userSession;
   }
 
-  // 3. 尝试 OIDC Access Token Cookie 认证（EventSource 等无法发送 Authorization header 的场景）
+  // 3. Try OIDC Access Token Cookie authentication (for scenarios like EventSource that cannot send Authorization headers)
   const oidcCookieToken = request.cookies.get("oidc_access_token")?.value;
   if (oidcCookieToken && isOidcToken(oidcCookieToken)) {
     const oidcContext = await verifyOidcAccessToken(oidcCookieToken);
@@ -72,7 +72,7 @@ export async function getAuthContext(
     }
   }
 
-  // 4. Fallback: Header 模拟用户认证（开发用）- UUID-based
+  // 4. Fallback: Header-based mock user authentication (for development) - UUID-based
   const userUuidHeader = request.headers.get("x-user-uuid");
   const companyUuidHeader = request.headers.get("x-company-uuid");
 
@@ -90,33 +90,33 @@ export async function getAuthContext(
   return null;
 }
 
-// 检查是否为 Agent
+// Check if context is Agent
 export function isAgent(ctx: AuthContext): ctx is AgentAuthContext {
   return ctx.type === "agent";
 }
 
-// 检查是否为 User
+// Check if context is User
 export function isUser(ctx: AuthContext): ctx is UserAuthContext {
   return ctx.type === "user";
 }
 
-// 检查 Agent 是否有特定角色
+// Check if Agent has a specific role
 export function hasRole(ctx: AuthContext, role: AgentRole): boolean {
   if (!isAgent(ctx)) return false;
   return ctx.roles.includes(role);
 }
 
-// 检查是否为 PM Agent
+// Check if PM Agent
 export function isPmAgent(ctx: AuthContext): boolean {
   return hasRole(ctx, "pm");
 }
 
-// 检查是否为 Developer Agent
+// Check if Developer Agent
 export function isDeveloperAgent(ctx: AuthContext): boolean {
   return hasRole(ctx, "developer");
 }
 
-// 要求认证的装饰器工厂
+// Require authentication decorator factory
 export function requireAuth<T>(
   handler: (
     request: NextRequest,
@@ -136,7 +136,7 @@ export function requireAuth<T>(
   };
 }
 
-// 要求用户认证
+// Require user authentication
 export function requireUser<T>(
   handler: (
     request: NextRequest,
@@ -159,7 +159,7 @@ export function requireUser<T>(
   };
 }
 
-// 要求特定 Agent 角色
+// Require specific Agent role
 export function requireAgentRole<T>(
   role: AgentRole,
   handler: (
@@ -186,7 +186,7 @@ export function requireAgentRole<T>(
   };
 }
 
-// 检查是否是资源的认领者 (UUID-based)
+// Check if context is the assignee of a resource (UUID-based)
 export function isAssignee(
   ctx: AuthContext,
   assigneeType: string | null,
@@ -195,18 +195,18 @@ export function isAssignee(
   if (!assigneeType || !assigneeUuid) return false;
 
   if (isUser(ctx)) {
-    // 用户直接匹配
+    // Direct user match
     if (assigneeType === "user" && assigneeUuid === ctx.actorUuid) {
       return true;
     }
   }
 
   if (isAgent(ctx)) {
-    // Agent 直接匹配
+    // Direct Agent match
     if (assigneeType === "agent" && assigneeUuid === ctx.actorUuid) {
       return true;
     }
-    // Agent 的 Owner 认领（"Assign to myself"）
+    // Agent's Owner claim ("Assign to myself")
     if (
       assigneeType === "user" &&
       ctx.ownerUuid &&
@@ -219,14 +219,14 @@ export function isAssignee(
   return false;
 }
 
-// 检查是否为 Super Admin
+// Check if Super Admin
 export function isSuperAdmin(
   ctx: AuthContext | SuperAdminAuthContext
 ): ctx is SuperAdminAuthContext {
   return ctx.type === "super_admin";
 }
 
-// 要求 Super Admin 认证
+// Require Super Admin authentication
 export function requireSuperAdmin<T>(
   handler: (
     request: NextRequest,

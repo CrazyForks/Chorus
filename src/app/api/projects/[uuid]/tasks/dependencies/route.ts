@@ -1,5 +1,5 @@
 // src/app/api/projects/[uuid]/tasks/dependencies/route.ts
-// Project Task Dependencies API - DAG 可视化数据
+// Project Task Dependencies API - DAG Visualization Data
 
 import { NextRequest } from "next/server";
 import { withErrorHandler } from "@/lib/api-handler";
@@ -10,7 +10,7 @@ import { getProjectTaskDependencies } from "@/services/task.service";
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// GET /api/projects/[uuid]/tasks/dependencies - 获取项目任务依赖关系（DAG）
+// GET /api/projects/[uuid]/tasks/dependencies - Get project task dependencies (DAG)
 export const GET = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -20,7 +20,7 @@ export const GET = withErrorHandler<{ uuid: string }>(
 
     const { uuid: projectUuid } = await context.params;
 
-    // 验证项目存在
+    // Validate project exists
     if (!(await projectExists(auth.companyUuid, projectUuid))) {
       return errors.notFound("Project");
     }

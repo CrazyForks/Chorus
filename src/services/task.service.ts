@@ -1,5 +1,5 @@
 // src/services/task.service.ts
-// Task 服务层 (ARCHITECTURE.md §3.1 Service Layer)
+// Task Service Layer (ARCHITECTURE.md §3.1 Service Layer)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { prisma } from "@/lib/prisma";
@@ -8,7 +8,7 @@ import { eventBus } from "@/lib/event-bus";
 import { AlreadyClaimedError, NotClaimedError, isPrismaNotFound } from "@/lib/errors";
 import { batchCommentCounts } from "@/services/comment.service";
 
-// ===== 类型定义 =====
+// ===== Type Definitions =====
 
 export interface TaskListParams {
   companyUuid: string;
@@ -26,7 +26,7 @@ export interface TaskCreateParams {
   description?: string | null;
   priority?: string;
   storyPoints?: number | null;
-  acceptanceCriteria?: string | null;  // 验收标准
+  acceptanceCriteria?: string | null;  // acceptance criteria
   proposalUuid?: string | null;
   createdByUuid: string;
 }
@@ -45,17 +45,17 @@ export interface TaskUpdateParams {
   status?: string;
   priority?: string;
   storyPoints?: number | null;
-  acceptanceCriteria?: string | null;  // 验收标准
+  acceptanceCriteria?: string | null;  // acceptance criteria
 }
 
-// 依赖关系简要信息
+// Dependency summary info
 export interface TaskDependencyInfo {
   uuid: string;
   title: string;
   status: string;
 }
 
-// API 响应格式
+// API response format
 export interface TaskResponse {
   uuid: string;
   title: string;
@@ -63,7 +63,7 @@ export interface TaskResponse {
   status: string;
   priority: string;
   storyPoints: number | null;
-  acceptanceCriteria: string | null;  // 验收标准
+  acceptanceCriteria: string | null;  // acceptance criteria
   assignee: {
     type: string;
     uuid: string;
@@ -81,7 +81,7 @@ export interface TaskResponse {
   updatedAt: string;
 }
 
-// Task 状态转换规则 (ARCHITECTURE.md §7.2)
+// Task status transition rules (ARCHITECTURE.md §7.2)
 export const TASK_STATUS_TRANSITIONS: Record<string, string[]> = {
   open: ["assigned", "closed"],
   assigned: ["open", "in_progress", "closed"],
@@ -91,15 +91,15 @@ export const TASK_STATUS_TRANSITIONS: Record<string, string[]> = {
   closed: [],
 };
 
-// 验证状态转换是否有效
+// Validate whether a status transition is valid
 export function isValidTaskStatusTransition(from: string, to: string): boolean {
   const allowed = TASK_STATUS_TRANSITIONS[from] || [];
   return allowed.includes(to);
 }
 
-// ===== 内部辅助函数 =====
+// ===== Internal Helper Functions =====
 
-// 格式化单个 Task 为 API 响应格式
+// Format a single Task into API response format
 async function formatTaskResponse(
   task: {
     uuid: string;
@@ -160,7 +160,7 @@ async function formatTaskResponse(
   };
 }
 
-// ===== 依赖关系 include 模板 =====
+// ===== Dependency relation include template =====
 
 const dependencyInclude = {
   dependsOn: {
@@ -175,9 +175,9 @@ const dependencyInclude = {
   },
 } as const;
 
-// ===== Service 方法 =====
+// ===== Service Methods =====
 
-// Tasks 列表查询
+// List tasks query
 export async function listTasks({
   companyUuid,
   projectUuid,
@@ -234,7 +234,7 @@ export async function listTasks({
   return { tasks, total };
 }
 
-// 获取 Task 详情
+// Get Task details
 export async function getTask(
   companyUuid: string,
   uuid: string
@@ -256,14 +256,14 @@ export async function getTask(
   return formatTaskResponse(task, commentCount);
 }
 
-// 通过 UUID 获取 Task 原始数据（内部使用，用于权限检查等）
+// Get raw Task data by UUID (internal use, for permission checks etc.)
 export async function getTaskByUuid(companyUuid: string, uuid: string) {
   return prisma.task.findFirst({
     where: { uuid, companyUuid },
   });
 }
 
-// 创建 Task
+// Create Task
 export async function createTask(params: TaskCreateParams): Promise<TaskResponse> {
   const task = await prisma.task.create({
     data: {
@@ -302,7 +302,7 @@ export async function createTask(params: TaskCreateParams): Promise<TaskResponse
   return formatTaskResponse(task);
 }
 
-// 更新 Task
+// Update Task
 export async function updateTask(
   uuid: string,
   data: TaskUpdateParams
@@ -320,7 +320,7 @@ export async function updateTask(
   return formatTaskResponse(task);
 }
 
-// 认领 Task (atomic: only succeeds if status is "open")
+// Claim Task (atomic: only succeeds if status is "open")
 export async function claimTask({
   taskUuid,
   companyUuid,
@@ -354,7 +354,7 @@ export async function claimTask({
   }
 }
 
-// 放弃认领 Task (atomic: only succeeds if status is "assigned")
+// Release Task (atomic: only succeeds if status is "assigned")
 export async function releaseTask(uuid: string): Promise<TaskResponse> {
   try {
     const task = await prisma.task.update({
@@ -382,15 +382,15 @@ export async function releaseTask(uuid: string): Promise<TaskResponse> {
   }
 }
 
-// 删除 Task
+// Delete Task
 export async function deleteTask(uuid: string) {
   const task = await prisma.task.delete({ where: { uuid } });
   eventBus.emitChange({ companyUuid: task.companyUuid, projectUuid: task.projectUuid, entityType: "task", entityUuid: task.uuid, action: "deleted" });
   return task;
 }
 
-// 批量创建 Tasks（用于 Proposal 审批）
-// 接受带 draftUuid 的任务列表，返回 { tasks, draftToTaskUuidMap }
+// Batch create Tasks (used for Proposal approval)
+// Accepts a task list with draftUuids, returns { tasks, draftToTaskUuidMap }
 export async function createTasksFromProposal(
   companyUuid: string,
   projectUuid: string,
@@ -447,21 +447,21 @@ export async function createTasksFromProposal(
   return { tasks: formattedTasks, draftToTaskUuidMap };
 }
 
-// ===== 依赖关系管理 =====
+// ===== Dependency Management =====
 
-// DFS 环检测：检查从 startUuid 出发是否可以经过已有边到达 targetUuid
+// DFS cycle detection: check if targetUuid is reachable from startUuid via existing edges
 async function wouldCreateCycle(
   startUuid: string,
   targetUuid: string
 ): Promise<boolean> {
-  // 获取项目内所有依赖边
+  // Get all dependency edges within the project
   const allDeps = await prisma.taskDependency.findMany({
     select: { taskUuid: true, dependsOnUuid: true },
   });
 
-  // 构建邻接表：taskUuid 依赖 dependsOnUuid
-  // 如果添加 edge: taskUuid=targetUuid -> dependsOnUuid=startUuid
-  // 需要检查 startUuid 是否可以通过已有边到达 targetUuid
+  // Build adjacency list: taskUuid depends on dependsOnUuid
+  // If adding edge: taskUuid=targetUuid -> dependsOnUuid=startUuid
+  // Need to check if startUuid can reach targetUuid via existing edges
   const adjacency = new Map<string, string[]>();
   for (const dep of allDeps) {
     if (!adjacency.has(dep.taskUuid)) {
@@ -491,18 +491,18 @@ async function wouldCreateCycle(
   return false;
 }
 
-// 添加任务依赖
+// Add task dependency
 export async function addTaskDependency(
   companyUuid: string,
   taskUuid: string,
   dependsOnUuid: string
 ): Promise<{ taskUuid: string; dependsOnUuid: string; createdAt: Date }> {
-  // 不能自依赖
+  // Cannot depend on itself
   if (taskUuid === dependsOnUuid) {
     throw new Error("A task cannot depend on itself");
   }
 
-  // 验证两个任务都存在且属于同一项目
+  // Verify both tasks exist and belong to the same project
   const [task, dependsOnTask] = await Promise.all([
     prisma.task.findFirst({ where: { uuid: taskUuid, companyUuid } }),
     prisma.task.findFirst({ where: { uuid: dependsOnUuid, companyUuid } }),
@@ -515,8 +515,8 @@ export async function addTaskDependency(
     throw new Error("Tasks must belong to the same project");
   }
 
-  // 环检测：如果添加 taskUuid -> dependsOnUuid 的边，
-  // 检查 dependsOnUuid 是否能沿着已有边到达 taskUuid（形成环）
+  // Cycle detection: if adding the edge taskUuid -> dependsOnUuid,
+  // check if dependsOnUuid can reach taskUuid via existing edges (forming a cycle)
   const cycleDetected = await wouldCreateCycle(dependsOnUuid, taskUuid);
   if (cycleDetected) {
     throw new Error("Adding this dependency would create a cycle");
@@ -529,13 +529,13 @@ export async function addTaskDependency(
   return { taskUuid: dep.taskUuid, dependsOnUuid: dep.dependsOnUuid, createdAt: dep.createdAt };
 }
 
-// 删除任务依赖
+// Remove task dependency
 export async function removeTaskDependency(
   companyUuid: string,
   taskUuid: string,
   dependsOnUuid: string
 ): Promise<void> {
-  // 验证任务属于该公司
+  // Verify task belongs to this company
   const task = await prisma.task.findFirst({ where: { uuid: taskUuid, companyUuid } });
   if (!task) throw new Error("Task not found");
 
@@ -544,7 +544,7 @@ export async function removeTaskDependency(
   });
 }
 
-// 获取任务的依赖关系
+// Get task dependencies
 export async function getTaskDependencies(
   companyUuid: string,
   taskUuid: string
@@ -570,7 +570,7 @@ export async function getTaskDependencies(
   };
 }
 
-// 获取已解锁的任务（所有依赖都已完成）
+// Get unblocked tasks (all dependencies are resolved)
 export async function getUnblockedTasks({
   companyUuid,
   projectUuid,
@@ -632,7 +632,7 @@ export async function getUnblockedTasks({
   return { tasks, total };
 }
 
-// 获取项目内所有任务依赖关系（DAG 可视化）
+// Get all task dependencies within a project (for DAG visualization)
 export async function getProjectTaskDependencies(
   companyUuid: string,
   projectUuid: string

@@ -36,7 +36,7 @@ interface Project {
   name: string;
 }
 
-// 从 URL 提取 project UUID
+// Extract project UUID from URL
 function extractProjectUuid(pathname: string): string | null {
   // Match /projects/[uuid] or /projects/[uuid]/anything
   const match = pathname.match(/^\/projects\/([a-f0-9-]{36})(\/|$)/);
@@ -56,7 +56,7 @@ export default function DashboardLayout({
   const [loading, setLoading] = useState(true);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
 
-  // 从 URL 获取当前 project UUID (stateful URL)
+  // Get current project UUID from URL (stateful URL)
   const currentProjectUuid = extractProjectUuid(pathname);
   const currentProject = projects.find((p) => p.uuid === currentProjectUuid) || null;
 
@@ -156,7 +156,7 @@ export default function DashboardLayout({
     );
   }
 
-  // Project navigation items - 使用 UUID 构建 URL
+  // Project navigation items - build URLs using UUIDs
   const getProjectNavItems = (projectUuid: string) => [
     { href: `/projects/${projectUuid}/dashboard`, label: t("nav.overview"), icon: LayoutDashboard },
     { href: `/projects/${projectUuid}/ideas`, label: t("nav.ideas"), icon: Lightbulb },

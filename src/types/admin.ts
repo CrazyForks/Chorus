@@ -1,7 +1,7 @@
 // src/types/admin.ts
-// Super Admin 相关类型定义
+// Super Admin related type definitions
 
-// Company 列表项
+// Company list item
 export interface CompanyListItem {
   uuid: string;
   name: string;
@@ -12,14 +12,14 @@ export interface CompanyListItem {
   createdAt: string;
 }
 
-// Company 详情
+// Company detail
 export interface CompanyDetail extends CompanyListItem {
   oidcIssuer: string | null;
   oidcClientId: string | null;
   updatedAt: string;
 }
 
-// Company 创建输入
+// Company creation input
 export interface CompanyCreateInput {
   name: string;
   emailDomains?: string[];
@@ -27,7 +27,7 @@ export interface CompanyCreateInput {
   oidcClientId?: string;
 }
 
-// Company 更新输入
+// Company update input
 export interface CompanyUpdateInput {
   name?: string;
   emailDomains?: string[];
@@ -36,7 +36,7 @@ export interface CompanyUpdateInput {
   oidcEnabled?: boolean;
 }
 
-// 邮箱识别响应
+// Email identification response
 export interface IdentifyResponse {
   type: "super_admin" | "oidc" | "default_auth" | "not_found";
   company?: {

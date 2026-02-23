@@ -1,5 +1,5 @@
 // src/app/api/agents/[uuid]/route.ts
-// Agents API - 详情、更新、删除 (ARCHITECTURE.md §5.1)
+// Agents API - Detail, Update, Delete (ARCHITECTURE.md §5.1)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest } from "next/server";
@@ -10,7 +10,7 @@ import { getAuthContext, isUser } from "@/lib/auth";
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// GET /api/agents/[uuid] - Agent 详情
+// GET /api/agents/[uuid] - Agent Detail
 export const GET = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -18,7 +18,7 @@ export const GET = withErrorHandler<{ uuid: string }>(
       return errors.unauthorized();
     }
 
-    // 只有用户可以查看 Agent 详情
+    // Only users can view Agent details
     if (!isUser(auth)) {
       return errors.forbidden("Only users can view agent details");
     }
@@ -67,7 +67,7 @@ export const GET = withErrorHandler<{ uuid: string }>(
   }
 );
 
-// PATCH /api/agents/[uuid] - 更新 Agent
+// PATCH /api/agents/[uuid] - Update Agent
 export const PATCH = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -75,7 +75,7 @@ export const PATCH = withErrorHandler<{ uuid: string }>(
       return errors.unauthorized();
     }
 
-    // 只有用户可以更新 Agent
+    // Only users can update Agents
     if (!isUser(auth)) {
       return errors.forbidden("Only users can update agents");
     }
@@ -159,7 +159,7 @@ export const PATCH = withErrorHandler<{ uuid: string }>(
   }
 );
 
-// DELETE /api/agents/[uuid] - 删除 Agent
+// DELETE /api/agents/[uuid] - Delete Agent
 export const DELETE = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -167,7 +167,7 @@ export const DELETE = withErrorHandler<{ uuid: string }>(
       return errors.unauthorized();
     }
 
-    // 只有用户可以删除 Agent
+    // Only users can delete Agents
     if (!isUser(auth)) {
       return errors.forbidden("Only users can delete agents");
     }
@@ -183,7 +183,7 @@ export const DELETE = withErrorHandler<{ uuid: string }>(
       return errors.notFound("Agent");
     }
 
-    // 删除 Agent（API Keys 会被级联删除）
+    // Delete Agent (API Keys will be cascade-deleted)
     await prisma.agent.delete({
       where: { uuid: agent.uuid },
     });

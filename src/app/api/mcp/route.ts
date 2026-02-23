@@ -1,5 +1,5 @@
 // src/app/api/mcp/route.ts
-// MCP HTTP 端点 (ARCHITECTURE.md §5.2)
+// MCP HTTP Endpoint (ARCHITECTURE.md §5.2)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest, NextResponse } from "next/server";
@@ -8,18 +8,18 @@ import { createMcpServer } from "@/mcp/server";
 import { extractApiKey, validateApiKey } from "@/lib/api-key";
 import type { AgentAuthContext } from "@/types/auth";
 
-// 存储会话的 transport 实例
+// Store session transport instances
 const sessions = new Map<string, WebStandardStreamableHTTPServerTransport>();
 
-// 生成会话 ID
+// Generate session ID
 function generateSessionId(): string {
   return crypto.randomUUID();
 }
 
-// POST /api/mcp - MCP HTTP 端点
+// POST /api/mcp - MCP HTTP Endpoint
 export async function POST(request: NextRequest) {
   try {
-    // 验证 API Key
+    // Validate API Key
     const authHeader = request.headers.get("authorization");
     const apiKey = extractApiKey(authHeader);
 
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 构建认证上下文 (UUID-based)
+    // Build auth context (UUID-based)
     const auth: AgentAuthContext = {
       type: "agent",
       companyUuid: validation.agent.companyUuid,
@@ -48,42 +48,42 @@ export async function POST(request: NextRequest) {
       agentName: validation.agent.name,
     };
 
-    // 检查会话 ID
+    // Check session ID
     const sessionId = request.headers.get("mcp-session-id");
 
     let transport: WebStandardStreamableHTTPServerTransport;
 
     if (sessionId && sessions.has(sessionId)) {
-      // 复用现有会话
+      // Reuse existing session
       transport = sessions.get(sessionId)!;
     } else if (sessionId && !sessions.has(sessionId)) {
-      // 客户端带了过期/无效的 session ID（服务端重启后 session 丢失）
-      // 返回 404 让客户端知道需要重新 initialize
+      // Client sent an expired/invalid session ID (session lost after server restart)
+      // Return 404 to let client know it needs to reinitialize
       return NextResponse.json(
         { jsonrpc: "2.0", error: { code: -32001, message: "Session not found. Please reinitialize." }, id: null },
         { status: 404 }
       );
     } else {
-      // 无 session ID — 新连接，创建新会话
+      // No session ID — new connection, create new session
       const newSessionId = generateSessionId();
       transport = new WebStandardStreamableHTTPServerTransport({
         sessionIdGenerator: () => newSessionId,
       });
 
-      // 创建并连接 MCP Server
+      // Create and connect MCP Server
       const server = createMcpServer(auth);
       await server.connect(transport);
 
-      // 存储会话
+      // Store session
       sessions.set(newSessionId, transport);
 
-      // 设置会话清理（30 分钟后）
+      // Set session cleanup (after 30 minutes)
       setTimeout(() => {
         sessions.delete(newSessionId);
       }, 30 * 60 * 1000);
     }
 
-    // 使用 Web Standard transport 处理请求
+    // Handle request using Web Standard transport
     const response = await transport.handleRequest(request);
     return response;
   } catch (error) {
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE /api/mcp - 关闭 MCP 会话
+// DELETE /api/mcp - Close MCP Session
 export async function DELETE(request: NextRequest) {
   try {
     const sessionId = request.headers.get("mcp-session-id");
@@ -123,7 +123,7 @@ export async function DELETE(request: NextRequest) {
   }
 }
 
-// OPTIONS - CORS 预检
+// OPTIONS - CORS Preflight
 export async function OPTIONS() {
   return new Response(null, {
     status: 204,

@@ -1,5 +1,5 @@
 // src/app/(dashboard)/projects/[uuid]/ideas/[ideaUuid]/page.tsx
-// Server Component - UUID 从 URL 获取
+// Server Component - UUID obtained from URL
 
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -14,7 +14,7 @@ import { checkIdeasAvailability } from "@/services/proposal.service";
 import { IdeaActions } from "./idea-actions";
 import { MarkdownContent } from "@/components/markdown-content";
 
-// 状态颜色配置
+// Status color configuration
 const statusColors: Record<string, string> = {
   open: "bg-[#FFF3E0] text-[#E65100]",
   assigned: "bg-[#E3F2FD] text-[#1976D2]",
@@ -24,7 +24,7 @@ const statusColors: Record<string, string> = {
   closed: "bg-[#F5F5F5] text-[#9A9A9A]",
 };
 
-// 状态到翻译 key 的映射
+// Status to i18n key mapping
 const statusI18nKeys: Record<string, string> = {
   open: "open",
   assigned: "assigned",
@@ -47,13 +47,13 @@ export default async function IdeaDetailPage({ params }: PageProps) {
   const { uuid: projectUuid, ideaUuid } = await params;
   const t = await getTranslations();
 
-  // 验证项目存在
+  // Validate project exists
   const exists = await projectExists(auth.companyUuid, projectUuid);
   if (!exists) {
     redirect("/projects");
   }
 
-  // 获取 Idea 详情
+  // Get Idea details
   const idea = await getIdea(auth.companyUuid, ideaUuid);
   if (!idea) {
     return (
@@ -66,7 +66,7 @@ export default async function IdeaDetailPage({ params }: PageProps) {
     );
   }
 
-  // 检查 Idea 是否已被用于创建 Proposal
+  // Check if Idea has already been used to create a Proposal
   const availabilityCheck = await checkIdeasAvailability(auth.companyUuid, [ideaUuid]);
   const isUsedInProposal = !availabilityCheck.available;
 

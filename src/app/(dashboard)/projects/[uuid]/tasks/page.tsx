@@ -1,5 +1,5 @@
 // src/app/(dashboard)/projects/[uuid]/tasks/page.tsx
-// Server Component - UUID 从 URL 获取
+// Server Component - UUID obtained from URL
 
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -24,13 +24,13 @@ export default async function TasksPage({ params, searchParams }: PageProps) {
   const { task: initialTaskUuid } = await searchParams;
   const t = await getTranslations();
 
-  // 验证项目存在
+  // Validate project exists
   const exists = await projectExists(auth.companyUuid, projectUuid);
   if (!exists) {
     redirect("/projects");
   }
 
-  // 获取所有 Tasks
+  // Get all Tasks
   const { tasks } = await listTasks({
     companyUuid: auth.companyUuid,
     projectUuid,

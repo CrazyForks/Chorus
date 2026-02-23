@@ -1,5 +1,5 @@
 // src/app/api/projects/[uuid]/documents/route.ts
-// Documents API - 列表和创建 (ARCHITECTURE.md §5.1)
+// Documents API - List and Create (ARCHITECTURE.md §5.1)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest } from "next/server";
@@ -11,7 +11,7 @@ import { listDocuments, createDocument } from "@/services/document.service";
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// GET /api/projects/[uuid]/documents - Documents 列表
+// GET /api/projects/[uuid]/documents - List Documents
 export const GET = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -22,11 +22,11 @@ export const GET = withErrorHandler<{ uuid: string }>(
     const { uuid: projectUuid } = await context.params;
     const { page, pageSize, skip, take } = parsePagination(request);
 
-    // 解析筛选参数
+    // Parse filter parameters
     const url = new URL(request.url);
     const typeFilter = url.searchParams.get("type") || undefined;
 
-    // 验证项目存在
+    // Validate project exists
     if (!(await projectExists(auth.companyUuid, projectUuid))) {
       return errors.notFound("Project");
     }
@@ -43,7 +43,7 @@ export const GET = withErrorHandler<{ uuid: string }>(
   }
 );
 
-// POST /api/projects/[uuid]/documents - 创建 Document
+// POST /api/projects/[uuid]/documents - Create Document
 export const POST = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -51,14 +51,14 @@ export const POST = withErrorHandler<{ uuid: string }>(
       return errors.unauthorized();
     }
 
-    // 只有用户可以直接创建 Document
+    // Only users can create Documents directly
     if (!isUser(auth)) {
       return errors.forbidden("Only users can create documents directly");
     }
 
     const { uuid: projectUuid } = await context.params;
 
-    // 验证项目存在
+    // Validate project exists
     if (!(await projectExists(auth.companyUuid, projectUuid))) {
       return errors.notFound("Project");
     }
@@ -69,7 +69,7 @@ export const POST = withErrorHandler<{ uuid: string }>(
       content?: string;
     }>(request);
 
-    // 验证必填字段
+    // Validate required fields
     if (!body.type || body.type.trim() === "") {
       return errors.validationError({ type: "Type is required" });
     }

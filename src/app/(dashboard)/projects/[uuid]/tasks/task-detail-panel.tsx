@@ -88,7 +88,7 @@ interface TaskDetailPanelProps {
   onDependencyChange?: () => void;
 }
 
-// 状态颜色配置
+// Status color configuration
 const statusColors: Record<string, string> = {
   open: "bg-[#FFF3E0] text-[#E65100]",
   assigned: "bg-[#E3F2FD] text-[#1976D2]",
@@ -98,7 +98,7 @@ const statusColors: Record<string, string> = {
   closed: "bg-[#F5F5F5] text-[#9A9A9A]",
 };
 
-// 状态到翻译 key 的映射
+// Status to i18n key mapping
 const statusI18nKeys: Record<string, string> = {
   open: "open",
   assigned: "assigned",
@@ -108,7 +108,7 @@ const statusI18nKeys: Record<string, string> = {
   closed: "closed",
 };
 
-// 优先级颜色配置
+// Priority color configuration
 const priorityColors: Record<string, string> = {
   low: "bg-[#F5F5F5] text-[#9A9A9A]",
   medium: "bg-[#FFF3E0] text-[#E65100]",
@@ -116,7 +116,7 @@ const priorityColors: Record<string, string> = {
   critical: "bg-[#FFCDD2] text-[#B71C1C]",
 };
 
-// 优先级到翻译 key 的映射
+// Priority to i18n key mapping
 const priorityI18nKeys: Record<string, string> = {
   low: "lowPriority",
   medium: "mediumPriority",
@@ -124,7 +124,7 @@ const priorityI18nKeys: Record<string, string> = {
   critical: "criticalPriority",
 };
 
-// 格式化相对时间
+// Format relative time
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function formatRelativeTime(dateString: string, t: any): string {
   const date = new Date(dateString);
@@ -141,7 +141,7 @@ function formatRelativeTime(dateString: string, t: any): string {
   return date.toLocaleDateString();
 }
 
-// Activity 圆点颜色
+// Activity dot color
 function getActivityDotColor(action: string): string {
   switch (action) {
     case "task_created":
@@ -163,7 +163,7 @@ function getActivityDotColor(action: string): string {
   }
 }
 
-// 格式化 Activity 消息
+// Format Activity message
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function formatActivityMessage(activity: ActivityResponse, t: any): string {
   const actorDisplay = activity.sessionName
@@ -249,7 +249,7 @@ export function TaskDetailPanel({
   const canMarkToVerify = isAssignedToMe && task?.status === "in_progress";
   const canMarkDone = task?.status === "to_verify";
 
-  // 加载评论、活动和来源
+  // Load comments, activities, and source
   useEffect(() => {
     if (!task) return;
 

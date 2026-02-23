@@ -1,5 +1,5 @@
 // src/app/api/tasks/[uuid]/release/route.ts
-// Tasks API - 放弃认领 Task (PRD §3.3.1)
+// Tasks API - Release Task (PRD §3.3.1)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest } from "next/server";
@@ -11,7 +11,7 @@ import { NotClaimedError } from "@/lib/errors";
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// POST /api/tasks/[uuid]/release - 放弃认领 Task
+// POST /api/tasks/[uuid]/release - Release Task
 export const POST = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -26,7 +26,7 @@ export const POST = withErrorHandler<{ uuid: string }>(
       return errors.notFound("Task");
     }
 
-    // 检查权限：用户可以释放任何 Task，Agent 只能释放自己认领的
+    // Check permissions: users can release any Task, Agents can only release their own
     if (!isUser(auth)) {
       if (!isAssignee(auth, task.assigneeType, task.assigneeUuid)) {
         return errors.permissionDenied("Only assignee can release this task");

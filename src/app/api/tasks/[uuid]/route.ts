@@ -1,5 +1,5 @@
 // src/app/api/tasks/[uuid]/route.ts
-// Tasks API - 详情、更新、删除 (ARCHITECTURE.md §5.1, §7.2)
+// Tasks API - Detail, Update, Delete (ARCHITECTURE.md §5.1, §7.2)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest } from "next/server";
@@ -16,7 +16,7 @@ import {
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// GET /api/tasks/[uuid] - Task 详情
+// GET /api/tasks/[uuid] - Task Detail
 export const GET = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -35,7 +35,7 @@ export const GET = withErrorHandler<{ uuid: string }>(
   }
 );
 
-// PATCH /api/tasks/[uuid] - 更新 Task
+// PATCH /api/tasks/[uuid] - Update Task
 export const PATCH = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -45,7 +45,7 @@ export const PATCH = withErrorHandler<{ uuid: string }>(
 
     const { uuid } = await context.params;
 
-    // 获取原始 Task 数据用于权限检查
+    // Get original Task data for permission check
     const task = await getTaskByUuid(auth.companyUuid, uuid);
     if (!task) {
       return errors.notFound("Task");
@@ -59,7 +59,7 @@ export const PATCH = withErrorHandler<{ uuid: string }>(
       storyPoints?: number | null;
     }>(request);
 
-    // 构建更新数据
+    // Build update data
     const updateData: {
       title?: string;
       description?: string | null;
@@ -68,7 +68,7 @@ export const PATCH = withErrorHandler<{ uuid: string }>(
       storyPoints?: number | null;
     } = {};
 
-    // 标题验证
+    // Title validation
     if (body.title !== undefined) {
       if (body.title.trim() === "") {
         return errors.validationError({ title: "Title cannot be empty" });
@@ -76,12 +76,12 @@ export const PATCH = withErrorHandler<{ uuid: string }>(
       updateData.title = body.title.trim();
     }
 
-    // 描述更新
+    // Description update
     if (body.description !== undefined) {
       updateData.description = body.description.trim() || null;
     }
 
-    // 优先级验证
+    // Priority validation
     if (body.priority !== undefined) {
       const validPriorities = ["low", "medium", "high"];
       if (!validPriorities.includes(body.priority)) {
@@ -92,7 +92,7 @@ export const PATCH = withErrorHandler<{ uuid: string }>(
       updateData.priority = body.priority;
     }
 
-    // Story Points 验证（单位：Agent 小时）
+    // Story Points validation (unit: agent hours)
     if (body.storyPoints !== undefined) {
       if (body.storyPoints !== null && (body.storyPoints < 0 || body.storyPoints > 1000)) {
         return errors.validationError({
@@ -102,14 +102,14 @@ export const PATCH = withErrorHandler<{ uuid: string }>(
       updateData.storyPoints = body.storyPoints;
     }
 
-    // 状态更新
+    // Status update
     if (body.status !== undefined) {
-      // 检查状态转换是否有效
+      // Check if state transition is valid
       if (!isValidTaskStatusTransition(task.status, body.status)) {
         return errors.invalidStatusTransition(task.status, body.status);
       }
 
-      // 非用户只能更新自己认领的 Task 状态
+      // Non-users can only update the status of Tasks they have claimed
       if (!isUser(auth)) {
         if (!isAssignee(auth, task.assigneeType, task.assigneeUuid)) {
           return errors.permissionDenied("Only assignee can update status");
@@ -124,7 +124,7 @@ export const PATCH = withErrorHandler<{ uuid: string }>(
   }
 );
 
-// DELETE /api/tasks/[uuid] - 删除 Task
+// DELETE /api/tasks/[uuid] - Delete Task
 export const DELETE = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -132,7 +132,7 @@ export const DELETE = withErrorHandler<{ uuid: string }>(
       return errors.unauthorized();
     }
 
-    // 只有用户可以删除 Task
+    // Only users can delete Tasks
     if (!isUser(auth)) {
       return errors.forbidden("Only users can delete tasks");
     }

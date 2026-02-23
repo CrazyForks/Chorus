@@ -1,5 +1,5 @@
 // src/app/api/proposals/[uuid]/reject/route.ts
-// Proposals API - 拒绝 Proposal (ARCHITECTURE.md §7.4)
+// Proposals API - Reject Proposal (ARCHITECTURE.md §7.4)
 // UUID-Based Architecture: All operations use UUIDs
 
 import { NextRequest } from "next/server";
@@ -10,7 +10,7 @@ import { getProposalByUuid, rejectProposal } from "@/services/proposal.service";
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// POST /api/proposals/[uuid]/reject - 拒绝 Proposal
+// POST /api/proposals/[uuid]/reject - Reject Proposal
 export const POST = withErrorHandler<{ uuid: string }>(
   async (request: NextRequest, context: RouteContext) => {
     const auth = await getAuthContext(request);
@@ -18,7 +18,7 @@ export const POST = withErrorHandler<{ uuid: string }>(
       return errors.unauthorized();
     }
 
-    // 只有用户可以拒绝
+    // Only users can reject
     if (!isUser(auth)) {
       return errors.forbidden("Only users can reject proposals");
     }
@@ -30,7 +30,7 @@ export const POST = withErrorHandler<{ uuid: string }>(
       return errors.notFound("Proposal");
     }
 
-    // 只有 pending 状态的 Proposal 可以拒绝
+    // Only pending Proposals can be rejected
     if (proposal.status !== "pending") {
       return errors.badRequest("Can only reject pending proposals");
     }
@@ -39,7 +39,7 @@ export const POST = withErrorHandler<{ uuid: string }>(
       reviewNote?: string;
     }>(request);
 
-    // 验证拒绝时必须提供原因
+    // A reason must be provided when rejecting
     if (!body.reviewNote || body.reviewNote.trim() === "") {
       return errors.validationError({
         reviewNote: "Review note is required when rejecting",

@@ -59,7 +59,7 @@ interface IdeaDetailPanelProps {
   onDeleted?: () => void;
 }
 
-// 状态颜色配置
+// Status color configuration
 const statusColors: Record<string, string> = {
   open: "bg-[#FFF3E0] text-[#E65100]",
   assigned: "bg-[#E3F2FD] text-[#1976D2]",

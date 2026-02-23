@@ -43,7 +43,7 @@ export async function createTaskCommentAction(
   }
 
   try {
-    // 验证 task 存在
+    // Validate task exists
     const task = await getTaskByUuid(auth.companyUuid, taskUuid);
     if (!task) {
       return { success: false, error: "Task not found" };
