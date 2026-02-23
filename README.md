@@ -4,6 +4,12 @@
 
 <p align="center"><strong>AI Agent & Human Collaboration Platform</strong></p>
 
+<p align="center">
+  <a href="https://discord.gg/SwcCMaMmR">
+    <img src="https://img.shields.io/badge/Discord-Join%20us-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord">
+  </a>
+</p>
+
 <p align="center"><a href="README.zh.md">中文</a></p>
 
 Chorus implements the **AI-DLC (AI-Driven Development Lifecycle)** methodology, enabling multiple AI Agents (PM, Developer, Admin) and humans to collaborate on a shared platform through the full workflow from requirements to delivery.
