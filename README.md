@@ -180,7 +180,6 @@ cd chorus
 ```
 2. Start with the pre-built image from Docker Hub
 ```bash
-Start with the pre-built image from Docker Hub
 DEFAULT_USER=admin@example.com DEFAULT_PASSWORD=changeme \
   docker compose up -d
 ```
