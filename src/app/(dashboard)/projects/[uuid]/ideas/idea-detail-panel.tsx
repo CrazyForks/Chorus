@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -34,6 +34,10 @@ import type { ActivityResponse } from "@/services/activity.service";
 import type { CommentResponse } from "@/services/comment.service";
 import { Streamdown } from "streamdown";
 import { AssignIdeaModal } from "./assign-idea-modal";
+import { ElaborationPanel } from "@/components/elaboration-panel";
+import { getElaborationAction } from "./[ideaUuid]/elaboration-actions";
+import { useRealtimeEvent } from "@/contexts/realtime-context";
+import type { ElaborationResponse } from "@/types/elaboration";
 
 interface Idea {
   uuid: string;
@@ -150,6 +154,21 @@ export function IdeaDetailPanel({
   const [isLoadingActivities, setIsLoadingActivities] = useState(true);
   const [showAssignModal, setShowAssignModal] = useState(false);
 
+  // Elaboration state
+  const [elaboration, setElaboration] = useState<ElaborationResponse | null>(null);
+  const isLoadingElaboration = false; // Loaded via useRealtimeEvent
+
+  // Reload elaboration data (called on mount + SSE events)
+  const reloadElaboration = useCallback(async () => {
+    const result = await getElaborationAction(idea.uuid);
+    if (result.success && result.data) {
+      setElaboration(result.data);
+    }
+  }, [idea.uuid]);
+
+  // Subscribe to SSE events to refresh elaboration in real-time
+  useRealtimeEvent(reloadElaboration);
+
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(idea.title);
@@ -158,10 +177,10 @@ export function IdeaDetailPanel({
   const [editError, setEditError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const canAssign = idea.status === "open" || idea.status === "assigned" || idea.status === "in_progress";
+  const canAssign = idea.status !== "completed" && idea.status !== "closed";
   const canCreateProposal =
     idea.assignee?.uuid === currentUserUuid &&
-    (idea.status === "assigned" || idea.status === "in_progress") &&
+    (idea.status === "assigned" || idea.status === "in_progress" || idea.status === "elaborating") &&
     !isUsedInProposal;
   const canEdit = idea.status !== "completed" && idea.status !== "closed";
 
@@ -392,6 +411,22 @@ export function IdeaDetailPanel({
                     )}
                   </div>
                 </div>
+
+                {/* Elaboration Section */}
+                {!isLoadingElaboration && elaboration && elaboration.rounds.length > 0 && (
+                  <div className="mt-5">
+                    <ElaborationPanel
+                      ideaUuid={idea.uuid}
+                      elaboration={elaboration}
+                      onRefresh={async () => {
+                        const result = await getElaborationAction(idea.uuid);
+                        if (result.success && result.data) {
+                          setElaboration(result.data);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
 
                 {/* Content Section */}
                 <div className="mt-5">

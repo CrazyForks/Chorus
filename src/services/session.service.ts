@@ -4,6 +4,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { eventBus } from "@/lib/event-bus";
+import { claimTask } from "@/services/task.service";
 
 // ===== Type Definitions =====
 
@@ -198,6 +199,20 @@ export async function sessionCheckinToTask(
     where: { uuid: taskUuid, companyUuid },
   });
   if (!task) throw new Error("Task not found");
+
+  // Auto-claim: if task has no assignee, claim it for the session's agent
+  if (!task.assigneeUuid) {
+    try {
+      await claimTask({
+        taskUuid,
+        companyUuid,
+        assigneeType: "agent",
+        assigneeUuid: session.agentUuid,
+      });
+    } catch {
+      // Claim may fail if task was concurrently claimed — safe to ignore
+    }
+  }
 
   // Upsert: reactivate if already exists
   const checkin = await prisma.sessionTaskCheckin.upsert({

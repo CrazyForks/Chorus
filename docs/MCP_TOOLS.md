@@ -236,6 +236,61 @@ Each task in the response includes the full TaskResponse format (with dependsOn,
 
 ---
 
+### chorus_answer_elaboration
+
+**Description**: Answer elaboration questions for an Idea. Submits answers for a specific elaboration round. When all required questions are answered, the round moves to validation.
+
+**Input**:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| ideaUuid | string | Yes | Idea UUID |
+| roundUuid | string | Yes | Elaboration round UUID |
+| answers | array | Yes | Answers to submit |
+
+**answers array item fields**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| questionId | string | Yes | Question ID to answer |
+| selectedOptionId | string\|null | Yes | Selected option ID (null if using custom text only) |
+| customText | string\|null | Yes | Custom text answer (null if using selected option only) |
+
+**Output**: Updated Elaboration Round JSON (includes questions with their answers)
+
+### chorus_get_elaboration
+
+**Description**: Get the full elaboration state for an Idea, including all rounds, questions, answers, and a summary of progress.
+
+**Input**:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| ideaUuid | string | Yes | Idea UUID |
+
+**Output**:
+```json
+{
+  "ideaUuid": "...",
+  "depth": "standard",
+  "status": "resolved",
+  "rounds": [
+    {
+      "uuid": "...",
+      "roundNumber": 1,
+      "status": "validated",
+      "questions": [...],
+      "createdAt": "ISO timestamp"
+    }
+  ],
+  "summary": {
+    "totalQuestions": 5,
+    "answeredQuestions": 5,
+    "validatedRounds": 1,
+    "pendingRound": null
+  }
+}
+```
+
+---
+
 ### chorus_add_comment
 
 **Description**: Add a comment to an Idea/Proposal/Task/Document
@@ -659,6 +714,77 @@ Available to PM Agent and Admin Agent. Not available to Developer Agent.
 - Task must be in open or assigned status
 - Target Agent must exist and belong to the same company
 - Target Agent must have the developer or developer_agent role
+
+### chorus_pm_start_elaboration
+
+**Description**: Start an elaboration round for an Idea. Creates structured questions for the Idea creator/stakeholder to answer, clarifying requirements before proposal creation.
+
+**Input**:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| ideaUuid | string | Yes | Idea UUID |
+| depth | enum | Yes | Elaboration depth: minimal, standard, comprehensive |
+| questions | array | Yes | Questions to ask (1-15 per round) |
+
+**questions array item fields**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| id | string | Yes | Unique question identifier |
+| text | string | Yes | Question text |
+| category | enum | Yes | Category: functional, non_functional, business_context, technical_context, user_scenario, scope |
+| options | array | Yes | Answer options (2-5 required) |
+| required | boolean | No | Whether the question is required (default: true) |
+
+**options array item fields**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| id | string | Yes | Option identifier |
+| label | string | Yes | Option label |
+| description | string | No | Option description |
+
+**Output**: Created Elaboration Round JSON
+
+### chorus_pm_validate_elaboration
+
+**Description**: Validate answers from an elaboration round. If no issues are found, the elaboration is marked as resolved. If issues exist, optionally provide follow-up questions for a new round.
+
+**Input**:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| ideaUuid | string | Yes | Idea UUID |
+| roundUuid | string | Yes | Elaboration round UUID |
+| issues | array | Yes | List of issues found (empty array = all valid) |
+| followUpQuestions | array | No | Follow-up questions for a new round (only if issues found) |
+
+**issues array item fields**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| questionId | string | Yes | Question ID with the issue |
+| type | enum | Yes | Issue type: contradiction, ambiguity, incomplete |
+| description | string | Yes | Issue description |
+
+**followUpQuestions array item fields**: Same as `questions` in `chorus_pm_start_elaboration`.
+
+**Output**: Validation result JSON. If issues are empty, elaboration status changes to `resolved`. If follow-up questions are provided, a new round is created with status `pending_answers`.
+
+### chorus_pm_skip_elaboration
+
+**Description**: Skip elaboration for an Idea (marks as resolved with minimal depth). Use when the Idea is already clear enough to proceed directly to proposal creation.
+
+**Input**:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| ideaUuid | string | Yes | Idea UUID |
+| reason | string | Yes | Reason for skipping elaboration |
+
+**Output**:
+```json
+{
+  "ideaUuid": "...",
+  "action": "elaboration_skipped",
+  "reason": "Bug fix with clear reproduction steps"
+}
+```
 
 ---
 

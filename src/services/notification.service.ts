@@ -63,6 +63,8 @@ export interface NotificationPreferenceFields {
   proposalRejected?: boolean;
   ideaClaimed?: boolean;
   commentAdded?: boolean;
+  elaborationRequested?: boolean;
+  elaborationAnswered?: boolean;
 }
 
 export interface NotificationPreferenceResponse {
@@ -78,6 +80,8 @@ export interface NotificationPreferenceResponse {
   proposalRejected: boolean;
   ideaClaimed: boolean;
   commentAdded: boolean;
+  elaborationRequested: boolean;
+  elaborationAnswered: boolean;
 }
 
 // ===== Internal Helper Functions =====
@@ -432,6 +436,8 @@ export async function getPreferences(
     proposalRejected: pref.proposalRejected,
     ideaClaimed: pref.ideaClaimed,
     commentAdded: pref.commentAdded,
+    elaborationRequested: pref.elaborationRequested,
+    elaborationAnswered: pref.elaborationAnswered,
   };
 }
 
@@ -468,5 +474,7 @@ export async function updatePreferences(
     proposalRejected: pref.proposalRejected,
     ideaClaimed: pref.ideaClaimed,
     commentAdded: pref.commentAdded,
+    elaborationRequested: pref.elaborationRequested,
+    elaborationAnswered: pref.elaborationAnswered,
   };
 }

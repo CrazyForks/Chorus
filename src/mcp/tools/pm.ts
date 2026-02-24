@@ -11,6 +11,7 @@ import * as proposalService from "@/services/proposal.service";
 import * as documentService from "@/services/document.service";
 import * as taskService from "@/services/task.service";
 import * as activityService from "@/services/activity.service";
+import * as elaborationService from "@/services/elaboration.service";
 import { getAgentByUuid } from "@/services/agent.service";
 import { AlreadyClaimedError, NotClaimedError } from "@/lib/errors";
 
@@ -780,6 +781,134 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
           };
         }
         throw e;
+      }
+    }
+  );
+
+  // ===== Elaboration Tools =====
+
+  // chorus_pm_start_elaboration - Start elaboration for an Idea
+  server.registerTool(
+    "chorus_pm_start_elaboration",
+    {
+      description: "Start an elaboration round for an Idea. Creates structured questions for the Idea creator/stakeholder to answer, clarifying requirements before proposal creation. IMPORTANT: Do NOT include an 'Other' option — the UI automatically adds a free-text 'Other' option to every question.",
+      inputSchema: z.object({
+        ideaUuid: z.string().describe("Idea UUID"),
+        depth: z.enum(["minimal", "standard", "comprehensive"]).describe("Elaboration depth level"),
+        questions: z.array(z.object({
+          id: z.string().describe("Unique question identifier"),
+          text: z.string().describe("Question text"),
+          category: z.enum(["functional", "non_functional", "business_context", "technical_context", "user_scenario", "scope"]).describe("Question category"),
+          options: z.array(z.object({
+            id: z.string().describe("Option identifier"),
+            label: z.string().describe("Option label"),
+            description: z.string().optional().describe("Option description"),
+          })).describe("Answer options (2-5). Do NOT include 'Other' — the UI adds it automatically."),
+          required: z.boolean().optional().describe("Whether the question is required (default: true)"),
+        })).describe("Questions to ask (1-15 per round)"),
+      }),
+    },
+    async ({ ideaUuid, depth, questions }) => {
+      try {
+        const round = await elaborationService.startElaboration({
+          companyUuid: auth.companyUuid,
+          ideaUuid,
+          actorUuid: auth.actorUuid,
+          actorType: "agent",
+          depth,
+          questions,
+        });
+
+        return {
+          content: [{ type: "text", text: JSON.stringify(round, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: "text", text: `Failed to start elaboration: ${error instanceof Error ? error.message : "Unknown error"}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // chorus_pm_validate_elaboration - Validate answers from an elaboration round
+  server.registerTool(
+    "chorus_pm_validate_elaboration",
+    {
+      description: "Validate answers from an elaboration round. If no issues are found, the elaboration is marked as resolved. If issues exist, optionally provide follow-up questions for a new round.",
+      inputSchema: z.object({
+        ideaUuid: z.string().describe("Idea UUID"),
+        roundUuid: z.string().describe("Elaboration round UUID"),
+        issues: z.array(z.object({
+          questionId: z.string().describe("Question ID with the issue"),
+          type: z.enum(["contradiction", "ambiguity", "incomplete"]).describe("Issue type"),
+          description: z.string().describe("Issue description"),
+        })).describe("List of issues found (empty array = all valid)"),
+        followUpQuestions: z.array(z.object({
+          id: z.string().describe("Unique question identifier"),
+          text: z.string().describe("Question text"),
+          category: z.enum(["functional", "non_functional", "business_context", "technical_context", "user_scenario", "scope"]).describe("Question category"),
+          options: z.array(z.object({
+            id: z.string().describe("Option identifier"),
+            label: z.string().describe("Option label"),
+            description: z.string().optional().describe("Option description"),
+          })).describe("Answer options (2-5). Do NOT include 'Other' — the UI adds it automatically."),
+          required: z.boolean().optional().describe("Whether the question is required (default: true)"),
+        })).optional().describe("Follow-up questions for next round (only when issues exist)"),
+      }),
+    },
+    async ({ ideaUuid, roundUuid, issues, followUpQuestions }) => {
+      try {
+        const result = await elaborationService.validateElaboration({
+          companyUuid: auth.companyUuid,
+          ideaUuid,
+          roundUuid,
+          actorUuid: auth.actorUuid,
+          actorType: "agent",
+          issues,
+          followUpQuestions,
+        });
+
+        return {
+          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: "text", text: `Failed to validate elaboration: ${error instanceof Error ? error.message : "Unknown error"}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // chorus_pm_skip_elaboration - Skip elaboration for an Idea
+  server.registerTool(
+    "chorus_pm_skip_elaboration",
+    {
+      description: "Skip elaboration for an Idea (marks as resolved with minimal depth). Use when the Idea is already clear enough to proceed directly to proposal creation.",
+      inputSchema: z.object({
+        ideaUuid: z.string().describe("Idea UUID"),
+        reason: z.string().describe("Reason for skipping elaboration"),
+      }),
+    },
+    async ({ ideaUuid, reason }) => {
+      try {
+        await elaborationService.skipElaboration({
+          companyUuid: auth.companyUuid,
+          ideaUuid,
+          actorUuid: auth.actorUuid,
+          actorType: "agent",
+          reason,
+        });
+
+        return {
+          content: [{ type: "text", text: JSON.stringify({ ideaUuid, action: "elaboration_skipped", reason }, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: "text", text: `Failed to skip elaboration: ${error instanceof Error ? error.message : "Unknown error"}` }],
+          isError: true,
+        };
       }
     }
   );

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getServerAuthContext } from "@/lib/auth-server";
-import { claimIdea, releaseIdea, getIdeaByUuid } from "@/services/idea.service";
+import { assignIdea, releaseIdea, getIdeaByUuid } from "@/services/idea.service";
 import { getAgentsByRole, getCompanyUsers } from "@/services/agent.service";
 
 export async function claimIdeaAction(ideaUuid: string) {
@@ -18,12 +18,12 @@ export async function claimIdeaAction(ideaUuid: string) {
       return { success: false, error: "Idea not found" };
     }
 
-    // Ideas with open/assigned/in_progress status can be assigned
-    if (idea.status !== "open" && idea.status !== "assigned" && idea.status !== "in_progress") {
+    // Only completed/closed ideas cannot be reassigned
+    if (idea.status === "completed" || idea.status === "closed") {
       return { success: false, error: "Idea is not available for assignment" };
     }
 
-    await claimIdea({
+    await assignIdea({
       ideaUuid,
       companyUuid: auth.companyUuid,
       assigneeType: auth.type,
@@ -54,11 +54,12 @@ export async function claimIdeaToAgentAction(ideaUuid: string, agentUuid: string
       return { success: false, error: "Idea not found" };
     }
 
-    if (idea.status !== "open" && idea.status !== "assigned" && idea.status !== "in_progress") {
+    // Only completed/closed ideas cannot be reassigned
+    if (idea.status === "completed" || idea.status === "closed") {
       return { success: false, error: "Idea is not available for assignment" };
     }
 
-    await claimIdea({
+    await assignIdea({
       ideaUuid,
       companyUuid: auth.companyUuid,
       assigneeType: "agent",
@@ -89,11 +90,12 @@ export async function claimIdeaToUserAction(ideaUuid: string, userUuid: string) 
       return { success: false, error: "Idea not found" };
     }
 
-    if (idea.status !== "open" && idea.status !== "assigned" && idea.status !== "in_progress") {
+    // Only completed/closed ideas cannot be reassigned
+    if (idea.status === "completed" || idea.status === "closed") {
       return { success: false, error: "Idea is not available for assignment" };
     }
 
-    await claimIdea({
+    await assignIdea({
       ideaUuid,
       companyUuid: auth.companyUuid,
       assigneeType: "user",
@@ -124,7 +126,8 @@ export async function releaseIdeaAction(ideaUuid: string) {
       return { success: false, error: "Idea not found" };
     }
 
-    if (idea.status !== "assigned" && idea.status !== "in_progress") {
+    // Only completed/closed ideas cannot be released
+    if (idea.status === "completed" || idea.status === "closed") {
       return { success: false, error: "Idea cannot be released from current status" };
     }
 

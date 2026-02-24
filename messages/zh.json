@@ -144,7 +144,8 @@
     "current": "当前",
     "assigned": "已分配",
     "completed": "已完成",
-    "closed": "已关闭"
+    "closed": "已关闭",
+    "elaborating": "需求澄清中"
   },
   "admin": {
     "title": "超级管理员",
@@ -662,7 +663,9 @@
       "task_verified": "任务已验证",
       "task_reopened": "任务已重新打开",
       "comment_added": "新评论",
-      "idea_claimed": "想法已认领"
+      "idea_claimed": "想法已认领",
+      "elaboration_requested": "需求澄清已请求",
+      "elaboration_answered": "需求澄清已回答"
     },
     "preferences": {
       "title": "通知偏好",
@@ -679,7 +682,32 @@
       "proposalApproved": "提案通过",
       "proposalRejected": "提案拒绝",
       "ideaClaimed": "想法认领",
-      "commentAdded": "新增评论"
+      "commentAdded": "新增评论",
+      "elaborationEvents": "需求澄清事件",
+      "elaborationRequested": "需求澄清请求",
+      "elaborationAnswered": "需求澄清回答"
+    }
+  },
+  "elaboration": {
+    "title": "需求澄清",
+    "answeredCounter": "已回答 {answered} / {total}",
+    "roundLabel": "第 {number} 轮",
+    "validated": "已验证",
+    "pendingAnswers": "待回答",
+    "statusAnswered": "已回答",
+    "noAnswer": "未回答",
+    "otherOption": "其他",
+    "otherPlaceholder": "请说明...",
+    "submitAnswers": "提交回答",
+    "submitting": "提交中...",
+    "submitFailed": "提交回答失败",
+    "category": {
+      "functional": "功能性",
+      "nonFunctional": "非功能性",
+      "businessContext": "业务背景",
+      "technicalContext": "技术背景",
+      "userScenario": "用户场景",
+      "scope": "范围"
     }
   }
 }

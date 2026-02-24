@@ -11,8 +11,10 @@ import { getServerAuthContext } from "@/lib/auth-server";
 import { getIdea } from "@/services/idea.service";
 import { projectExists } from "@/services/project.service";
 import { checkIdeasAvailability } from "@/services/proposal.service";
+import { getElaboration } from "@/services/elaboration.service";
 import { IdeaActions } from "./idea-actions";
 import { MarkdownContent } from "@/components/markdown-content";
+import { ElaborationPanel } from "@/components/elaboration-panel";
 
 // Status color configuration
 const statusColors: Record<string, string> = {
@@ -70,6 +72,17 @@ export default async function IdeaDetailPage({ params }: PageProps) {
   const availabilityCheck = await checkIdeasAvailability(auth.companyUuid, [ideaUuid]);
   const isUsedInProposal = !availabilityCheck.available;
 
+  // Load elaboration data
+  let elaboration = null;
+  try {
+    elaboration = await getElaboration({
+      companyUuid: auth.companyUuid,
+      ideaUuid,
+    });
+  } catch {
+    // Elaboration may not exist for this idea
+  }
+
   return (
     <div className="p-8">
       {/* Breadcrumb */}
@@ -110,6 +123,16 @@ export default async function IdeaDetailPage({ params }: PageProps) {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main Content */}
         <div className="lg:col-span-2">
+          {/* Elaboration Panel */}
+          {elaboration && elaboration.rounds.length > 0 && (
+            <Card className="border-[#E5E0D8] p-6 mb-6">
+              <ElaborationPanel
+                ideaUuid={ideaUuid}
+                elaboration={elaboration}
+              />
+            </Card>
+          )}
+
           <Card className="border-[#E5E0D8] p-6">
             <h2 className="mb-4 text-lg font-medium text-[#2C2C2C]">{t("common.content")}</h2>
             {idea.content ? (

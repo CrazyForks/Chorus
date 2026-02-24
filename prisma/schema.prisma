@@ -129,11 +129,14 @@ model Idea {
   content        String?   // Text content
   attachments    Json?     // Attachment list [{type, url, name}]
   // Status and assignment (ARCHITECTURE.md §7.3)
-  status         String    @default("open")  // open | assigned | in_progress | pending_review | completed | closed
+  status         String    @default("open")  // open | assigned | in_progress | elaborating | pending_review | completed | closed
   assigneeType   String?   // user | agent
   assigneeUuid   String?   // User or Agent UUID (polymorphic)
   assignedAt     DateTime? // Assignment timestamp
   assignedByUuid String?   // User UUID (human assignment)
+  // Elaboration (AI-DLC Stage 3 — structured requirements clarification)
+  elaborationDepth   String?  // "minimal" | "standard" | "comprehensive"
+  elaborationStatus  String?  // "pending_answers" | "validating" | "resolved"
   createdByUuid  String    // User UUID
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -381,9 +384,56 @@ model NotificationPreference {
   proposalRejected    Boolean  @default(true)
   ideaClaimed         Boolean  @default(true)
   commentAdded        Boolean  @default(true)
+  elaborationRequested Boolean @default(true)
+  elaborationAnswered  Boolean @default(true)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
   @@unique([ownerType, ownerUuid])
   @@index([companyUuid])
+}
+
+// Elaboration Round (AI-DLC Stage 3 — structured requirements clarification)
+model ElaborationRound {
+  id            Int       @id @default(autoincrement())
+  uuid          String    @unique @default(uuid())
+  companyUuid   String
+  ideaUuid      String
+  roundNumber   Int
+  status        String    @default("pending_answers") // pending_answers | answered | validated | needs_followup
+  createdByType String    // agent | user
+  createdByUuid String
+  validatedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  questions     ElaborationQuestion[]
+
+  @@index([ideaUuid])
+  @@index([companyUuid])
+}
+
+// Elaboration Question (individual Q&A item within a round)
+model ElaborationQuestion {
+  id               Int       @id @default(autoincrement())
+  uuid             String    @unique @default(uuid())
+  roundUuid        String
+  round            ElaborationRound @relation(fields: [roundUuid], references: [uuid], onDelete: Cascade)
+  questionId       String    // Round-scoped ID: "q1", "q2", etc.
+  text             String
+  category         String    // functional | non_functional | business_context | technical_context | user_scenario | scope
+  options          Json      // [{id, label, description?}] — 2-5 options
+  required         Boolean   @default(true)
+  // Answer (null = unanswered)
+  selectedOptionId String?
+  customText       String?
+  answeredAt       DateTime?
+  answeredByType   String?   // user | agent
+  answeredByUuid   String?
+  // Validation issue (null = no issue)
+  issueType        String?   // contradiction | ambiguity | incomplete
+  issueDescription String?
+
+  @@index([roundUuid])
+  @@unique([roundUuid, questionId])
 }

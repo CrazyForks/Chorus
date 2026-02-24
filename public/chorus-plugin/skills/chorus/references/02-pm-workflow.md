@@ -11,6 +11,11 @@ PM Agent is responsible for **analyzing Ideas, producing Proposals (with PRD doc
 - `chorus_release_idea` - Release a claimed idea (assigned -> open)
 - `chorus_update_idea_status` - Update idea status (in_progress / pending_review / completed)
 
+**Requirements Elaboration:**
+- `chorus_pm_start_elaboration` - Start an elaboration round with structured questions for an Idea
+- `chorus_pm_validate_elaboration` - Validate answers from an elaboration round (resolve or create follow-up)
+- `chorus_pm_skip_elaboration` - Skip elaboration for clear/simple Ideas
+
 **Proposal Management:**
 - `chorus_pm_create_proposal` - Create proposal container with document & task drafts
 - `chorus_pm_submit_proposal` - Submit proposal for Admin approval (draft -> pending)
@@ -104,6 +109,157 @@ Gather context before writing a proposal:
    ```
    chorus_get_comments({ targetType: "idea", targetUuid: "<idea-uuid>" })
    ```
+
+### Step 4b: Requirements Elaboration
+
+After analyzing the Idea, determine if clarification is needed before creating a Proposal.
+
+**Simple Ideas** (bug fixes, small changes with clear requirements):
+Skip elaboration and proceed directly to Step 5:
+
+```
+chorus_pm_skip_elaboration({
+  ideaUuid: "<idea-uuid>",
+  reason: "Bug fix with clear reproduction steps"
+})
+```
+
+**Standard/Complex Ideas** (new features, multi-component changes):
+Start an elaboration round to clarify requirements:
+
+1. **Determine depth** based on idea complexity:
+   - `"minimal"` — 2-4 questions (small features, minor enhancements)
+   - `"standard"` — 5-10 questions (typical new features)
+   - `"comprehensive"` — 10-15 questions (large features, architectural changes)
+
+2. **Create elaboration questions:**
+
+   > **Note:** Do NOT include an "Other" option in your questions. The UI automatically adds a free-text "Other" option to every question. When the user selects "Other", the answer is submitted as `selectedOptionId: null, customText: "user's text"`.
+
+   ```
+   chorus_pm_start_elaboration({
+     ideaUuid: "<idea-uuid>",
+     depth: "standard",
+     questions: [
+       {
+         id: "q1",
+         text: "What user roles should have access to this feature?",
+         category: "functional",
+         options: [
+           { id: "a", label: "All users" },
+           { id: "b", label: "Admin only" },
+           { id: "c", label: "Role-based (configurable)" }
+         ]
+       },
+       {
+         id: "q2",
+         text: "What is the expected data volume for this feature?",
+         category: "non_functional",
+         options: [
+           { id: "a", label: "Low (< 1000 records)" },
+           { id: "b", label: "Medium (1K-100K records)" },
+           { id: "c", label: "High (100K+ records)" }
+         ]
+       },
+       {
+         id: "q3",
+         text: "Should this feature support real-time updates?",
+         category: "technical_context",
+         options: [
+           { id: "a", label: "Yes, real-time via WebSocket" },
+           { id: "b", label: "Near real-time (polling)" },
+           { id: "c", label: "No, refresh on demand is fine" }
+         ]
+       }
+     ]
+   })
+   ```
+
+3. **Present questions to the user — MUST use the `AskUserQuestion` tool.** Do NOT display questions as text, tables, or markdown. The `AskUserQuestion` tool renders interactive radio buttons in the terminal that the user can click to select. Map each elaboration question to an AskUserQuestion call (max 4 questions per call; batch if needed). Example:
+
+   ```
+   AskUserQuestion({
+     questions: [
+       {
+         question: "Which new locales should be prioritized for V1?",
+         header: "Scope",
+         options: [
+           { label: "Japanese only", description: "Single locale for initial release" },
+           { label: "Japanese + Korean", description: "Two East Asian locales" },
+           { label: "Japanese + Korean + Arabic (RTL)", description: "Includes right-to-left support" }
+         ],
+         multiSelect: false
+       }
+     ]
+   })
+   ```
+
+   After the user answers all questions via AskUserQuestion, map their selections back to option IDs and call `chorus_answer_elaboration`. If the user selected "Other", set `selectedOptionId: null` and `customText` to their input.
+
+4. **Submit answers** (or the user/stakeholder submits via the UI):
+   ```
+   chorus_answer_elaboration({
+     ideaUuid: "<idea-uuid>",
+     roundUuid: "<round-uuid>",
+     answers: [
+       { questionId: "q1", selectedOptionId: "c", customText: null },
+       { questionId: "q2", selectedOptionId: "b", customText: "We may need to support 500K+ in future" },
+       { questionId: "q3", selectedOptionId: null, customText: "We need a custom hybrid approach" }
+     ]
+   })
+   ```
+
+   Answer format:
+   - **Select an option**: `selectedOptionId: "a", customText: null`
+   - **Select an option + add a note**: `selectedOptionId: "a", customText: "additional context"`
+   - **Choose "Other" (free text)**: `selectedOptionId: null, customText: "your answer"` — customText is required when no option is selected
+
+5. **Validate the answers:**
+   ```
+   chorus_pm_validate_elaboration({
+     ideaUuid: "<idea-uuid>",
+     roundUuid: "<round-uuid>",
+     issues: [],
+     followUpQuestions: []
+   })
+   ```
+   - If issues are found (contradictions, ambiguities, incomplete answers), include them in `issues` and provide `followUpQuestions` to start a new round:
+   ```
+   chorus_pm_validate_elaboration({
+     ideaUuid: "<idea-uuid>",
+     roundUuid: "<round-uuid>",
+     issues: [
+       {
+         questionId: "q1",
+         type: "ambiguity",
+         description: "Role-based access selected but no roles defined"
+       }
+     ],
+     followUpQuestions: [
+       {
+         id: "fq1",
+         text: "Which specific roles should have access?",
+         category: "functional",
+         options: [
+           { id: "a", label: "Admin + PM" },
+           { id: "b", label: "Admin + PM + Developer" },
+           { id: "c", label: "Custom roles (specify)" }
+         ]
+       }
+     ]
+   })
+   ```
+
+6. **Check elaboration status** at any time:
+   ```
+   chorus_get_elaboration({ ideaUuid: "<idea-uuid>" })
+   ```
+
+7. Once all rounds are resolved, proceed to Step 5 (Create Proposal). The elaboration answers provide rich context for writing the PRD and task breakdown.
+
+**Question categories:** `functional`, `non_functional`, `business_context`, `technical_context`, `user_scenario`, `scope`
+
+**Validation issue types:** `contradiction`, `ambiguity`, `incomplete`
 
 ### Step 5: Create an Empty Proposal
 

@@ -144,7 +144,8 @@
     "current": "Current",
     "assigned": "Assigned",
     "completed": "Completed",
-    "closed": "Closed"
+    "closed": "Closed",
+    "elaborating": "Elaborating"
   },
   "admin": {
     "title": "Super Admin",
@@ -661,7 +662,9 @@
       "task_verified": "Task verified",
       "task_reopened": "Task reopened",
       "comment_added": "New comment",
-      "idea_claimed": "Idea claimed"
+      "idea_claimed": "Idea claimed",
+      "elaboration_requested": "Elaboration requested",
+      "elaboration_answered": "Elaboration answered"
     },
     "preferences": {
       "title": "Notification Preferences",
@@ -678,7 +681,32 @@
       "proposalApproved": "Proposal approved",
       "proposalRejected": "Proposal rejected",
       "ideaClaimed": "Idea claimed",
-      "commentAdded": "Comment added"
+      "commentAdded": "Comment added",
+      "elaborationEvents": "Elaboration Events",
+      "elaborationRequested": "Elaboration requested",
+      "elaborationAnswered": "Elaboration answered"
+    }
+  },
+  "elaboration": {
+    "title": "Requirements Elaboration",
+    "answeredCounter": "{answered} of {total} answered",
+    "roundLabel": "Round {number}",
+    "validated": "Validated",
+    "pendingAnswers": "Pending answers",
+    "statusAnswered": "Answered",
+    "noAnswer": "No answer",
+    "otherOption": "Other",
+    "otherPlaceholder": "Please specify...",
+    "submitAnswers": "Submit answers",
+    "submitting": "Submitting...",
+    "submitFailed": "Failed to submit answers",
+    "category": {
+      "functional": "Functional",
+      "nonFunctional": "Non-functional",
+      "businessContext": "Business Context",
+      "technicalContext": "Technical Context",
+      "userScenario": "User Scenario",
+      "scope": "Scope"
     }
   }
 }

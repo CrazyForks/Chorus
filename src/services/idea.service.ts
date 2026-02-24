@@ -52,6 +52,8 @@ export interface IdeaResponse {
     assignedBy: { type: string; uuid: string; name: string } | null;
   } | null;
   project?: { uuid: string; name: string };
+  elaborationStatus?: string;
+  elaborationDepth?: string;
   createdBy: { type: string; uuid: string; name: string } | null;
   createdAt: string;
   updatedAt: string;
@@ -61,7 +63,8 @@ export interface IdeaResponse {
 export const IDEA_STATUS_TRANSITIONS: Record<string, string[]> = {
   open: ["assigned", "closed"],
   assigned: ["open", "in_progress", "closed"],
-  in_progress: ["pending_review", "closed"],
+  in_progress: ["elaborating", "pending_review", "closed"],
+  elaborating: ["elaborating", "in_progress", "pending_review", "closed"],
   pending_review: ["completed", "in_progress", "closed"],
   completed: ["closed"],
   closed: [],
@@ -83,6 +86,8 @@ async function formatIdeaResponse(
     content: string | null;
     attachments: unknown;
     status: string;
+    elaborationStatus?: string | null;
+    elaborationDepth?: string | null;
     assigneeType: string | null;
     assigneeUuid: string | null;
     assignedAt: Date | null;
@@ -106,6 +111,8 @@ async function formatIdeaResponse(
     status: idea.status,
     assignee,
     ...(idea.project && { project: idea.project }),
+    ...(idea.elaborationStatus != null && { elaborationStatus: idea.elaborationStatus }),
+    ...(idea.elaborationDepth != null && { elaborationDepth: idea.elaborationDepth }),
     createdBy,
     createdAt: idea.createdAt.toISOString(),
     updatedAt: idea.updatedAt.toISOString(),
@@ -155,6 +162,8 @@ export async function listIdeas({
         content: true,
         attachments: true,
         status: true,
+        elaborationStatus: true,
+        elaborationDepth: true,
         assigneeType: true,
         assigneeUuid: true,
         assignedAt: true,
@@ -212,6 +221,8 @@ export async function createIdea(params: IdeaCreateParams): Promise<IdeaResponse
       content: true,
       attachments: true,
       status: true,
+      elaborationStatus: true,
+      elaborationDepth: true,
       assigneeType: true,
       assigneeUuid: true,
       assignedAt: true,
@@ -246,7 +257,7 @@ export async function updateIdea(
   return formatIdeaResponse(idea);
 }
 
-// Claim Idea (atomic: only succeeds if status is "open")
+// Claim Idea (self-claim: only works when no assignee)
 export async function claimIdea({
   ideaUuid,
   companyUuid,
@@ -254,58 +265,101 @@ export async function claimIdea({
   assigneeUuid,
   assignedByUuid,
 }: IdeaClaimParams): Promise<IdeaResponse> {
-  try {
-    const idea = await prisma.idea.update({
-      where: { uuid: ideaUuid, status: "open" },
-      data: {
-        status: "assigned",
-        assigneeType,
-        assigneeUuid,
-        assignedAt: new Date(),
-        assignedByUuid,
-      },
-      include: {
-        project: { select: { uuid: true, name: true } },
-      },
-    });
-
-    eventBus.emitChange({ companyUuid: idea.companyUuid, projectUuid: idea.project!.uuid, entityType: "idea", entityUuid: idea.uuid, action: "updated" });
-
-    return formatIdeaResponse(idea);
-  } catch (e: unknown) {
-    if (isPrismaNotFound(e)) {
-      throw new AlreadyClaimedError("Idea");
-    }
-    throw e;
+  const existing = await prisma.idea.findFirst({
+    where: { uuid: ideaUuid, companyUuid },
+  });
+  if (!existing) throw new AlreadyClaimedError("Idea");
+  if (existing.assigneeUuid) {
+    throw new AlreadyClaimedError("Idea");
   }
+  if (existing.status === "completed" || existing.status === "closed") {
+    throw new Error("Cannot claim a completed or closed Idea");
+  }
+
+  const idea = await prisma.idea.update({
+    where: { uuid: ideaUuid },
+    data: {
+      status: "assigned",
+      assigneeType,
+      assigneeUuid,
+      assignedAt: new Date(),
+      assignedByUuid,
+    },
+    include: {
+      project: { select: { uuid: true, name: true } },
+    },
+  });
+
+  eventBus.emitChange({ companyUuid: idea.companyUuid, projectUuid: idea.project!.uuid, entityType: "idea", entityUuid: idea.uuid, action: "updated" });
+
+  return formatIdeaResponse(idea);
 }
 
-// Release Idea (atomic: only succeeds if status is "assigned")
-export async function releaseIdea(uuid: string): Promise<IdeaResponse> {
-  try {
-    const idea = await prisma.idea.update({
-      where: { uuid, status: "assigned" },
-      data: {
-        status: "open",
-        assigneeType: null,
-        assigneeUuid: null,
-        assignedAt: null,
-        assignedByUuid: null,
-      },
-      include: {
-        project: { select: { uuid: true, name: true } },
-      },
-    });
-
-    eventBus.emitChange({ companyUuid: idea.companyUuid, projectUuid: idea.project!.uuid, entityType: "idea", entityUuid: idea.uuid, action: "updated" });
-
-    return formatIdeaResponse(idea);
-  } catch (e: unknown) {
-    if (isPrismaNotFound(e)) {
-      throw new NotClaimedError("Idea");
-    }
-    throw e;
+// Assign Idea (reassign: works regardless of current assignee, any non-terminal status)
+export async function assignIdea({
+  ideaUuid,
+  companyUuid,
+  assigneeType,
+  assigneeUuid,
+  assignedByUuid,
+}: IdeaClaimParams): Promise<IdeaResponse> {
+  const existing = await prisma.idea.findFirst({
+    where: { uuid: ideaUuid, companyUuid },
+  });
+  if (!existing) throw new Error("Idea not found");
+  if (existing.status === "completed" || existing.status === "closed") {
+    throw new Error("Cannot assign a completed or closed Idea");
   }
+
+  // If currently open, move to assigned; otherwise keep current status
+  const newStatus = existing.status === "open" ? "assigned" : existing.status;
+
+  const idea = await prisma.idea.update({
+    where: { uuid: ideaUuid },
+    data: {
+      status: newStatus,
+      assigneeType,
+      assigneeUuid,
+      assignedAt: new Date(),
+      assignedByUuid,
+    },
+    include: {
+      project: { select: { uuid: true, name: true } },
+    },
+  });
+
+  eventBus.emitChange({ companyUuid: idea.companyUuid, projectUuid: idea.project!.uuid, entityType: "idea", entityUuid: idea.uuid, action: "updated" });
+
+  return formatIdeaResponse(idea);
+}
+
+// Release Idea (clears assignee, resets to open; any non-terminal status)
+export async function releaseIdea(uuid: string): Promise<IdeaResponse> {
+  const existing = await prisma.idea.findUnique({ where: { uuid } });
+  if (!existing) throw new Error("Idea not found");
+  if (existing.status === "completed" || existing.status === "closed") {
+    throw new Error("Cannot release a completed or closed Idea");
+  }
+
+  const idea = await prisma.idea.update({
+    where: { uuid },
+    data: {
+      status: "open",
+      assigneeType: null,
+      assigneeUuid: null,
+      assignedAt: null,
+      assignedByUuid: null,
+      elaborationDepth: null,
+      elaborationStatus: null,
+    },
+    include: {
+      project: { select: { uuid: true, name: true } },
+    },
+  });
+
+  eventBus.emitChange({ companyUuid: idea.companyUuid, projectUuid: idea.project!.uuid, entityType: "idea", entityUuid: idea.uuid, action: "updated" });
+
+  return formatIdeaResponse(idea);
 }
 
 // Delete Idea

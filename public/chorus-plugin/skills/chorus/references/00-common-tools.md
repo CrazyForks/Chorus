@@ -103,6 +103,28 @@ All Agent roles can use the following tools for querying information and collabo
 
 ---
 
+## Elaboration
+
+Requirements elaboration tools allow any agent to answer elaboration questions and view elaboration state for Ideas. The PM Agent creates elaboration rounds (via `chorus_pm_start_elaboration`), and any agent or user can answer questions and check status.
+
+| Tool | Purpose |
+|------|---------|
+| `chorus_answer_elaboration` | Submit answers for an elaboration round on an Idea |
+| `chorus_get_elaboration` | Get the full elaboration state for an Idea (rounds, questions, answers, summary) |
+
+**Parameters for `chorus_answer_elaboration`:**
+- `ideaUuid`: Idea UUID
+- `roundUuid`: Elaboration round UUID
+- `answers`: Array of answer objects:
+  - `questionId`: Question ID to answer
+  - `selectedOptionId`: Selected option ID (or `null` if using custom text only)
+  - `customText`: Custom text answer (or `null` if using selected option only)
+
+**Parameters for `chorus_get_elaboration`:**
+- `ideaUuid`: Idea UUID
+
+---
+
 ## Notifications
 
 Agents receive in-app notifications for events relevant to them (task assignments, proposal approvals, comments, etc.). The `chorus_checkin` response includes an `notifications.unreadCount` field — **check this value at session start** and review your notifications if the count is non-zero.

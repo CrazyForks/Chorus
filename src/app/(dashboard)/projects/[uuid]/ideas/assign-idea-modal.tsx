@@ -105,8 +105,8 @@ export function AssignIdeaModal({
 
     setIsLoading(false);
     if (result?.success) {
-      onClose();
       router.refresh();
+      onClose();
     }
   };
 

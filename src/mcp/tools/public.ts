@@ -14,6 +14,7 @@ import * as activityService from "@/services/activity.service";
 import * as commentService from "@/services/comment.service";
 import * as assignmentService from "@/services/assignment.service";
 import * as notificationService from "@/services/notification.service";
+import * as elaborationService from "@/services/elaboration.service";
 import { prisma } from "@/lib/prisma";
 
 export function registerPublicTools(server: McpServer, auth: AgentAuthContext) {
@@ -594,6 +595,74 @@ export function registerPublicTools(server: McpServer, auth: AgentAuthContext) {
       }
       await notificationService.markRead(params.notificationUuid, auth.companyUuid, auth.type, auth.actorUuid);
       return { content: [{ type: "text" as const, text: JSON.stringify({ success: true }, null, 2) }] };
+    }
+  );
+
+  // ===== Elaboration Tools =====
+
+  // chorus_answer_elaboration - Answer elaboration questions
+  server.registerTool(
+    "chorus_answer_elaboration",
+    {
+      description: "Answer elaboration questions for an Idea. Submits answers for a specific elaboration round. When all required questions are answered, the round moves to validation.",
+      inputSchema: z.object({
+        ideaUuid: z.string().describe("Idea UUID"),
+        roundUuid: z.string().describe("Elaboration round UUID"),
+        answers: z.array(z.object({
+          questionId: z.string().describe("Question ID to answer"),
+          selectedOptionId: z.string().nullable().describe("Selected option ID. Set to null for free-text 'Other' answers."),
+          customText: z.string().nullable().describe("Optional note when an option is selected, or REQUIRED free-text when selectedOptionId is null ('Other'). At least one of selectedOptionId or customText must be non-null."),
+        })).describe("Answers to submit"),
+      }),
+    },
+    async ({ ideaUuid, roundUuid, answers }) => {
+      try {
+        const round = await elaborationService.answerElaboration({
+          companyUuid: auth.companyUuid,
+          ideaUuid,
+          roundUuid,
+          actorUuid: auth.actorUuid,
+          actorType: auth.type,
+          answers,
+        });
+
+        return {
+          content: [{ type: "text", text: JSON.stringify(round, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: "text", text: `Failed to answer elaboration: ${error instanceof Error ? error.message : "Unknown error"}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // chorus_get_elaboration - Get elaboration status and rounds for an Idea
+  server.registerTool(
+    "chorus_get_elaboration",
+    {
+      description: "Get the full elaboration state for an Idea, including all rounds, questions, answers, and a summary of progress.",
+      inputSchema: z.object({
+        ideaUuid: z.string().describe("Idea UUID"),
+      }),
+    },
+    async ({ ideaUuid }) => {
+      try {
+        const elaboration = await elaborationService.getElaboration({
+          companyUuid: auth.companyUuid,
+          ideaUuid,
+        });
+
+        return {
+          content: [{ type: "text", text: JSON.stringify(elaboration, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: "text", text: `Failed to get elaboration: ${error instanceof Error ? error.message : "Unknown error"}` }],
+          isError: true,
+        };
+      }
     }
   );
 }

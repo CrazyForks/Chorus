@@ -15,6 +15,8 @@ interface NotificationPreferences {
   proposalRejected: boolean;
   ideaClaimed: boolean;
   commentAdded: boolean;
+  elaborationRequested: boolean;
+  elaborationAnswered: boolean;
 }
 
 const DEFAULT_PREFERENCES: NotificationPreferences = {
@@ -27,6 +29,8 @@ const DEFAULT_PREFERENCES: NotificationPreferences = {
   proposalRejected: true,
   ideaClaimed: true,
   commentAdded: true,
+  elaborationRequested: true,
+  elaborationAnswered: true,
 };
 
 type PreferenceKey = keyof NotificationPreferences;
@@ -59,6 +63,13 @@ const PREFERENCE_GROUPS: PreferenceGroup[] = [
     items: [{ key: "ideaClaimed", labelKey: "ideaClaimed" }],
   },
   {
+    labelKey: "elaborationEvents",
+    items: [
+      { key: "elaborationRequested", labelKey: "elaborationRequested" },
+      { key: "elaborationAnswered", labelKey: "elaborationAnswered" },
+    ],
+  },
+  {
     labelKey: "commentEvents",
     items: [{ key: "commentAdded", labelKey: "commentAdded" }],
   },
@@ -88,6 +99,8 @@ export function NotificationPreferencesForm() {
               proposalRejected,
               ideaClaimed,
               commentAdded,
+              elaborationRequested,
+              elaborationAnswered,
             } = json.data;
             setPreferences({
               taskAssigned,
@@ -99,6 +112,8 @@ export function NotificationPreferencesForm() {
               proposalRejected,
               ideaClaimed,
               commentAdded,
+              elaborationRequested: elaborationRequested ?? true,
+              elaborationAnswered: elaborationAnswered ?? true,
             });
           }
         }

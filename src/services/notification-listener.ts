@@ -26,6 +26,12 @@ function resolveNotificationType(action: string, targetType: string): string | n
     "idea:comment_added": "comment_added",
     "proposal:comment_added": "comment_added",
     "document:comment_added": "comment_added",
+    // elaboration events (target type is always "idea")
+    "idea:elaboration_started": "elaboration_requested",
+    "idea:elaboration_answered": "elaboration_answered",
+    "idea:elaboration_followup": "elaboration_requested",
+    "idea:elaboration_resolved": "elaboration_answered",
+    "idea:elaboration_skipped": "elaboration_answered",
   };
   return mapping[key] ?? null;
 }
@@ -42,6 +48,8 @@ const PREF_FIELD_MAP: Record<string, keyof notificationService.NotificationPrefe
   proposal_rejected: "proposalRejected",
   idea_claimed: "ideaClaimed",
   comment_added: "commentAdded",
+  elaboration_requested: "elaborationRequested",
+  elaboration_answered: "elaborationAnswered",
 };
 
 interface ActivityEvent {
@@ -245,6 +253,55 @@ async function resolveRecipients(
       return [];
     }
 
+    case "elaboration_requested": {
+      // Notify Idea creator (user) + project admin agents
+      const reqIdea = await prisma.idea.findUnique({
+        where: { uuid: targetUuid },
+        select: { createdByUuid: true, projectUuid: true },
+      });
+      if (!reqIdea) return [];
+      const reqRecipients: Recipient[] = [];
+      // Idea creator is always a user
+      reqRecipients.push({ type: "user", uuid: reqIdea.createdByUuid });
+      // Project admin agents
+      const reqAdminAgents = await prisma.agent.findMany({
+        where: {
+          companyUuid,
+          roles: { has: "admin_agent" },
+        },
+        select: { uuid: true },
+      });
+      for (const a of reqAdminAgents) {
+        reqRecipients.push({ type: "agent", uuid: a.uuid });
+      }
+      return reqRecipients;
+    }
+
+    case "elaboration_answered": {
+      // Notify Idea assignee (the PM agent)
+      const ansIdea = await prisma.idea.findUnique({
+        where: { uuid: targetUuid },
+        select: {
+          assigneeType: true,
+          assigneeUuid: true,
+          createdByUuid: true,
+        },
+      });
+      if (!ansIdea) return [];
+      const ansRecipients: Recipient[] = [];
+      // For elaboration_answered from "answered" action: notify assignee (PM)
+      // For elaboration_resolved/elaboration_skipped: notify idea creator
+      // We distinguish based on the original action stored in the event
+      // But since resolveRecipients only sees notificationType, and both map to
+      // "elaboration_answered", we include both assignee and creator, then
+      // the dedup + actor-exclusion in handleActivity will filter correctly.
+      if (ansIdea.assigneeType && ansIdea.assigneeUuid) {
+        ansRecipients.push({ type: ansIdea.assigneeType, uuid: ansIdea.assigneeUuid });
+      }
+      ansRecipients.push({ type: "user", uuid: ansIdea.createdByUuid });
+      return ansRecipients;
+    }
+
     case "comment_added": {
       // Notify entity assignee + creator, but EXCLUDE the comment author
       const recipients: Recipient[] = [];
@@ -356,6 +413,10 @@ function buildMessage(
       return `${actorName} claimed idea "${entityTitle}"`;
     case "comment_added":
       return `${actorName} commented on "${entityTitle}"`;
+    case "elaboration_requested":
+      return `${actorName} requested elaboration on idea "${entityTitle}"`;
+    case "elaboration_answered":
+      return `${actorName} answered elaboration questions for idea "${entityTitle}"`;
     default:
       return `${actorName} performed an action on "${entityTitle}"`;
   }
