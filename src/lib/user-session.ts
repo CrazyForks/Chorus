@@ -7,7 +7,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { UserAuthContext } from "@/types/auth";
 
 const COOKIE_NAME = "user_session";
-const ACCESS_TOKEN_EXPIRY = "15m"; // Short-lived access token
+export const ACCESS_TOKEN_EXPIRY = "1h"; // Access token expiry
+export const ACCESS_TOKEN_MAX_AGE = 60 * 60; // Cookie maxAge in seconds — must match ACCESS_TOKEN_EXPIRY
 const REFRESH_TOKEN_EXPIRY = "7d"; // Long-lived refresh token
 const REFRESH_COOKIE_NAME = "user_refresh";
 
@@ -179,7 +180,7 @@ export function setUserSessionCookies(
     httpOnly: true,
     secure: isProduction,
     sameSite: "lax",
-    maxAge: 15 * 60, // 15 minutes
+    maxAge: ACCESS_TOKEN_MAX_AGE,
     path: "/",
   });
 

@@ -1,8 +1,10 @@
 // src/middleware.ts
-// Edge Middleware for server-side OIDC token refresh
-// Automatically refreshes expired access tokens using refresh_token before requests reach Server Components
+// Edge Middleware for server-side token refresh
+// Handles both OIDC tokens and user_session (Default Auth) tokens automatically
 
 import { NextRequest, NextResponse } from "next/server";
+import { SignJWT, jwtVerify } from "jose";
+import { ACCESS_TOKEN_EXPIRY, ACCESS_TOKEN_MAX_AGE } from "@/lib/user-session";
 
 // In-memory cache for OIDC discovery documents (per edge instance)
 const discoveryCache = new Map<string, { tokenEndpoint: string; expiresAt: number }>();
@@ -19,6 +21,13 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
   } catch {
     return null;
   }
+}
+
+// Get JWT signing secret for user_session tokens
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret) throw new Error("NEXTAUTH_SECRET is not set");
+  return new TextEncoder().encode(secret);
 }
 
 // Get token endpoint from OIDC discovery, with 10-minute cache
@@ -70,11 +79,94 @@ function clearAuthAndRedirect(request: NextRequest): NextResponse {
   response.cookies.set("oidc_refresh_token", "", expireOpts);
   response.cookies.set("oidc_client_id", "", expireOpts);
   response.cookies.set("oidc_issuer", "", expireOpts);
+  response.cookies.set("user_session", "", expireOpts);
+  response.cookies.set("user_refresh", "", expireOpts);
 
   return response;
 }
 
+// ─── User Session (Default Auth) refresh ────────────────────────────────────
+// Default Auth users get a short-lived user_session JWT (access token) and a
+// long-lived user_refresh JWT (refresh token). Unlike OIDC, both are self-signed
+// with NEXTAUTH_SECRET so we can verify and re-sign entirely in Edge Runtime
+// without calling any external endpoint.
+async function handleUserSessionRefresh(request: NextRequest): Promise<NextResponse | null> {
+  const userSession = request.cookies.get("user_session")?.value;
+
+  if (!userSession) {
+    return null; // No user_session cookie — not a Default Auth user
+  }
+
+  // Check expiry
+  const payload = decodeJwtPayload(userSession);
+  if (payload && typeof payload.exp === "number") {
+    const now = Math.floor(Date.now() / 1000);
+    // Still valid with comfortable margin — pass through
+    if (payload.exp - now > 10) {
+      return null;
+    }
+  }
+
+  // Token expired or about to expire — try refresh
+  const userRefresh = request.cookies.get("user_refresh")?.value;
+  if (!userRefresh) {
+    // No refresh token — cannot renew, let page-level auth handle redirect
+    return null;
+  }
+
+  try {
+    const secret = getJwtSecret();
+
+    // Verify the refresh token (must not be expired, must be tokenType "refresh")
+    const { payload: refreshPayload } = await jwtVerify(userRefresh, secret);
+    if (refreshPayload.tokenType !== "refresh") {
+      return null;
+    }
+
+    // Reconstruct the access token payload from the (possibly expired) access token.
+    // The refresh token only carries userUuid + companyUuid, so we need the rest
+    // (email, name, oidcSub) from the old access token payload.
+    const newAccessToken = await new SignJWT({
+      type: "user",
+      tokenType: "access",
+      userUuid: payload?.userUuid ?? refreshPayload.userUuid,
+      companyUuid: payload?.companyUuid ?? refreshPayload.companyUuid,
+      email: payload?.email,
+      name: payload?.name,
+      oidcSub: payload?.oidcSub,
+    })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime(ACCESS_TOKEN_EXPIRY)
+      .sign(secret);
+
+    console.log("[middleware] User session refreshed for", payload?.email || refreshPayload.userUuid);
+
+    // Write the new access token to the request cookie so downstream Server Components read it
+    request.cookies.set("user_session", newAccessToken);
+
+    const response = NextResponse.next({
+      request: { headers: request.headers },
+    });
+
+    // Write the new access token to the response cookie for the browser
+    response.cookies.set("user_session", newAccessToken, cookieOptions(ACCESS_TOKEN_MAX_AGE));
+
+    return response;
+  } catch (error) {
+    console.error("[middleware] User session refresh error:", error);
+    return null; // Let page-level auth handle redirect
+  }
+}
+
+// ─── Main middleware ─────────────────────────────────────────────────────────
 export async function middleware(request: NextRequest) {
+  // --- 1. Try user_session refresh (Default Auth) ---
+  // Check this first because it's a quick local operation (no external fetch).
+  const userResult = await handleUserSessionRefresh(request);
+  if (userResult) return userResult;
+
+  // --- 2. OIDC token refresh ---
   const accessToken = request.cookies.get("oidc_access_token")?.value;
 
   // No access token at all — check if we have refresh materials

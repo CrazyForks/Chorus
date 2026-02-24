@@ -72,21 +72,6 @@ export async function getAuthContext(
     }
   }
 
-  // 4. Fallback: Header-based mock user authentication (for development) - UUID-based
-  const userUuidHeader = request.headers.get("x-user-uuid");
-  const companyUuidHeader = request.headers.get("x-company-uuid");
-
-  if (userUuidHeader && companyUuidHeader) {
-    const userContext: UserAuthContext = {
-      type: "user",
-      companyUuid: companyUuidHeader,
-      actorUuid: userUuidHeader,
-      email: request.headers.get("x-user-email") || undefined,
-      name: request.headers.get("x-user-name") || undefined,
-    };
-    return userContext;
-  }
-
   return null;
 }
 
