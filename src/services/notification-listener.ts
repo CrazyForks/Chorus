@@ -245,11 +245,18 @@ async function resolveRecipients(
     case "idea_claimed": {
       const idea = await prisma.idea.findUnique({
         where: { uuid: targetUuid },
-        select: { createdByUuid: true },
+        select: { createdByUuid: true, assigneeType: true, assigneeUuid: true },
       });
       if (idea) {
-        // Ideas are always created by users
-        return [{ type: "user", uuid: idea.createdByUuid }];
+        const recipients: Recipient[] = [
+          // Notify idea creator
+          { type: "user", uuid: idea.createdByUuid },
+        ];
+        // Also notify the assignee (e.g., agent assigned via UI)
+        if (idea.assigneeType && idea.assigneeUuid) {
+          recipients.push({ type: idea.assigneeType as "user" | "agent", uuid: idea.assigneeUuid });
+        }
+        return recipients;
       }
       return [];
     }

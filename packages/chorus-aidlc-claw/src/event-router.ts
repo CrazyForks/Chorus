@@ -115,6 +115,9 @@ export class ChorusEventRouter {
         case "proposal_approved":
           this.handleProposalApproved(notification);
           break;
+        case "idea_claimed":
+          this.handleIdeaClaimed(notification);
+          break;
         default:
           this.logger.info(`Unhandled notification action: "${notification.action}"`);
           break;
@@ -174,6 +177,14 @@ export class ChorusEventRouter {
       `[Chorus] Proposal '${n.entityTitle}' was APPROVED! Documents and tasks have been created. ` +
       `Use chorus_get_available_tasks to see the new tasks ready for work.`,
       { notificationUuid: n.uuid, action: "proposal_approved", entityUuid: n.entityUuid }
+    );
+  }
+
+  private handleIdeaClaimed(n: NotificationDetail): void {
+    this.triggerAgent(
+      `[Chorus] Idea '${n.entityTitle}' has been assigned to you (ideaUuid: ${n.entityUuid}). ` +
+      `Use chorus_get_idea to review the idea, then chorus_claim_idea to start elaboration.`,
+      { notificationUuid: n.uuid, action: "idea_claimed", entityUuid: n.entityUuid }
     );
   }
 
