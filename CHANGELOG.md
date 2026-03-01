@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.2.0] - 2026-03-01
+
+### Added
+
+- **OpenClaw Integration**: New `@chorus-aidlc/chorus-openclaw-plugin` — an OpenClaw-compatible plugin with SSE + MCP bridge, enabling Chorus to work with any OpenClaw-supported IDE or agent. Includes 12 exploration tools and admin create tools.
+- **Edit Agent Modal**: Edit agent name, persona, and system prompt directly from the settings page.
+- **Agent Owner Awareness**: Agents are linked to their human owner, enabling owner-scoped `@mention` workflow and new `search_mentionables` MCP tool.
+- **@Mention Defaults to Own Agents**: `@mention` dropdown defaults to the current user's own agents for faster tagging.
+- **Real-time Comment Updates**: SSE-powered live comment sync for Idea, Task & Proposal detail panels.
+
+### Changed
+
+- **`create_idea` Permission Level**: Moved from Admin-only to PM permission level, allowing PM agents to create ideas directly.
+
+### Fixed
+
+- **Notification Scoping**: Elaboration and task_verify notifications are now scoped to relevant parties instead of broadcasting to all admin agents.
+- **Duplicate Event Emission**: Removed duplicate `eventBus.emit` in elaboration service.
+- **Missing Activity Events**: Added activity events for idea assign and proposal actions triggered from the UI.
+- **Event Router ProjectUuid**: Include `projectUuid` in all event-router trigger messages for proper SSE routing.
+
+---
+
 ## [0.1.1] - 2026-02-27
 
 ### Added
