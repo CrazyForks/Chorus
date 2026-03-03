@@ -7,19 +7,19 @@
 | 项目 | 详情 |
 |------|------|
 | 公司名 | Trace |
-| 网站 | trace.so / demo.trace.so |
+| 网站 | [trace.so](https://www.trace.so/) / [demo.trace.so](https://demo.trace.so/) |
 | YC 批次 | S25 |
-| YC 页面 | ycombinator.com/companies/trace-so |
+| YC 页面 | [ycombinator.com/companies/trace-so](https://www.ycombinator.com/companies/trace-so) |
 | 注册地 | 伦敦 (London-based)，运营在 SF |
 | 成立 | 2025 |
 | 团队规模 | ~5人 |
-| 前身 | Clustr (pivot 过来的，PH 上有帖子记录 "Road from Pivot Hell to Trace") |
+| 前身 | Clustr (pivot 过来的，PH 上有帖子记录 "[Road from Pivot Hell to Trace](https://www.producthunt.com/p/clustr/road-from-pivot-hell-to-trace-yc-s25)") |
 
 ## 2. 融资
 
 | 轮次 | 金额 | 时间 | 来源 |
 |------|------|------|------|
-| Seed | $3M | 2026-02-26 公布 | TechCrunch 报道 |
+| Seed | $3M | 2026-02-26 公布 | [TechCrunch 报道](https://techcrunch.com/2026/02/26/trace-raises-3-million-to-solve-the-agent-adoption-problem/) |
 
 **投资人:**
 - Y Combinator
@@ -27,35 +27,35 @@
 - Transpose Platform Management
 - Goodwater Capital
 - Formosa Capital
-- WeFunder (众筹平台)
+- WeFunder (作为投资人参投，非众筹)
 - 天使: Benjamin Bryant, Kevin Moore
 
-**韩文投资分析 (CapitalEDGE) 观点:** 对 Trace 持怀疑态度，认为 "关键词能看懂 (workflow automation, AI agents, CompanyOS) 但具体做什么、值不值得投" 不确定。文中提到 Trace 几个月前就在融但 $3M 还没填满。
+**韩文投资分析 ([CapitalEDGE](https://insight.thecapitaledge.com/p/dealedge-pitch-trace-yc-s25)) 观点:** 对 Trace 持怀疑态度，认为 "关键词能看懂 (workflow automation, AI agents, CompanyOS) 但具体做什么、值不值得投" 不确定。文中提到 Trace 几个月前就在融但 $3M 还没填满。
 
 ## 3. 创始团队
 
 ### Tim Cherkasov — CEO
-- LinkedIn: linkedin.com/in/timcherkasov
-- X: @timcherkasov (247 followers)
+- LinkedIn: [linkedin.com/in/timcherkasov](https://www.linkedin.com/in/timcherkasov/)
+- X: [@timcherkasov](https://x.com/timcherkasov) (247 followers)
 - 背景: 前 Copper (数字资产托管) Product Manager，为 State Street 交付机构级产品
 - 金融科技背景，做过对冲基金和 scaleup 的数据科学家
 - 17 岁开始创业，零售科技/旅游/Web3 方向
-- 在 X 上宣称 Trace 拿到 YC S25 Launchpad 排行榜 #1
+- 在 X 上宣称 Trace 拿到 [YC S25 Launchpad 排行榜 #1](https://x.com/timcherkasov/status/1963488338566070574)
 
 ### Artur Romanov — CTO
-- LinkedIn: linkedin.com/in/artur-romanov
+- LinkedIn: [linkedin.com/in/artur-romanov](https://www.linkedin.com/in/artur-romanov/)
 - 背景: 前 Deliveroo 高级工程师，建了 grocery data-enrichment ML pipeline (百万 SKU，千级零售商)
 - 多次创业者，物流和金融后端，工程和运营的 workflow automation
 
-两人大学相识，合作 10+ 年。还有一个 Stefan Cherkasov (疑似 Tim 兄弟) 也在 Trace。
+两人大学相识，合作 10+ 年。还有一个 [Stefan Cherkasov](https://www.linkedin.com/in/stefancherkasov/) (疑似 Tim 兄弟) 也在 Trace。
 
 ## 4. 产品定位与机制
 
 **一句话:** "Context-aware orchestration between humans and AI"
 
-**CEO 金句:** "OpenAI and Anthropic are building these brilliant interns. We're building the manager that knows where to put them."
+**CEO 金句:** "OpenAI and Anthropic are building these brilliant interns. We're building the manager that knows where to put them." — [TechCrunch](https://techcrunch.com/2026/02/26/trace-raises-3-million-to-solve-the-agent-adoption-problem/)
 
-**CTO 金句:** "2024 and 2025 was about prompt engineering. Now we've moved to context engineering. Whoever provides the best context at the right time is going to be the infrastructure on top of which AI-first companies are built."
+**CTO 金句:** "2024 and 2025 was about prompt engineering. Now we've moved to context engineering. Whoever provides the best context at the right time is going to be the infrastructure on top of which AI-first companies are built." — [TechCrunch](https://techcrunch.com/2026/02/26/trace-raises-3-million-to-solve-the-agent-adoption-problem/)
 
 **产品机制:**
 1. 连接已有工具 (Slack, Jira, Notion, Email, Airtable)
@@ -67,56 +67,65 @@
 
 **愿景:** CompanyOS — "a cognitive layer that ingests internal signals and drives intelligent action across every team"
 
-**已有客户:** 30+ 家公司 (YC Launch Post 声称)
+**已有客户:** 30+ 家公司 ([YC Launch Post](https://www.ycombinator.com/companies/trace-so) 声称)
 
 ## 5. 公开内容索引
 
 ### 媒体报道
-| 来源 | 标题 | 链接 | 日期 |
-|------|------|------|------|
-| TechCrunch | "Trace raises $3M to solve the AI agent adoption problem in enterprise" | techcrunch.com/2026/02/26/trace-raises-3-million-to-solve-the-agent-adoption-problem/ | 2026-02-26 |
-| FoundersToday | "Trace bags $3M to accelerate AI Agent Deployment in Enterprises" | founderstoday.news/trace-bags-3-millions-in-funding/ | 2026-02-27 |
-| FindArticles | "Trace Raises $3M to Unlock Enterprise AI Agents" | findarticles.com/trace-raises-3m-to-unlock-enterprise-ai-agents/ | 2026-02-26 |
-| Unirises | "YC-Backed Startup Trace Transforms Automation with AI" | unirises.com/yc-backed-startup-trace-transforming-workflow-automation-with-ai-and-human-task-routing/ | 2025-08-31 |
-| CapitalEDGE (韩文) | "[DealEDGE] Pitch - Trace (YC S25)" — 投资人视角分析 pitch deck | insight.thecapitaledge.com/p/dealedge-pitch-trace-yc-s25 | 2026-03-02 |
-| Futurepedia | Trace AI 产品 Review | futurepedia.io/tool/trace | - |
+| 来源 | 标题 | 日期 |
+|------|------|------|
+| [TechCrunch](https://techcrunch.com/2026/02/26/trace-raises-3-million-to-solve-the-agent-adoption-problem/) | "Trace raises $3M to solve the AI agent adoption problem in enterprise" | 2026-02-26 |
+| [FoundersToday](https://www.founderstoday.news/trace-bags-3-millions-in-funding/) | "Trace bags $3M to accelerate AI Agent Deployment in Enterprises" | 2026-02-27 |
+| [FindArticles](https://www.findarticles.com/trace-raises-3m-to-unlock-enterprise-ai-agents/) | "Trace Raises $3M to Unlock Enterprise AI Agents" | 2026-02-26 |
+| [Unirises](https://unirises.com/yc-backed-startup-trace-transforming-workflow-automation-with-ai-and-human-task-routing/) | "YC-Backed Startup Trace Transforms Automation with AI" | 2025-08-31 |
+| [CapitalEDGE (韩文)](https://insight.thecapitaledge.com/p/dealedge-pitch-trace-yc-s25) | "[DealEDGE] Pitch - Trace (YC S25)" — 投资人视角分析 pitch deck | 2026-03-02 |
+| [Futurepedia](https://www.futurepedia.io/tool/trace) | Trace AI 产品 Review | - |
 
 ### YouTube
 | 标题 | 链接 | 说明 |
 |------|------|------|
-| YC Launch Video (官方 demo) | youtu.be/RfJerH9r2-8 | YC 页面嵌入的官方视频 |
-| "Trace: AI Workflow Automation for Human-AI Teams" | youtube.com/watch?v=J3y5CjBDZ_I | Podcast 形式介绍，2025-08-26 |
+| YC Launch Video (官方 demo) | [youtu.be/RfJerH9r2-8](https://youtu.be/RfJerH9r2-8) | YC 页面嵌入的官方视频 |
+| "Trace: AI Workflow Automation for Human-AI Teams" | [youtube.com/watch?v=J3y5CjBDZ_I](https://www.youtube.com/watch?v=J3y5CjBDZ_I) | Podcast 形式介绍，2025-08-26 |
 
 ### Product Hunt
 | 页面 | 链接 | 数据 |
 |------|------|------|
-| 产品页 | producthunt.com/products/trace | 1037 upvotes, 351 comments |
-| Pivot 故事 | producthunt.com/p/clustr/road-from-pivot-hell-to-trace-yc-s25 | Clustr → Trace 的 pivot 经历 |
+| 产品页 | [producthunt.com/products/trace](https://www.producthunt.com/products/trace) | 1037 upvotes, 351 comments |
+| Pivot 故事 (Clustr 论坛) | [producthunt.com/p/clustr/road-from-pivot-hell-to-trace-yc-s25](https://www.producthunt.com/p/clustr/road-from-pivot-hell-to-trace-yc-s25) | Clustr → Trace 的 pivot 经历 |
+| Pivot 故事 (YC 论坛) | [producthunt.com/p/yc/from-bad-idea-pivot-hell-finally-trace-the-road-to-yc-s25](https://www.producthunt.com/p/yc/from-bad-idea-pivot-hell-finally-trace-the-road-to-yc-s25) | 同一故事，发在 YC 论坛 |
+| Pivot 长文 (PH Stories) | [producthunt.com/stories/unwinding-our-clustr-fck](https://www.producthunt.com/stories/unwinding-our-clustr-fck) | Tim 亲笔，完整 pivot 叙事 |
+| PH Launch Dashboard | [hunted.space/dashboard/trace](https://hunted.space/dashboard/trace) | 第三方 launch 数据 |
 
 ### 社交媒体
 | 平台 | 账号 | 链接 |
 |------|------|------|
-| X (公司) | @trace_so | 通过 Tim 的帖子可见 |
-| X (CEO) | @timcherkasov | x.com/timcherkasov — 247 followers |
-| LinkedIn (CEO) | Tim Cherkasov | linkedin.com/in/timcherkasov |
-| LinkedIn (CTO) | Artur Romanov | linkedin.com/in/artur-romanov |
+| X (公司) | @trace_so | [x.com/trace_so](https://x.com/trace_so) — 188 followers |
+| X (CEO) | @timcherkasov | [x.com/timcherkasov](https://x.com/timcherkasov) — 247 followers |
+| LinkedIn (CEO) | Tim Cherkasov | [linkedin.com/in/timcherkasov](https://www.linkedin.com/in/timcherkasov/) |
+| LinkedIn (CTO) | Artur Romanov | [linkedin.com/in/artur-romanov](https://www.linkedin.com/in/artur-romanov/) |
+
+### LinkedIn Posts (关键帖)
+- [Introducing Trace](https://www.linkedin.com/posts/timcherkasov_hey-everyone-big-news-we-just-activity-7360714023094411264-Nl5z) — Launch 公告
+- [YC Launchpad #1](https://www.linkedin.com/posts/timcherkasov_another-milestone-for-trace-yc-s25-we-activity-7369252522277957632-s6Sz) — Launchpad 排名
+- [Demo Day S25](https://www.linkedin.com/posts/timcherkasov_demo-day-s25-what-a-journey-today-was-activity-7371685163115843584-NpIW) — Demo Day 感想
+- [From bad idea → pivot hell → YC S25](https://www.linkedin.com/posts/timcherkasov_from-bad-idea-pivot-hell-finally-yc-s25-activity-7358030326436192256-ITbY) — Pivot 故事
 
 ### 其他
-- Demo: demo.trace.so (可免费试用)
-- Calendly: calendly.com/trace_so/20min
+- Demo: [demo.trace.so](https://demo.trace.so/) (可免费试用)
+- Calendly: [calendly.com/trace_so/20min](https://calendly.com/trace_so/20min)
 - Email: founders@trace.so
-- Jared Friedman (YC Partner) 在 LinkedIn 上推荐过 Trace
+- [Jared Friedman (YC Partner)](https://www.linkedin.com/in/jaredfriedman/) 在 LinkedIn 上推荐过 Trace
 
 ## 6. Pitch Deck
 
 **直接获取 pitch deck 的情况:**
-- CapitalEDGE 韩文文章明确提到通过 syndicate 看到了 Trace 的 pitch deck，但文章本身是付费墙内容，只展示了一张截图和评论
-- Pitch deck 没有公开发布，通过 WeFunder 众筹渠道可能有部分公开
-- WeFunder 页面 (wefunder.com) 值得检查，众筹平台通常要求公开 pitch 材料
+- [CapitalEDGE 韩文文章](https://insight.thecapitaledge.com/p/dealedge-pitch-trace-yc-s25)明确提到通过 syndicate 看到了 Trace 的 pitch deck，但文章本身是付费墙内容，只展示了一张截图和评论
+- Pitch deck 没有公开发布
+- WeFunder 上的 [wefunder.com/trace](https://wefunder.com/trace) 是另一家公司 (traceapp.com)，与 trace.so 无关
 
 **从 CapitalEDGE 文章可推断的 deck 关键词:** workflow automation, AI agents, CompanyOS
 
-## 7. 竞争分析 (TechCrunch 原文观点)
+## 7. 竞争分析 ([TechCrunch 原文](https://techcrunch.com/2026/02/26/trace-raises-3-million-to-solve-the-agent-adoption-problem/)观点)
 
 TechCrunch 明确指出竞争激烈:
 - Anthropic 刚推企业 agent plug-ins (finance/engineering/design)
@@ -141,13 +150,13 @@ Trace 的差异化赌注: knowledge graph + context engineering
 
 ## 9. WeFunder 调查结果
 
-WeFunder 上的 "Trace" (wefunder.com/trace) 是另一家公司 — traceapp.com, "Discover the cool things people buy"，ex-Intuit/Google/Foursquare 团队，跟 trace.so 无关。
+WeFunder 上的 "Trace" ([wefunder.com/trace](https://wefunder.com/trace)) 是另一家公司 — traceapp.com, "Discover the cool things people buy"，ex-Intuit/Google/Foursquare 团队，跟 trace.so 无关。
 
 WeFunder 在 Trace seed round 中是作为投资人参投，不是 Trace 通过 WeFunder 众筹。因此 **WeFunder 上没有 Trace (trace.so) 的 pitch deck 或融资材料**。
 
 ## 10. Clustr → Trace Pivot 完整故事
 
-来源: Product Hunt Stories "Unwinding Our Clustr Fck" (2025-07-06, Tim Cherkasov 亲笔)
+来源: [Product Hunt Stories "Unwinding Our Clustr Fck"](https://www.producthunt.com/stories/unwinding-our-clustr-fck) (2025-07-06, Tim Cherkasov 亲笔)
 
 ### Clustr 是什么
 - Web3 平台，帮 crypto 新手管理投资组合
@@ -185,11 +194,11 @@ WeFunder 在 Trace seed round 中是作为投资人参投，不是 Trace 通过 
 2. **Clustr 是 web3/crypto 背景** — 团队没有 devtools/PM 工具经验，从通用运营切入而非开发流程是合理的路径选择
 3. **54 次访谈 → 3 个 pilot → MVP** — 执行力不差，但"stealth"到 YC 后才公开说明产品形态可能经历过进一步调整
 4. **Artur 是技术锚** — Deliveroo ML pipeline 经验对 knowledge graph 有直接帮助
-5. **融资困难** — CapitalEDGE 说 $3M 融了几个月没填满 + 韩国投资人持怀疑态度 → 叙事虽好但 traction 可能不够硬
+5. **融资困难** — [CapitalEDGE](https://insight.thecapitaledge.com/p/dealedge-pitch-trace-yc-s25) 说 $3M 融了几个月没填满 + 韩国投资人持怀疑态度 → 叙事虽好但 traction 可能不够硬
 
 ## 11. 剩余可挖线索
 
-1. **demo.trace.so** — 可以直接体验产品，了解实际能力边界
-2. **Tim 的 LinkedIn posts** — Demo Day S25 帖、Launch 帖有更多细节
-3. **YC Demo Day 录像** — 28 个 YC S25 1-slide pitch deck 的合集文章
-4. **X @trace_so** — 188 followers，有 PH launch 数据帖
+1. [demo.trace.so](https://demo.trace.so/) — 可以直接体验产品，了解实际能力边界
+2. Tim 的 [LinkedIn posts](https://www.linkedin.com/in/timcherkasov/) — Demo Day S25 帖、Launch 帖有更多细节
+3. [28 个 YC S25 1-slide pitch deck 合集](https://www.productmarketfit.tech/p/28-y-combinator-1-slide-pitch-decks) — 可能包含 Trace 的 demo day slide
+4. [X @trace_so](https://x.com/trace_so) — 188 followers，有 PH launch 数据帖
