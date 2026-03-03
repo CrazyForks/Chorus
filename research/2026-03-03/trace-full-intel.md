@@ -139,10 +139,57 @@ Trace 的差异化赌注: knowledge graph + context engineering
 | 叙事 | "CompanyOS" / "context engineering" | "AI-DLC" / "PM for Agents" |
 | 最大威胁 | 向下延伸到开发流程 | Trace 抢占 "human+AI orchestration" 叙事 |
 
-## 9. 值得继续挖的线索
+## 9. WeFunder 调查结果
 
-1. **WeFunder 页面** — 众筹平台可能有更详细的 pitch/财务数据
-2. **Clustr → Trace pivot 故事** — PH discussion 页面有细节，CF 保护访问不了，可用浏览器
-3. **demo.trace.so** — 可以直接体验产品，了解实际能力
-4. **Tim 的 LinkedIn posts** — 有多篇关于 Trace launch 和 milestone 的帖子
-5. **YC Demo Day 录像** — 28 个 YC S25 1-slide pitch deck 的合集文章提到了 demo day 内容
+WeFunder 上的 "Trace" (wefunder.com/trace) 是另一家公司 — traceapp.com, "Discover the cool things people buy"，ex-Intuit/Google/Foursquare 团队，跟 trace.so 无关。
+
+WeFunder 在 Trace seed round 中是作为投资人参投，不是 Trace 通过 WeFunder 众筹。因此 **WeFunder 上没有 Trace (trace.so) 的 pitch deck 或融资材料**。
+
+## 10. Clustr → Trace Pivot 完整故事
+
+来源: Product Hunt Stories "Unwinding Our Clustr Fck" (2025-07-06, Tim Cherkasov 亲笔)
+
+### Clustr 是什么
+- Web3 平台，帮 crypto 新手管理投资组合
+- 提供基本面指标，免去用户自研
+- 峰值数据: 9,000 用户，平均 session 10 分钟，有收入 (另一帖提到 $20K MRR)
+
+### 为什么失败
+- **核心问题: 没有 stickiness** — 用户用 Clustr 看研报，但去别的平台交易
+- 无法让用户在平台上 transact
+- 跑了 150+ 营销实验，大部分失败
+- 只剩两条路: 内容付费墙 或 广告变现，都不想做
+- Tim 内心知道该 pivot 一整年，但没下决心，团队指着用户数说"有 market validation"
+
+### Pivot 过程
+1. **裁员:** 12人 → 4人 → 再走2个 → 只剩 Tim + Artur (Arthur)
+2. **Pivot hell:** 数月漫游，看了几十个 idea、几百个成功 startup
+3. **YC Startup School London:** 参加 SUS，认识了 YC 的 Tom
+4. **SF 之行:** Tim 无计划飞 SF 找灵感，5天改变了方向
+5. **Tom 的关键建议:** "Moving cautiously kills startups"
+6. **回来后立刻行动:**
+   - 2 周做了 54 个行业专家访谈
+   - 拿到 2 个 advisor
+   - 签了 3 家公司 pilot
+   - 开始 MVP
+7. **进 YC:** 以 YC deadline 倒逼进度，第 6 次申请终于进了 S25
+
+### 关键教训 (Tim 原话)
+- "Be ambitious yet grounded. Don't go for the classic tarpit idea being pitched by literally hundreds of founders at YC startup school."
+- "Momentum creates information, which helps you fall down the right path."
+- "Sometimes you just have to piss your team off. The buck stops with you."
+- Clustr → Trace 整个 pivot 过程约 5 个月
+
+### 对 Chorus 的启示
+1. **Tim 是连续创业者但 Trace 是他第一个有 YC 背书的项目** — 之前失败过，有韧性但产品感待验证
+2. **Clustr 是 web3/crypto 背景** — 团队没有 devtools/PM 工具经验，从通用运营切入而非开发流程是合理的路径选择
+3. **54 次访谈 → 3 个 pilot → MVP** — 执行力不差，但"stealth"到 YC 后才公开说明产品形态可能经历过进一步调整
+4. **Artur 是技术锚** — Deliveroo ML pipeline 经验对 knowledge graph 有直接帮助
+5. **融资困难** — CapitalEDGE 说 $3M 融了几个月没填满 + 韩国投资人持怀疑态度 → 叙事虽好但 traction 可能不够硬
+
+## 11. 剩余可挖线索
+
+1. **demo.trace.so** — 可以直接体验产品，了解实际能力边界
+2. **Tim 的 LinkedIn posts** — Demo Day S25 帖、Launch 帖有更多细节
+3. **YC Demo Day 录像** — 28 个 YC S25 1-slide pitch deck 的合集文章
+4. **X @trace_so** — 188 followers，有 PH launch 数据帖
