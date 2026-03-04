@@ -13,6 +13,7 @@ import * as proposalService from "@/services/proposal.service";
 import * as activityService from "@/services/activity.service";
 import * as commentService from "@/services/comment.service";
 import * as assignmentService from "@/services/assignment.service";
+import { zArray } from "./schema-utils";
 import * as notificationService from "@/services/notification.service";
 import * as elaborationService from "@/services/elaboration.service";
 import * as projectGroupService from "@/services/project-group.service";
@@ -652,7 +653,7 @@ export function registerPublicTools(server: McpServer, auth: AgentAuthContext) {
       inputSchema: z.object({
         ideaUuid: z.string().describe("Idea UUID"),
         roundUuid: z.string().describe("Elaboration round UUID"),
-        answers: z.array(z.object({
+        answers: zArray(z.object({
           questionId: z.string().describe("Question ID to answer"),
           selectedOptionId: z.string().nullable().describe("Selected option ID. Set to null for free-text 'Other' answers."),
           customText: z.string().nullable().describe("Optional note when an option is selected, or REQUIRED free-text when selectedOptionId is null ('Other'). At least one of selectedOptionId or customText must be non-null."),

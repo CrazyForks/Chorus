@@ -14,6 +14,7 @@ import * as activityService from "@/services/activity.service";
 import * as elaborationService from "@/services/elaboration.service";
 import { getAgentByUuid } from "@/services/agent.service";
 import { AlreadyClaimedError, NotClaimedError } from "@/lib/errors";
+import { zArray } from "./schema-utils";
 
 export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
   // chorus_claim_idea - Claim an Idea
@@ -173,19 +174,19 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
         title: z.string().describe("Proposal title"),
         description: z.string().optional().describe("Proposal description"),
         inputType: z.enum(["idea", "document"]).describe("Input source type"),
-        inputUuids: z.array(z.string()).describe("Input UUID list"),
-        documentDrafts: z.array(z.object({
+        inputUuids: zArray(z.string()).describe("Input UUID list"),
+        documentDrafts: zArray(z.object({
           type: z.string().describe("Document type (prd, tech_design, adr, spec, guide)"),
           title: z.string().describe("Document title"),
           content: z.string().describe("Document content (Markdown)"),
         })).optional().describe("Document drafts list"),
-        taskDrafts: z.array(z.object({
+        taskDrafts: zArray(z.object({
           title: z.string().describe("Task title"),
           description: z.string().optional().describe("Task description"),
           storyPoints: z.number().optional().describe("Effort estimate (agent hours)"),
           priority: z.enum(["low", "medium", "high"]).optional().describe("Priority"),
           acceptanceCriteria: z.string().optional().describe("Acceptance criteria (Markdown)"),
-          dependsOnDraftUuids: z.array(z.string()).optional().describe("Dependent taskDraft UUID list"),
+          dependsOnDraftUuids: zArray(z.string()).optional().describe("Dependent taskDraft UUID list"),
         })).optional().describe("Task drafts list"),
       }),
     },
@@ -347,15 +348,15 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
       inputSchema: z.object({
         projectUuid: z.string().describe("Project UUID"),
         proposalUuid: z.string().optional().describe("Associated Proposal UUID (optional)"),
-        tasks: z.array(z.object({
+        tasks: zArray(z.object({
           title: z.string().describe("Task title"),
           description: z.string().optional().describe("Task description"),
           priority: z.enum(["low", "medium", "high"]).optional().describe("Priority"),
           storyPoints: z.number().optional().describe("Effort estimate (agent hours)"),
           acceptanceCriteria: z.string().optional().describe("Acceptance criteria (Markdown)"),
           draftUuid: z.string().optional().describe("Temporary UUID for intra-batch dependsOnDraftUuids references"),
-          dependsOnDraftUuids: z.array(z.string()).optional().describe("Dependent draftUuid list within this batch"),
-          dependsOnTaskUuids: z.array(z.string()).optional().describe("Dependent existing Task UUID list"),
+          dependsOnDraftUuids: zArray(z.string()).optional().describe("Dependent draftUuid list within this batch"),
+          dependsOnTaskUuids: zArray(z.string()).optional().describe("Dependent existing Task UUID list"),
         })).describe("Task list"),
       }),
     },
@@ -521,7 +522,7 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
         storyPoints: z.number().optional().describe("Effort estimate (agent hours)"),
         priority: z.enum(["low", "medium", "high"]).optional().describe("Priority"),
         acceptanceCriteria: z.string().optional().describe("Acceptance criteria (Markdown)"),
-        dependsOnDraftUuids: z.array(z.string()).optional().describe("Dependent taskDraft UUID list"),
+        dependsOnDraftUuids: zArray(z.string()).optional().describe("Dependent taskDraft UUID list"),
       }),
     },
     async ({ proposalUuid, title, description, storyPoints, priority, acceptanceCriteria, dependsOnDraftUuids }) => {
@@ -594,7 +595,7 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
         storyPoints: z.number().optional().describe("Effort estimate (agent hours)"),
         priority: z.enum(["low", "medium", "high"]).optional().describe("Priority"),
         acceptanceCriteria: z.string().optional().describe("Acceptance criteria (Markdown)"),
-        dependsOnDraftUuids: z.array(z.string()).optional().describe("Dependent taskDraft UUID list"),
+        dependsOnDraftUuids: zArray(z.string()).optional().describe("Dependent taskDraft UUID list"),
       }),
     },
     async ({ proposalUuid, draftUuid, title, description, storyPoints, priority, acceptanceCriteria, dependsOnDraftUuids }) => {
@@ -822,11 +823,11 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
       inputSchema: z.object({
         ideaUuid: z.string().describe("Idea UUID"),
         depth: z.enum(["minimal", "standard", "comprehensive"]).describe("Elaboration depth level"),
-        questions: z.array(z.object({
+        questions: zArray(z.object({
           id: z.string().describe("Unique question identifier"),
           text: z.string().describe("Question text"),
           category: z.enum(["functional", "non_functional", "business_context", "technical_context", "user_scenario", "scope"]).describe("Question category"),
-          options: z.array(z.object({
+          options: zArray(z.object({
             id: z.string().describe("Option identifier"),
             label: z.string().describe("Option label"),
             description: z.string().optional().describe("Option description"),
@@ -866,16 +867,16 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
       inputSchema: z.object({
         ideaUuid: z.string().describe("Idea UUID"),
         roundUuid: z.string().describe("Elaboration round UUID"),
-        issues: z.array(z.object({
+        issues: zArray(z.object({
           questionId: z.string().describe("Question ID with the issue"),
           type: z.enum(["contradiction", "ambiguity", "incomplete"]).describe("Issue type"),
           description: z.string().describe("Issue description"),
         })).describe("List of issues found (empty array = all valid)"),
-        followUpQuestions: z.array(z.object({
+        followUpQuestions: zArray(z.object({
           id: z.string().describe("Unique question identifier"),
           text: z.string().describe("Question text"),
           category: z.enum(["functional", "non_functional", "business_context", "technical_context", "user_scenario", "scope"]).describe("Question category"),
-          options: z.array(z.object({
+          options: zArray(z.object({
             id: z.string().describe("Option identifier"),
             label: z.string().describe("Option label"),
             description: z.string().optional().describe("Option description"),
