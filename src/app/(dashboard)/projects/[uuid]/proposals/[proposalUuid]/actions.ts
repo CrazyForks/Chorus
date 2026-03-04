@@ -17,7 +17,7 @@ import {
 } from "@/services/proposal.service";
 import { createActivity } from "@/services/activity.service";
 
-export async function approveProposalAction(proposalUuid: string) {
+export async function approveProposalAction(proposalUuid: string, reviewNote?: string) {
   const auth = await getServerAuthContext();
   if (!auth) {
     return { success: false, error: "Unauthorized" };
@@ -35,7 +35,7 @@ export async function approveProposalAction(proposalUuid: string) {
       return { success: false, error: "Proposal is not pending review" };
     }
 
-    await approveProposal(proposalUuid, auth.companyUuid, auth.actorUuid);
+    await approveProposal(proposalUuid, auth.companyUuid, auth.actorUuid, reviewNote || null);
 
     await createActivity({
       companyUuid: auth.companyUuid,
@@ -45,6 +45,7 @@ export async function approveProposalAction(proposalUuid: string) {
       actorType: auth.type,
       actorUuid: auth.actorUuid,
       action: "approved",
+      value: reviewNote ? { reviewNote } : undefined,
     });
 
     revalidatePath(`/projects/${proposal.projectUuid}/proposals/${proposalUuid}`);

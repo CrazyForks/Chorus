@@ -428,8 +428,12 @@ function buildMessage(
       return `Task "${entityTitle}" has been reopened`;
     case "proposal_submitted":
       return `${actorName} submitted proposal "${entityTitle}" for review`;
-    case "proposal_approved":
-      return `Proposal "${entityTitle}" has been approved`;
+    case "proposal_approved": {
+      const approveNote = typeof v.reviewNote === "string" ? v.reviewNote.trim() : "";
+      return approveNote
+        ? `Proposal "${entityTitle}" has been approved. Note: ${approveNote}`
+        : `Proposal "${entityTitle}" has been approved`;
+    }
     case "proposal_rejected": {
       const note = typeof v.reviewNote === "string" ? v.reviewNote.trim() : "";
       return note

@@ -25,6 +25,8 @@ export function ProposalActions({ proposalUuid, status }: ProposalActionsProps) 
   const t = useTranslations();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [approveNote, setApproveNote] = useState("");
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
@@ -43,8 +45,10 @@ export function ProposalActions({ proposalUuid, status }: ProposalActionsProps) 
 
   const handleApprove = () => {
     startTransition(async () => {
-      const result = await approveProposalAction(proposalUuid);
+      const result = await approveProposalAction(proposalUuid, approveNote.trim() || undefined);
       if (result.success) {
+        setApproveDialogOpen(false);
+        setApproveNote("");
         router.refresh();
       }
     });
@@ -103,11 +107,11 @@ export function ProposalActions({ proposalUuid, status }: ProposalActionsProps) 
               {t("common.reject")}
             </Button>
             <Button
-              onClick={handleApprove}
+              onClick={() => setApproveDialogOpen(true)}
               disabled={isPending}
               className="bg-[#5A9E6F] hover:bg-[#4A8E5F] text-white"
             >
-              {isPending ? t("common.processing") : t("common.approve")}
+              {t("common.approve")}
             </Button>
           </>
         )}
@@ -140,6 +144,37 @@ export function ProposalActions({ proposalUuid, status }: ProposalActionsProps) 
               className="bg-[#C67A52] hover:bg-[#B56A42] text-white"
             >
               {isPending ? t("common.processing") : t("proposals.submitForReview")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("proposals.approveProposal")}</DialogTitle>
+            <DialogDescription>{t("proposals.approveProposalDesc")}</DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={approveNote}
+            onChange={(e) => setApproveNote(e.target.value)}
+            placeholder={t("proposals.approveNotePlaceholder")}
+            className="min-h-[100px] border-[#E5E0D8]"
+          />
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setApproveDialogOpen(false)}
+              className="border-[#E5E0D8] text-[#6B6B6B]"
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={handleApprove}
+              disabled={isPending}
+              className="bg-[#5A9E6F] hover:bg-[#4A8E5F] text-white"
+            >
+              {isPending ? t("common.processing") : t("common.approve")}
             </Button>
           </DialogFooter>
         </DialogContent>

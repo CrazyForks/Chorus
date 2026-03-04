@@ -332,7 +332,26 @@ export function registerPmTools(api: any, mcpClient: ChorusMcpClient) {
     },
   });
 
-  // 15. chorus_pm_create_idea
+  // 15. chorus_pm_assign_task
+  api.registerTool({
+    name: "chorus_pm_assign_task",
+    description: "Assign a task to a specified Developer Agent. The task must be in open or assigned status. Use chorus_search_mentionables to find the agent UUID.",
+    parameters: {
+      type: "object",
+      properties: {
+        taskUuid: { type: "string", description: "Task UUID" },
+        agentUuid: { type: "string", description: "Target Developer Agent UUID" },
+      },
+      required: ["taskUuid", "agentUuid"],
+      additionalProperties: false,
+    },
+    async execute(_id: string, { taskUuid, agentUuid }: { taskUuid: string; agentUuid: string }) {
+      const result = await mcpClient.callTool("chorus_pm_assign_task", { taskUuid, agentUuid });
+      return JSON.stringify(result, null, 2);
+    },
+  });
+
+  // 16. chorus_pm_create_idea
   api.registerTool({
     name: "chorus_pm_create_idea",
     description: "Create a new Idea in a project. Use this when you discover a requirement, want to propose work, or record a user request.",

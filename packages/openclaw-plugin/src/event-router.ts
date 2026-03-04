@@ -193,8 +193,9 @@ export class ChorusEventRouter {
   private handleProposalApproved(n: NotificationDetail): void {
     const mentionGuidance = this.buildMentionGuidance(n, "proposal");
 
+    const reviewInfo = n.message.includes("Note: ") ? ` Review note: "${n.message.split("Note: ").pop()}"` : "";
     this.triggerAgent(
-      `[Chorus] Proposal '${n.entityTitle}' was APPROVED (projectUuid: ${n.projectUuid})! Documents and tasks have been created. ` +
+      `[Chorus] Proposal '${n.entityTitle}' was APPROVED (projectUuid: ${n.projectUuid})!${reviewInfo} Documents and tasks have been created. ` +
       `Use chorus_get_available_tasks with projectUuid: "${n.projectUuid}" to see the new tasks ready for work.\n` +
       mentionGuidance,
       { notificationUuid: n.uuid, action: "proposal_approved", entityUuid: n.entityUuid, projectUuid: n.projectUuid }
