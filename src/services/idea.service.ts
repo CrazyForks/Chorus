@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { formatAssigneeComplete, formatCreatedBy } from "@/lib/uuid-resolver";
 import { eventBus } from "@/lib/event-bus";
 import { AlreadyClaimedError, NotClaimedError, isPrismaNotFound } from "@/lib/errors";
+import { ApiError } from "@/lib/api-handler";
 import * as mentionService from "@/services/mention.service";
 import * as activityService from "@/services/activity.service";
 
@@ -455,4 +456,81 @@ export async function deleteIdea(uuid: string) {
   const idea = await prisma.idea.delete({ where: { uuid } });
   eventBus.emitChange({ companyUuid: idea.companyUuid, projectUuid: idea.projectUuid, entityType: "idea", entityUuid: idea.uuid, action: "deleted" });
   return idea;
+}
+
+// Move Idea to a different project
+export async function moveIdea(
+  companyUuid: string,
+  ideaUuid: string,
+  targetProjectUuid: string,
+  actorUuid: string,
+  actorType: string = "user"
+): Promise<IdeaResponse> {
+  // Validate idea exists and belongs to same company
+  const idea = await prisma.idea.findFirst({
+    where: { uuid: ideaUuid, companyUuid },
+    include: { project: { select: { uuid: true, name: true } } },
+  });
+  if (!idea) throw new ApiError("NOT_FOUND", "Idea not found", 404);
+
+  // Validate target project exists and belongs to same company
+  const targetProject = await prisma.project.findFirst({
+    where: { uuid: targetProjectUuid, companyUuid },
+    select: { uuid: true, name: true },
+  });
+  if (!targetProject) throw new ApiError("NOT_FOUND", "Target project not found", 404);
+
+  if (idea.projectUuid === targetProjectUuid) {
+    throw new ApiError("BAD_REQUEST", "Idea is already in the target project", 400);
+  }
+
+  const fromProjectUuid = idea.projectUuid;
+
+  // Transaction: update idea + linked proposals
+  await prisma.$transaction(async (tx) => {
+    // Update Idea.projectUuid
+    await tx.idea.update({
+      where: { uuid: ideaUuid },
+      data: { projectUuid: targetProjectUuid },
+    });
+
+    // Update linked Proposal.projectUuid (draft or pending only)
+    await tx.proposal.updateMany({
+      where: {
+        companyUuid,
+        inputType: "idea",
+        inputUuids: { array_contains: [ideaUuid] },
+        status: { in: ["draft", "pending"] },
+      },
+      data: { projectUuid: targetProjectUuid },
+    });
+  });
+
+  // Log activity
+  await activityService.createActivity({
+    companyUuid,
+    projectUuid: targetProjectUuid,
+    targetType: "idea",
+    targetUuid: ideaUuid,
+    actorType,
+    actorUuid,
+    action: "moved",
+    value: {
+      fromProjectUuid,
+      fromProjectName: idea.project!.name,
+      toProjectUuid: targetProjectUuid,
+      toProjectName: targetProject.name,
+    },
+  });
+
+  // Emit changes for both projects
+  eventBus.emitChange({ companyUuid, projectUuid: fromProjectUuid, entityType: "idea", entityUuid: ideaUuid, action: "updated" });
+  eventBus.emitChange({ companyUuid, projectUuid: targetProjectUuid, entityType: "idea", entityUuid: ideaUuid, action: "updated" });
+
+  // Return updated idea
+  const updated = await prisma.idea.findFirst({
+    where: { uuid: ideaUuid, companyUuid },
+    include: { project: { select: { uuid: true, name: true } } },
+  });
+  return formatIdeaResponse(updated!);
 }
