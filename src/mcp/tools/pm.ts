@@ -169,32 +169,16 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
   server.registerTool(
     "chorus_pm_create_proposal",
     {
-      description: "Create a Proposal container (can include document drafts and task drafts)",
+      description: "Create an empty Proposal container. Use chorus_pm_add_document_draft and chorus_pm_add_task_draft to populate it afterwards.",
       inputSchema: z.object({
         projectUuid: z.string().describe("Project UUID"),
         title: z.string().describe("Proposal title"),
         description: z.string().optional().describe("Proposal description"),
         inputType: z.enum(["idea", "document"]).describe("Input source type"),
         inputUuids: zArray(z.string()).describe("Input UUID list"),
-        documentDrafts: zArray(z.object({
-          type: z.string().describe("Document type (prd, tech_design, adr, spec, guide)"),
-          title: z.string().describe("Document title"),
-          content: z.string().describe("Document content (Markdown)"),
-        })).optional().describe("Document drafts list"),
-        taskDrafts: zArray(z.object({
-          title: z.string().describe("Task title"),
-          description: z.string().optional().describe("Task description"),
-          storyPoints: z.number().optional().describe("Effort estimate (agent hours)"),
-          priority: z.enum(["low", "medium", "high"]).optional().describe("Priority"),
-          acceptanceCriteriaItems: zArray(z.object({
-            description: z.string().describe("Criterion description"),
-            required: z.boolean().optional().describe("Whether this criterion is required (default: true)"),
-          })).optional().describe("Structured acceptance criteria items (materialized on approval)"),
-          dependsOnDraftUuids: zArray(z.string()).optional().describe("Dependent taskDraft UUID list"),
-        })).optional().describe("Task drafts list"),
       }),
     },
-    async ({ projectUuid, title, description, inputType, inputUuids, documentDrafts, taskDrafts }) => {
+    async ({ projectUuid, title, description, inputType, inputUuids }) => {
       // Validate project exists
       if (!(await projectExists(auth.companyUuid, projectUuid))) {
         return { content: [{ type: "text", text: "Project not found" }], isError: true };
@@ -235,8 +219,6 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
         description,
         inputType,
         inputUuids,
-        documentDrafts: documentDrafts || undefined,
-        taskDrafts: taskDrafts || undefined,
         createdByUuid: auth.actorUuid,
         createdByType: "agent",
       });
@@ -852,7 +834,7 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
   server.registerTool(
     "chorus_pm_start_elaboration",
     {
-      description: "Start an elaboration round for an Idea. Creates structured questions for the Idea creator/stakeholder to answer, clarifying requirements before proposal creation. Recommended for every Idea. Structured elaboration improves Proposal quality and reduces rejection cycles. IMPORTANT: Even if the user discusses requirements with you outside of elaboration (e.g., in chat), you should still record key decisions and clarifications as elaboration rounds so they are persisted to the Idea as an audit trail. Do NOT include an 'Other' option — the UI automatically adds a free-text 'Other' option to every question.",
+      description: "Start an elaboration round for an Idea. Creates structured questions for the Idea creator/stakeholder to answer, clarifying requirements before proposal creation. Recommended for every Idea. Structured elaboration improves Proposal quality and reduces rejection cycles. IMPORTANT: After this tool returns pending_answers, you MUST use an interactive prompt tool (e.g., AskUserQuestion in Claude Code) to present the questions to the user — do NOT display questions as plain text. Collect answers interactively, then call chorus_answer_elaboration. IMPORTANT: Even if the user discusses requirements with you outside of elaboration (e.g., in chat), you should still record key decisions and clarifications as elaboration rounds so they are persisted to the Idea as an audit trail. Do NOT include an 'Other' option — the UI automatically adds a free-text 'Other' option to every question.",
       inputSchema: z.object({
         ideaUuid: z.string().describe("Idea UUID"),
         depth: z.enum(["minimal", "standard", "comprehensive"]).describe("Elaboration depth level"),
