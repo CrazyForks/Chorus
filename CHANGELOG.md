@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.4.2] - 2026-03-20
+
+### Added
+- **Multi-project Filtering**: Filter by multiple projects via MCP headers. (#37)
+- **Team Lead Verify Reminders**: Auto-remind team leads to verify completed tasks via plugin hooks. (#44)
+
+### Changed
+- **MCP Session Sliding Window Expiration**: Sessions now use sliding window expiration instead of fixed timeout. (#39)
+- **TypeScript Strict CI**: Added `tsc --noEmit` to CI pipeline and resolved 27 type errors in test files. (#41)
+- **Fork PR Coverage Comments**: Enabled coverage PR comments for fork PRs via `workflow_run`. (#42)
+
+### Fixed
+- **MCP Draft/Approve UUID Returns**: Draft and approve tools now return created UUIDs, eliminating extra round-trips. (#48)
+- **SubagentStop Hook Context Injection**: Removed async from SubagentStop hook to fix context injection. (#47)
+- **Verify Reminder Hook Placement**: Moved verify reminder from TaskCompleted to SubagentStop hook for reliability. (#45)
+
+### Docs
+- Updated Chorus vs Plane comparison to v2.0 and added Linear AI-DLC plugin report. (#40)
+
+---
+
 ## [0.4.1] - 2026-03-15
 
 ### Added
