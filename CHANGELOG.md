@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.5.1] - 2026-03-29
+
+### Added
+- **New User Onboarding Wizard**: Full-screen step-by-step wizard at `/onboarding` guides new users through agent creation, API key copy, client install, and connectivity test via real-time SSE detection. (#63)
+- **UI Animation System**: Comprehensive framer-motion animations — page transitions, list stagger, sidebar nav indicator, collapsible expand/collapse, notification badge pulse, and form submit feedback. (#57)
+- **Quick-Dev Skill**: New skip-proposal workflow skill for both plugin and standalone agents. (#61)
+
+### Changed
+- **Projects Page Redesign**: Replaced card grid with compact list view, extracted shared project color utility. (#62)
+- **Task Tools Migrated to Public Layer**: `chorus_create_tasks` and `chorus_update_task` moved from role-specific to public MCP tools, enabling all roles to create/edit tasks directly. (#61)
+- **Skill Documentation Split**: Monolithic skill docs split into 5 modular skills by AI-DLC stage (chorus, idea, proposal, develop, review) for both plugin and standalone. (#59, #60)
+
+### Fixed
+- **OIDC Cookie Expiry Mismatch**: Derive `oidc_access_token` cookie maxAge from JWT `exp` claim instead of hardcoded 1h. (#56)
+- **DAG/Kanban Render Issues**: Fix ReactFlow height propagation, remove framer-motion wrapper breaking node measurement, guard duplicate Cmd+K search dialog. (#58)
+
+### Plugin
+- Plugin version bumped to 0.5.2 with enhanced quick-dev skill (admin self-verify, AC guidance). (#64)
+
+---
+
 ## [0.5.0] - 2026-03-20
 
 ### Added
