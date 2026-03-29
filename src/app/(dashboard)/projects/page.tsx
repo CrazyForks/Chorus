@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -12,7 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import {
   Collapsible,
   CollapsibleContent,
@@ -21,18 +20,21 @@ import {
 import {
   Plus,
   FolderOpen,
-  Lightbulb,
-  ClipboardList,
-  FileText,
   ChevronDown,
   ChevronRight,
   ArrowRight,
   Folder,
+  List,
+  Grid2X2,
+  SquareCheckBig,
+  Lightbulb,
+  FileText,
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { MoveProjectConfirmDialog } from "@/components/move-project-confirm-dialog";
 import { CreateProjectGroupDialog } from "@/components/create-project-group-dialog";
 import { CreateProjectDialog } from "@/components/create-project-dialog";
-import { StaggerList, StaggerItem } from "@/components/stagger-list";
+import { getProjectInitials, getProjectIconColor } from "@/lib/project-colors";
 
 // Types
 interface ProjectData {
@@ -60,32 +62,11 @@ interface ProjectGroupData {
   updatedAt: string;
 }
 
-// Avatar color palette based on project name hash
-const AVATAR_COLORS = [
-  "#C67A52", // terracotta
-  "#1976D2", // blue
-  "#5A9E6F", // green
-  "#8E6BBF", // purple
-  "#D4805A", // warm orange
-  "#2E86AB", // teal
-  "#A45A52", // muted red
-  "#6B8E5A", // olive
-];
-
-function getProjectInitials(name: string): string {
-  const words = name.trim().split(/\s+/);
-  if (words.length >= 2) {
-    return (words[0][0] + words[1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-}
-
-function getAvatarColor(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+function getProgressColor(percent: number): { bar: string; text: string } {
+  if (percent >= 100) return { bar: "#1D9E75", text: "#0F6E56" };
+  if (percent >= 60) return { bar: "#5DCAA5", text: "#0F6E56" };
+  if (percent >= 30) return { bar: "#FAC775", text: "#854F0B" };
+  return { bar: "#F09595", text: "#A32D2D" };
 }
 
 function useRelativeDate() {
@@ -106,98 +87,197 @@ function useRelativeDate() {
   };
 }
 
-const UNGROUPED_DROPPABLE_ID = "__ungrouped__";
 
-function ProjectCardContent({ project }: { project: ProjectData }) {
+type ViewMode = "list" | "grid";
+
+function ProjectStats({ counts, compact = false }: { counts: ProjectData["counts"]; compact?: boolean }) {
+  const t = useTranslations();
+  return (
+    <span className={`flex items-center gap-2 text-[#9A9A9A] ${compact ? "text-[10px]" : "text-[11px]"}`}>
+      <span className="inline-flex items-center gap-1">
+        <SquareCheckBig className={`text-[#BDBDBD] ${compact ? "h-[11px] w-[11px]" : "h-3 w-3"}`} />
+        {counts.tasks}{!compact && ` ${t("projects.tasks")}`}
+      </span>
+      <span className="inline-flex items-center gap-1">
+        <Lightbulb className={`text-[#BDBDBD] ${compact ? "h-[11px] w-[11px]" : "h-3 w-3"}`} />
+        {counts.ideas}{!compact && ` ${t("projects.ideas")}`}
+      </span>
+      <span className="inline-flex items-center gap-1">
+        <FileText className={`text-[#BDBDBD] ${compact ? "h-[11px] w-[11px]" : "h-3 w-3"}`} />
+        {counts.documents}{!compact && ` ${t("projects.docs")}`}
+      </span>
+    </span>
+  );
+}
+
+function ProjectGridCard({ project }: { project: ProjectData }) {
   const t = useTranslations();
   const formatRelative = useRelativeDate();
   const initials = getProjectInitials(project.name);
-  const avatarColor = getAvatarColor(project.name);
+  const iconColor = getProjectIconColor(project.name);
   const progress = project.counts.tasks > 0
     ? Math.round((project.counts.doneTasks / project.counts.tasks) * 100)
     : 0;
+  const progressColor = getProgressColor(progress);
+  const isEmpty = project.counts.tasks === 0;
+  const isComplete = progress === 100 && !isEmpty;
 
   return (
-    <Card className="group cursor-pointer rounded-2xl border-[#E5E2DC] p-6 shadow-none transition-all hover:border-[#C67A52] hover:shadow-md">
-      {/* Header: Avatar + Name + Badge */}
-      <div className="mb-3 flex items-start gap-3">
+    <div className="flex flex-col gap-3 rounded-xl border border-[#E5E2DC] bg-white p-4 transition-colors hover:bg-[#F5F2EC]">
+      {/* Header */}
+      <div className="flex items-center gap-2.5">
         <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
-          style={{ backgroundColor: avatarColor }}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold"
+          style={{ backgroundColor: iconColor.bg, color: iconColor.text }}
+        >
+          {initials}
+        </div>
+        <span className="truncate text-[13px] font-semibold text-[#2C2C2C]">
+          {project.name}
+        </span>
+        {isEmpty && (
+          <Badge variant="outline" className="shrink-0 border-0 bg-[#FEF3C7] px-1.5 py-0 text-[10px] font-medium text-[#92400E]">
+            {t("projects.empty")}
+          </Badge>
+        )}
+        {isComplete && (
+          <Badge variant="outline" className="shrink-0 border-0 bg-[#D1FAE5] px-1.5 py-0 text-[10px] font-medium text-[#065F46]">
+            {t("projects.complete")}
+          </Badge>
+        )}
+      </div>
+
+      {/* Stats */}
+      <ProjectStats counts={project.counts} />
+
+      {/* Progress */}
+      <div className="flex flex-col gap-1.5">
+        <Progress
+          value={progress}
+          className="h-1.5 w-full bg-[#F0EDE8]"
+          style={{ '--progress-indicator': progressColor.bar } as React.CSSProperties}
+        />
+        <div className="flex justify-between">
+          <span className="text-[11px] font-semibold" style={{ color: progressColor.text }}>
+            {progress}%
+          </span>
+          <span className="text-[11px] text-[#9A9A9A]">
+            {formatRelative(project.updatedAt)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProjectListRow({ project, showDivider = true }: { project: ProjectData; showDivider?: boolean }) {
+  const t = useTranslations();
+  const formatRelative = useRelativeDate();
+  const initials = getProjectInitials(project.name);
+  const iconColor = getProjectIconColor(project.name);
+  const progress = project.counts.tasks > 0
+    ? Math.round((project.counts.doneTasks / project.counts.tasks) * 100)
+    : 0;
+  const progressColor = getProgressColor(progress);
+  const isEmpty = project.counts.tasks === 0;
+  const isComplete = progress === 100 && !isEmpty;
+
+  return (
+    <div
+      className="flex w-full flex-col gap-1.5 px-4 py-2.5 md:flex-row md:items-center md:gap-4 md:px-6 md:py-2"
+      style={showDivider ? { borderBottom: '1px solid #0000000a' } : undefined}
+    >
+      {/* Line 1: Icon + Name + Badge */}
+      <div className="flex items-center gap-2.5 md:min-w-0 md:flex-1 md:gap-4">
+        <div
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold md:h-9 md:w-9 md:rounded-[10px] md:text-[11px]"
+          style={{ backgroundColor: iconColor.bg, color: iconColor.text }}
         >
           {initials}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="truncate font-semibold text-[#2C2C2C] group-hover:text-[#C67A52]">
+            <span className="truncate text-[13px] font-semibold text-[#2C2C2C]">
               {project.name}
-            </h3>
-            <Badge
-              variant="success"
-              className="gap-1 border-0 bg-[#5A9E6F15] text-[10px] text-[#5A9E6F]"
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-[#5A9E6F]" />
-              {t("status.active")}
-            </Badge>
+            </span>
+            {isEmpty && (
+              <Badge variant="outline" className="shrink-0 border-0 bg-[#FEF3C7] px-1.5 py-0 text-[10px] font-medium text-[#92400E]">
+                {t("projects.empty")}
+              </Badge>
+            )}
+            {isComplete && (
+              <Badge variant="outline" className="shrink-0 border-0 bg-[#D1FAE5] px-1.5 py-0 text-[10px] font-medium text-[#065F46]">
+                {t("projects.complete")}
+              </Badge>
+            )}
           </div>
-          {project.description && (
-            <p className="mt-0.5 line-clamp-1 text-xs text-[#6B6B6B]">
-              {project.description}
-            </p>
-          )}
+          {/* Desktop: stats below name */}
+          <div className="hidden md:block">
+            <ProjectStats counts={project.counts} />
+          </div>
         </div>
       </div>
 
-      {/* Progress Bar */}
-      <div className="mb-3">
-        <div className="mb-1 flex items-center justify-between">
-          <span className="text-[11px] text-[#9A9A9A]">
-            {t("projects.taskProgress")}
-          </span>
-          <span className="text-[11px] font-medium text-[#2C2C2C]">
-            {progress}%
-          </span>
-        </div>
-        <Progress value={progress} />
-      </div>
-
-      {/* Stats Row */}
-      <div className="flex items-center justify-between text-[11px] text-[#9A9A9A]">
-        <div className="flex flex-wrap gap-3">
-          <span className="flex items-center gap-1">
-            <ClipboardList className="h-3 w-3" />
-            {project.counts.tasks} {t("projects.tasks")}
-          </span>
-          <span className="flex items-center gap-1">
-            <Lightbulb className="h-3 w-3" />
-            {project.counts.ideas} {t("projects.ideas")}
-          </span>
-          <span className="flex items-center gap-1">
-            <FileText className="h-3 w-3" />
-            {project.counts.documents} {t("projects.docs")}
-          </span>
-        </div>
-        <span>
-          {t("projects.updated")} {formatRelative(project.updatedAt)}
+      {/* Line 2 (mobile): compact stats + time + percentage */}
+      <div className="flex items-center justify-between md:hidden">
+        <span className="flex items-center gap-1.5 text-[10px] text-[#9A9A9A]">
+          <ProjectStats counts={project.counts} compact />
+          <span>&middot;</span>
+          <span>{formatRelative(project.updatedAt)}</span>
+        </span>
+        <span className="text-[10px] font-semibold" style={{ color: progressColor.text }}>
+          {progress}%
         </span>
       </div>
-    </Card>
+
+      {/* Line 3 (mobile): full-width progress bar only */}
+      <div className="md:hidden">
+        <Progress
+          value={progress}
+          className="h-1 w-full bg-[#F0EDE8]"
+          style={{ '--progress-indicator': progressColor.bar } as React.CSSProperties}
+        />
+      </div>
+
+      {/* Desktop: Progress bar + percentage */}
+      <div className="hidden w-[200px] shrink-0 items-center gap-2 md:flex">
+        <Progress
+          value={progress}
+          className="h-1.5 flex-1 bg-[#F0EDE8]"
+          style={{ '--progress-indicator': progressColor.bar } as React.CSSProperties}
+        />
+        <span className="w-9 text-right text-[11px] font-semibold" style={{ color: progressColor.text }}>
+          {progress}%
+        </span>
+      </div>
+
+      {/* Desktop: Updated time */}
+      <span className="hidden w-[80px] shrink-0 text-right text-[11px] text-[#9A9A9A] md:block">
+        {formatRelative(project.updatedAt)}
+      </span>
+    </div>
   );
 }
+
+const UNGROUPED_DROPPABLE_ID = "__ungrouped__";
 
 function GroupSection({
   group,
   projects,
   stats,
   onNewProject,
+  defaultOpen = false,
+  viewMode,
 }: {
   group: ProjectGroupData;
   projects: ProjectData[];
   stats: { totalTasks: number; completedTasks: number; openIdeas: number };
   onNewProject: () => void;
+  defaultOpen?: boolean;
+  viewMode: ViewMode;
 }) {
   const t = useTranslations();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   const completionRate =
     stats.totalTasks > 0
       ? Math.round((stats.completedTasks / stats.totalTasks) * 100)
@@ -209,52 +289,52 @@ function GroupSection({
         <div ref={provided.innerRef} {...provided.droppableProps}>
           <Collapsible open={isOpen} onOpenChange={setIsOpen}>
             <Card
-              className={`rounded-2xl border-[#E5E2DC] p-0 shadow-none transition-colors hover:border-[#C67A52]/40 ${
+              className={`overflow-hidden rounded-2xl border-[#E5E2DC] gap-0 py-0 shadow-none transition-colors hover:border-[#C67A52]/40 ${
                 snapshot.isDraggingOver
                   ? "border-[#C67A52] bg-[#C67A5208]"
                   : ""
               }`}
             >
               {/* Group Header */}
-              <div className="flex flex-col gap-2 px-4 py-3 md:flex-row md:items-center md:justify-between md:px-6 md:py-4">
-                <CollapsibleTrigger className="flex flex-1 cursor-pointer items-center gap-3 text-left">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#C67A5215]">
+              <div className="flex flex-col gap-2 px-4 py-2.5 md:flex-row md:items-center md:justify-between md:px-6 md:py-3">
+                <CollapsibleTrigger className="flex flex-1 cursor-pointer items-center gap-2.5 text-left md:gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#C67A5215] md:h-9 md:w-9">
                     <Folder className="h-4 w-4 text-[#C67A52]" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h2 className="truncate text-base font-semibold text-[#2C2C2C]">
+                    <div className="flex items-center gap-1.5 md:gap-2">
+                      <h2 className="truncate text-sm font-semibold text-[#2C2C2C] md:text-base">
                         {group.name}
                       </h2>
                       <Badge
                         variant="secondary"
-                        className="shrink-0 border-0 bg-[#F0EDE8] text-[11px] font-medium text-[#6B6B6B]"
+                        className="shrink-0 border-0 bg-[#F0EDE8] text-[10px] font-medium text-[#6B6B6B] md:text-[11px]"
                       >
-                        {projects.length} {t("projectGroups.projectCount")}
+                        {projects.length}
                       </Badge>
                     </div>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-[#9A9A9A]">
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-[#9A9A9A] md:text-[11px]">
                       <span>
                         {stats.totalTasks} {t("projects.tasks")} &middot;{" "}
                         {completionRate}% {t("projectGroups.complete")}
                       </span>
-                      <span>
+                      <span className="hidden md:inline">
                         {stats.openIdeas} {t("projectGroups.openIdeas")}
                       </span>
                     </div>
                   </div>
                   {isOpen ? (
-                    <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-[#9A9A9A]" />
+                    <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 text-[#9A9A9A] md:h-4 md:w-4" />
                   ) : (
-                    <ChevronRight className="ml-auto h-4 w-4 shrink-0 text-[#9A9A9A]" />
+                    <ChevronRight className="ml-auto h-3.5 w-3.5 shrink-0 text-[#9A9A9A] md:h-4 md:w-4" />
                   )}
                 </CollapsibleTrigger>
-                <div className={`grid grid-cols-2 gap-2 md:flex md:items-center ${isOpen ? "grid" : "hidden md:flex"}`}>
-                  <Link href={`/project-groups/${group.uuid}`} className="md:w-auto">
+                <div className={`hidden items-center gap-2 md:flex`}>
+                  <Link href={`/project-groups/${group.uuid}`}>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="w-full text-xs text-[#C67A52] hover:text-[#B56A42]"
+                      className="text-xs text-[#C67A52] hover:text-[#B56A42]"
                     >
                       {t("projectGroups.viewDashboard")}
                       <ArrowRight className="ml-1 h-3 w-3" />
@@ -263,7 +343,7 @@ function GroupSection({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full border-[#E5E2DC] text-xs md:w-auto"
+                    className="border-[#E5E2DC] text-xs"
                     onClick={onNewProject}
                   >
                     <Plus className="mr-1 h-3 w-3" />
@@ -272,18 +352,18 @@ function GroupSection({
                 </div>
               </div>
 
-              {/* Projects Grid */}
+              {/* Projects Content */}
               <CollapsibleContent>
-                <div className="border-t border-[#E5E2DC] px-4 pb-4 pt-3 md:px-6 md:pb-5 md:pt-4">
+                <div className="border-t border-[#0000000a] py-0">
                   {projects.length === 0 && !snapshot.isDraggingOver ? (
                     <p className="py-4 text-center text-sm text-[#9A9A9A]">
                       {t("projectGroups.noProjectsInGroup")}
                     </p>
                   ) : (
-                    <StaggerList className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className={viewMode === "grid" ? "md:grid md:grid-cols-2 md:gap-4 md:p-5 lg:grid-cols-3" : ""}>
                       {projects.map((project, index) => (
-                        <StaggerItem key={project.uuid}>
                         <Draggable
+                          key={project.uuid}
                           draggableId={project.uuid}
                           index={index}
                         >
@@ -300,22 +380,34 @@ function GroupSection({
                                   if (snapshot.isDragging) e.preventDefault();
                                 }}
                               >
-                                <div
-                                  className={
-                                    snapshot.isDragging
-                                      ? "rotate-2 opacity-90 shadow-lg"
-                                      : ""
-                                  }
-                                >
-                                  <ProjectCardContent project={project} />
-                                </div>
+                                {viewMode === "grid" ? (
+                                  <>
+                                    {/* Mobile: always list */}
+                                    <div className={`md:hidden transition-colors hover:bg-[#F5F2EC] ${snapshot.isDragging ? "rotate-1 opacity-90 shadow-md rounded-lg bg-white" : ""}`}>
+                                      <ProjectListRow project={project} showDivider={index < projects.length - 1} />
+                                    </div>
+                                    {/* Desktop: grid card */}
+                                    <div className={`hidden md:block ${snapshot.isDragging ? "rotate-1 opacity-90 shadow-md" : ""}`}>
+                                      <ProjectGridCard project={project} />
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div
+                                    className={`transition-colors hover:bg-[#F5F2EC] ${
+                                      snapshot.isDragging
+                                        ? "rotate-1 opacity-90 shadow-md rounded-lg bg-white"
+                                        : ""
+                                    }`}
+                                  >
+                                    <ProjectListRow project={project} showDivider={index < projects.length - 1} />
+                                  </div>
+                                )}
                               </Link>
                             </div>
                           )}
                         </Draggable>
-                        </StaggerItem>
                       ))}
-                    </StaggerList>
+                    </div>
                   )}
                   {provided.placeholder}
                 </div>
@@ -328,7 +420,7 @@ function GroupSection({
   );
 }
 
-function UngroupedSection({ projects, onNewProject }: { projects: ProjectData[]; onNewProject: () => void }) {
+function UngroupedSection({ projects, onNewProject, viewMode }: { projects: ProjectData[]; onNewProject: () => void; viewMode: ViewMode }) {
   const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -347,58 +439,60 @@ function UngroupedSection({ projects, onNewProject }: { projects: ProjectData[];
           <div ref={provided.innerRef} {...provided.droppableProps}>
             <Collapsible open={isOpen} onOpenChange={setIsOpen}>
               <Card
-                className={`rounded-2xl border-[#E5E2DC] p-0 shadow-none transition-colors hover:border-[#C67A52]/40 ${
+                className={`overflow-hidden rounded-2xl border-[#E5E2DC] gap-0 py-0 shadow-none transition-colors hover:border-[#C67A52]/40 ${
                   snapshot.isDraggingOver
                     ? "border-[#C67A52] bg-[#C67A5208]"
                     : ""
                 }`}
               >
                 {/* Header */}
-                <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4">
-                  <CollapsibleTrigger className="flex flex-1 cursor-pointer items-center gap-3 text-left">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#F0EDE8]">
+                <div className="flex items-center justify-between px-4 py-2.5 md:px-6 md:py-3">
+                  <CollapsibleTrigger className="flex flex-1 cursor-pointer items-center gap-2.5 text-left md:gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F0EDE8] md:h-9 md:w-9">
                       <FolderOpen className="h-4 w-4 text-[#9A9A9A]" />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-base font-semibold text-[#6B6B6B]">
+                    <div className="flex items-center gap-1.5 md:gap-2">
+                      <h2 className="text-sm font-semibold text-[#6B6B6B] md:text-base">
                         {t("projectGroups.ungrouped")}
                       </h2>
                       <Badge
                         variant="secondary"
-                        className="shrink-0 border-0 bg-[#F0EDE8] text-[11px] font-medium text-[#6B6B6B]"
+                        className="shrink-0 border-0 bg-[#F0EDE8] text-[10px] font-medium text-[#6B6B6B] md:text-[11px]"
                       >
-                        {projects.length} {t("projectGroups.projectCount")}
+                        {projects.length}
                       </Badge>
                     </div>
                     {isOpen ? (
-                      <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-[#9A9A9A]" />
+                      <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 text-[#9A9A9A] md:h-4 md:w-4" />
                     ) : (
-                      <ChevronRight className="ml-auto h-4 w-4 shrink-0 text-[#9A9A9A]" />
+                      <ChevronRight className="ml-auto h-3.5 w-3.5 shrink-0 text-[#9A9A9A] md:h-4 md:w-4" />
                     )}
                   </CollapsibleTrigger>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={`ml-2 shrink-0 border-[#E5E2DC] text-xs md:inline-flex ${isOpen ? "inline-flex" : "hidden"}`}
-                    onClick={onNewProject}
-                  >
-                    <Plus className="mr-1 h-3 w-3" />
-                    {t("projects.newProject")}
-                  </Button>
+                  <div className="hidden items-center gap-2 md:flex">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0 border-[#E5E2DC] text-xs"
+                      onClick={onNewProject}
+                    >
+                      <Plus className="mr-1 h-3 w-3" />
+                      {t("projects.newProject")}
+                    </Button>
+                  </div>
                 </div>
 
-                {/* Projects Grid */}
+                {/* Projects */}
                 <CollapsibleContent>
-                  <div className="border-t border-[#E5E2DC] px-4 pb-4 pt-3 md:px-6 md:pb-5 md:pt-4">
+                  <div className="border-t border-[#0000000a] py-0">
                     {projects.length === 0 ? (
                       <p className="py-4 text-center text-sm text-[#9A9A9A]">
                         {t("projectGroups.noProjectsInGroup")}
                       </p>
                     ) : (
-                      <StaggerList className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className={viewMode === "grid" ? "md:grid md:grid-cols-2 md:gap-4 md:p-5 lg:grid-cols-3" : ""}>
                         {projects.map((project, index) => (
-                          <StaggerItem key={project.uuid}>
                           <Draggable
+                            key={project.uuid}
                             draggableId={project.uuid}
                             index={index}
                           >
@@ -415,22 +509,27 @@ function UngroupedSection({ projects, onNewProject }: { projects: ProjectData[];
                                     if (snapshot.isDragging) e.preventDefault();
                                   }}
                                 >
-                                  <div
-                                    className={
-                                      snapshot.isDragging
-                                        ? "rotate-2 opacity-90 shadow-lg"
-                                        : ""
-                                    }
-                                  >
-                                    <ProjectCardContent project={project} />
-                                  </div>
+                                  {viewMode === "grid" ? (
+                                    <div className={snapshot.isDragging ? "rotate-1 opacity-90 shadow-md" : ""}>
+                                      <ProjectGridCard project={project} />
+                                    </div>
+                                  ) : (
+                                    <div
+                                      className={`transition-colors hover:bg-[#F5F2EC] ${
+                                        snapshot.isDragging
+                                          ? "rotate-1 opacity-90 shadow-md rounded-lg bg-white"
+                                          : ""
+                                      }`}
+                                    >
+                                      <ProjectListRow project={project} showDivider={index < projects.length - 1} />
+                                    </div>
+                                  )}
                                 </Link>
                               </div>
                             )}
                           </Draggable>
-                          </StaggerItem>
                         ))}
-                      </StaggerList>
+                      </div>
                     )}
                     {provided.placeholder}
                   </div>
@@ -458,6 +557,17 @@ export default function ProjectsPage() {
   const [groups, setGroups] = useState<ProjectGroupData[]>([]);
   const [loading, setLoading] = useState(true);
   const [pendingMove, setPendingMove] = useState<PendingMove | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("chorus_projects_view_mode");
+      if (saved === "list" || saved === "grid") return saved;
+    }
+    return "list";
+  });
+  useEffect(() => {
+    localStorage.setItem("chorus_projects_view_mode", viewMode);
+  }, [viewMode]);
+
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [createProjectTarget, setCreateProjectTarget] = useState<{ groupUuid: string | null; groupName: string } | null>(null);
 
@@ -564,10 +674,12 @@ export default function ProjectsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-full bg-[#FAF8F4] p-4 md:p-8">
-        <p className="text-sm text-[#6B6B6B]">
-          {t("projects.loadingProjects")}
-        </p>
+      <div className="bg-[#FAF8F4] p-4 md:px-8 md:py-6">
+        <div className="mx-auto max-w-[1200px]">
+          <p className="text-sm text-[#6B6B6B]">
+            {t("projects.loadingProjects")}
+          </p>
+        </div>
       </div>
     );
   }
@@ -575,24 +687,56 @@ export default function ProjectsPage() {
   return (
     <>
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="min-h-full bg-[#FAF8F4] p-4 md:p-8">
+        <div className="bg-[#FAF8F4] p-4 md:px-8 md:py-6">
+        <div className="mx-auto max-w-[1200px]">
           {/* Header */}
-          <div className="mb-6 flex flex-col gap-3 md:mb-8 md:flex-row md:items-center md:justify-between">
-            <div>
+          <div className="mb-4 md:mb-6">
+            <div className="flex items-center justify-between">
               <h1 className="text-2xl font-semibold text-[#2C2C2C]">
                 {t("projects.title")}
               </h1>
-              <p className="mt-1 text-sm text-[#6B6B6B]">
-                {t("projects.subtitle")}
-              </p>
+              <div className="flex items-center gap-3">
+                {/* View toggle — desktop only, mobile always uses list */}
+                <div className="hidden overflow-hidden rounded-lg border border-[#E5E2DC] md:flex">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setViewMode("list")}
+                    className={`flex items-center gap-1.5 rounded-none px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                      viewMode === "list"
+                        ? "bg-[#F5F2EC] text-[#C67A52]"
+                        : "text-[#9A9A9A] hover:text-[#6B6B6B]"
+                    }`}
+                  >
+                    <List className="h-3.5 w-3.5" />
+                    {t("projects.listView")}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setViewMode("grid")}
+                    className={`flex items-center gap-1.5 rounded-none px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                      viewMode === "grid"
+                        ? "bg-[#F5F2EC] text-[#C67A52]"
+                        : "text-[#9A9A9A] hover:text-[#6B6B6B]"
+                    }`}
+                  >
+                    <Grid2X2 className="h-3.5 w-3.5" />
+                    {t("projects.gridView")}
+                  </Button>
+                </div>
+                <Button
+                  className="hidden rounded-xl bg-[#C67A52] px-5 text-white hover:bg-[#B56A42] md:flex"
+                  onClick={() => setShowCreateGroup(true)}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  {t("projectGroups.newProjectGroup")}
+                </Button>
+              </div>
             </div>
-            <Button
-              className="rounded-xl bg-[#C67A52] px-5 text-white hover:bg-[#B56A42]"
-              onClick={() => setShowCreateGroup(true)}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              {t("projectGroups.newProjectGroup")}
-            </Button>
+            <p className="mt-1 text-sm text-[#6B6B6B]">
+              {t("projects.subtitle")}
+            </p>
           </div>
 
           {projects.length === 0 && groups.length === 0 ? (
@@ -613,9 +757,9 @@ export default function ProjectsPage() {
               </Link>
             </Card>
           ) : (
-            <div className="space-y-5">
+            <div className="space-y-4">
               {/* Groups */}
-              {groups.map((group) => {
+              {groups.map((group, index) => {
                 const groupProjects = projectsByGroup.get(group.uuid) || [];
                 const stats = getGroupStats(groupProjects);
                 return (
@@ -624,6 +768,8 @@ export default function ProjectsPage() {
                     group={group}
                     projects={groupProjects}
                     stats={stats}
+                    defaultOpen={index === 0}
+                    viewMode={viewMode}
                     onNewProject={() => setCreateProjectTarget({ groupUuid: group.uuid, groupName: group.name })}
                   />
                 );
@@ -632,10 +778,21 @@ export default function ProjectsPage() {
               {/* Ungrouped */}
               <UngroupedSection
                 projects={ungroupedProjects}
+                viewMode={viewMode}
                 onNewProject={() => setCreateProjectTarget({ groupUuid: null, groupName: t("projectGroups.ungrouped") })}
               />
+
+              {/* Mobile: full-width New Project Group button */}
+              <Button
+                className="w-full rounded-xl bg-[#C67A52] text-white hover:bg-[#B56A42] md:hidden"
+                onClick={() => setShowCreateGroup(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                {t("projectGroups.newProjectGroup")}
+              </Button>
             </div>
           )}
+        </div>
         </div>
       </DragDropContext>
 
