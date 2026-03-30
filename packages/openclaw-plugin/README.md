@@ -39,7 +39,7 @@ Chorus Server
   │     └──────────────────────┘      (immediate heartbeat)
   │
   ├── MCP (POST /api/mcp)
-  │     40 Chorus MCP tools available as native
+  │     47 Chorus MCP tools available as native
   │     OpenClaw agent tools via @modelcontextprotocol/sdk
   │
   └─────────────────────────────────────────────────────
@@ -47,7 +47,7 @@ Chorus Server
 
 **Key design decisions:**
 
-- **MCP Client, not REST** — Uses `@modelcontextprotocol/sdk` to call Chorus MCP tools directly. Zero Chorus-side code changes needed. 40 tools registered out of the box. When Chorus adds new MCP tools, adding them to the plugin is a one-liner.
+- **MCP Client, not REST** — Uses `@modelcontextprotocol/sdk` to call Chorus MCP tools directly. Zero Chorus-side code changes needed. 47 tools registered out of the box. When Chorus adds new MCP tools, adding them to the plugin is a one-liner.
 - **SSE for push, MCP for pull** — SSE delivers real-time notifications; MCP handles all tool operations (claim, report, submit, etc.).
 - **Hooks-based agent wake** — Uses OpenClaw's `/hooks/wake` API to inject system events and trigger immediate heartbeats when Chorus events arrive.
 
@@ -138,9 +138,24 @@ The plugin maintains a persistent SSE connection to Chorus and reacts to these e
 
 **Resilience:** Exponential backoff reconnect (1s → 2s → 4s → ... → 30s max). After reconnect, unread notifications are back-filled via MCP to ensure no events are lost.
 
-### Registered Tools (40 total)
+### Built-in Skills (6)
 
-#### PM Workflow (15 tools)
+The plugin ships with 6 SKILL.md files that OpenClaw auto-discovers and loads. These provide workflow guidance to the agent without consuming tool calls.
+
+| Skill | Description |
+|-------|-------------|
+| `chorus` | Platform overview, common tools, setup, and workflow routing |
+| `idea` | Claim ideas, run elaboration rounds, prepare for proposal |
+| `proposal` | Create proposals with document & task drafts, manage dependency DAG |
+| `develop` | Claim tasks, report work, submit for verification |
+| `quick-dev` | Skip Idea→Proposal, create tasks directly, execute, and verify |
+| `review` | Approve/reject proposals, verify tasks, project governance |
+
+Skills are automatically available when the plugin is enabled — no extra configuration needed.
+
+### Registered Tools (47 total)
+
+#### PM Workflow (17 tools)
 
 | Tool | Description |
 |------|-------------|
@@ -159,17 +174,20 @@ The plugin maintains a persistent SSE connection to Chorus and reacts to these e
 | `chorus_validate_proposal` | Check proposal completeness before submit |
 | `chorus_submit_proposal` | Submit proposal for approval |
 | `chorus_pm_create_idea` | Create a new idea in a project |
+| `chorus_pm_assign_task` | Assign a task to a specific Developer Agent |
+| `chorus_move_idea` | Move an idea to a different project |
 
 #### Developer Workflow (4 tools)
 
 | Tool | Description |
 |------|-------------|
 | `chorus_claim_task` | Claim an open task |
-| `chorus_update_task` | Update task status (in_progress / to_verify) |
-| `chorus_report_work` | Report work progress |
+| `chorus_update_task` | Update task status or fields (title, description, priority, dependencies) |
+| `chorus_report_work` | Report work progress (writes comment + records activity) |
 | `chorus_submit_for_verify` | Submit completed task for verification |
+| `chorus_report_criteria_self_check` | Self-check acceptance criteria before submitting |
 
-#### Common & Exploration (20 tools)
+#### Common & Exploration (21 tools)
 
 | Tool | Description |
 |------|-------------|
@@ -193,12 +211,20 @@ The plugin maintains a persistent SSE connection to Chorus and reacts to these e
 | `chorus_get_comments` | Get comments on an entity |
 | `chorus_get_elaboration` | Get full elaboration state for an idea |
 | `chorus_get_my_assignments` | Get all claimed ideas and tasks |
+| `chorus_get_project_groups` | List all project groups |
+| `chorus_get_project_group` | Get a project group with its projects |
+| `chorus_create_tasks` | Batch create tasks (Quick Task or Proposal-linked) |
+| `chorus_search` | Search across tasks, ideas, proposals, documents, projects |
 
-#### Admin (1 tool)
+#### Admin (5 tools)
 
 | Tool | Description |
 |------|-------------|
 | `chorus_admin_create_project` | Create a new project |
+| `chorus_admin_create_project_group` | Create a new project group |
+| `chorus_admin_approve_proposal` | Approve a proposal (materializes drafts into Documents + Tasks) |
+| `chorus_admin_verify_task` | Verify a task (to_verify → done, unblocks downstream) |
+| `chorus_mark_acceptance_criteria` | Mark acceptance criteria as passed/failed |
 
 ### Commands
 
@@ -209,14 +235,22 @@ Bypass LLM for fast status queries:
 | `/chorus` or `/chorus status` | Connection status, assignments, unread count |
 | `/chorus tasks` | List your assigned tasks |
 | `/chorus ideas` | List your assigned ideas |
+| `/chorus skills` | List available Chorus skills |
 
 ## Architecture
 
 ```
 packages/openclaw-plugin/
 ├── package.json              # npm package config
-├── openclaw.plugin.json      # OpenClaw plugin manifest
+├── openclaw.plugin.json      # OpenClaw plugin manifest (declares skills)
 ├── tsconfig.json
+├── skills/                   # 6 SKILL.md files (auto-discovered by OpenClaw)
+│   ├── chorus/SKILL.md       # Core overview & routing
+│   ├── idea/SKILL.md         # Idea → Elaboration workflow
+│   ├── proposal/SKILL.md     # Proposal → DAG → Submit workflow
+│   ├── develop/SKILL.md      # Task → Report → Verify workflow
+│   ├── quick-dev/SKILL.md    # Quick task creation & execution
+│   └── review/SKILL.md       # Admin review & governance
 └── src/
     ├── index.ts              # Plugin entry — wires all modules together
     ├── config.ts             # Zod config schema
@@ -225,9 +259,10 @@ packages/openclaw-plugin/
     ├── event-router.ts       # Event → agent action mapping
     ├── commands.ts           # /chorus commands
     └── tools/
-        ├── pm-tools.ts       # 14 PM workflow tools
+        ├── pm-tools.ts       # 17 PM workflow tools
         ├── dev-tools.ts      # 4 Developer tools
-        └── common-tools.ts   # 21 common/exploration/admin tools
+        ├── common-tools.ts   # 21 common/exploration tools
+        └── admin-tools.ts    # 5 Admin tools
 ```
 
 ### MCP Client (`mcp-client.ts`)
@@ -253,6 +288,41 @@ Wraps `@modelcontextprotocol/sdk` with:
 - All handlers catch errors internally — never crashes the gateway
 
 ## Troubleshooting
+
+### chorus_* tools not available in agent (sandbox mode)
+
+**Symptom:** Agent cannot call `chorus_checkin` or any `chorus_*` tool. Tools are missing from the tool list.
+
+**Cause:** When OpenClaw sandbox mode is enabled (`agents.defaults.sandbox.mode = "all"` or `"non-main"`), the sandbox tool policy only allows a fixed set of core tools by default. Plugin-registered tools are excluded unless explicitly allowed.
+
+**Verify:**
+```bash
+openclaw sandbox explain
+# Look for: Sandbox tool policy → allow (default)
+# chorus_* tools will NOT appear unless configured
+```
+
+**Fix:** Add the plugin to the sandbox tool allow list:
+```bash
+openclaw config set tools.sandbox.tools.alsoAllow '["chorus-openclaw-plugin"]'
+# Then restart gateway
+openclaw gateway restart
+```
+
+Or add directly to `~/.openclaw/openclaw.json`:
+```json
+{
+  "tools": {
+    "sandbox": {
+      "tools": {
+        "alsoAllow": ["chorus-openclaw-plugin"]
+      }
+    }
+  }
+}
+```
+
+---
 
 ### "plugin id mismatch" warning
 Ensure `openclaw.plugin.json` `id` and `index.ts` `id` both equal `chorus-openclaw-plugin`.
