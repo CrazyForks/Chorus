@@ -298,6 +298,9 @@ Schema changes, new tables.
 ## API Design
 New/modified endpoints.
 
+## Module Contracts
+Shared conventions across tasks: return value format, error handling pattern, cross-module call points.
+
 ## Implementation Plan
 Step-by-step implementation order.
 
@@ -308,21 +311,30 @@ Potential issues and how to address them.
 ### Task Writing Guidelines
 
 Good tasks are:
-- **Atomic** — One clear deliverable per task
-- **Testable** — Clear acceptance criteria
+- **Module-scoped** — One cohesive functional module per task, not a single function or file
+- **Testable** — Clear, cohesive acceptance criteria (max 6 items per task; group related checks into one criterion but list key coverage, e.g. "All tests pass: service layer unit tests, API integration tests, edge case handling")
 - **Sized** — 1-8 story points (hours of agent work)
 - **Ordered** — Use `dependsOnDraftUuids` / `dependsOnTaskUuids` to express execution order
-- **Descriptive** — Include enough context for a developer agent to start without questions
+- **Descriptive** — Include enough context for a developer agent to start without questions. For tasks with cross-module dependencies, reference the tech design's Module Contracts in the AC
+
+### Task Granularity
+
+Each task should correspond to an **independently runnable and testable functional module** — not a single function, file, or API endpoint. Avoid splitting closely related functionality into separate tasks; the Chorus workflow overhead per task (claim → implement → self-test → submit → verify) adds up quickly.
+
+**Bad → Good examples:**
+- Bad: `Book Search` + `Book CRUD` (2 tasks) → Good: `Book Management` (1 task covering CRUD + Search for the same entity)
+- Bad: `Chart Rendering` + `Statistics Calculation` (2 tasks) → Good: `Data Analytics` (1 task covering stats + visualization as one module)
 
 ---
 
 ## Tips
 
 - Keep PRD focused on *what* and *why*; tech design focused on *how*
-- Consider breaking large features into multiple smaller tasks rather than one monolithic task
+- Break large features into cohesive module-scoped tasks — but avoid over-splitting related functionality into too many tiny tasks
 - Add `storyPoints` to help prioritize and estimate effort
-- Use `acceptanceCriteria` with checkboxes for clear verification
+- Keep acceptance criteria cohesive — group related verifications into one item rather than listing each check separately
 - Prefer setting up task dependency DAG — tasks without dependencies are assumed parallelizable
+- When multiple tasks share data formats or call each other, define contracts in the tech design before writing task AC
 - When combining multiple ideas, consider explaining how they relate in the proposal description
 
 ---
