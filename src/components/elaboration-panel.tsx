@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -240,6 +240,8 @@ interface PendingRoundContentProps {
   onAnswered: () => Promise<void> | void;
 }
 
+const SLIDE_ANIMATION_MS = 200;
+
 function PendingRoundContent({
   round,
   ideaUuid,
@@ -248,14 +250,14 @@ function PendingRoundContent({
   const t = useTranslations("elaboration");
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentIndexRef = useRef(currentIndex);
-  currentIndexRef.current = currentIndex;
   const [enterFrom, setEnterFrom] = useState<"left" | "right">("right");
   const [answers, setAnswers] = useState<Record<string, AnswerInput>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Animation duration in ms — keep in sync with CSS `duration-200`
-  const SLIDE_DURATION_MS = 200;
+  useEffect(() => {
+    currentIndexRef.current = currentIndex;
+  }, [currentIndex]);
 
   const goTo = useCallback(
     (next: number, dir: "left" | "right") => {
@@ -286,10 +288,9 @@ function PendingRoundContent({
       }));
       // Auto-advance to next question with slide-left animation
       if (optionId !== OTHER_OPTION_ID) {
-        const idx = currentIndexRef.current;
-        const nextIdx = Math.min(questions.length - 1, idx + 1);
-        if (nextIdx !== idx) {
-          setTimeout(() => goTo(nextIdx, "left"), SLIDE_DURATION_MS);
+        const nextIdx = Math.min(questions.length - 1, currentIndexRef.current + 1);
+        if (nextIdx !== currentIndexRef.current) {
+          setTimeout(() => goTo(nextIdx, "left"), SLIDE_ANIMATION_MS);
         }
       }
     },
@@ -371,9 +372,9 @@ function PendingRoundContent({
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 text-[#6B6B6B] disabled:opacity-30"
             onClick={() => goTo(currentIndex - 1, "right")}
             disabled={currentIndex === 0}
+            className="h-7 w-7 text-[#6B6B6B] disabled:opacity-30"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -386,9 +387,9 @@ function PendingRoundContent({
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 text-[#6B6B6B] disabled:opacity-30"
             onClick={() => goTo(currentIndex + 1, "left")}
             disabled={currentIndex === questions.length - 1}
+            className="h-7 w-7 text-[#6B6B6B] disabled:opacity-30"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -406,7 +407,7 @@ function PendingRoundContent({
                 onClick={() =>
                   handleSelectOption(question.questionId, option.id)
                 }
-                className={`flex h-auto w-full items-center justify-between rounded-none px-3.5 py-3 text-left transition-colors ${
+                className={`flex w-full items-center justify-between px-3.5 py-3 h-auto text-left transition-colors rounded-none ${
                   isSelected
                     ? "bg-[#F7F6F3]"
                     : "hover:bg-[#FAF8F4]"
@@ -423,7 +424,7 @@ function PendingRoundContent({
                       {option.label}
                     </span>
                     {option.description && (
-                      <span className="text-[11px] font-normal text-[#9A9A9A]">
+                      <span className="text-[11px] text-[#9A9A9A]">
                         {option.description}
                       </span>
                     )}
@@ -474,7 +475,7 @@ function PendingRoundContent({
               onClick={() =>
                 handleSelectOption(question.questionId, OTHER_OPTION_ID)
               }
-              className="h-auto flex-1 justify-start rounded-none p-0 text-[13px] italic text-[#B4B2A9] hover:bg-transparent"
+              className="flex-1 justify-start text-left text-[13px] italic text-[#B4B2A9] h-auto p-0 hover:bg-transparent"
             >
               {t("somethingElse")}
             </Button>
