@@ -10,22 +10,13 @@ import { NewIdeaDialog } from "./new-idea-dialog";
 
 interface IdeaTrackerProps {
   projectUuid: string;
-  currentUserUuid: string;
 }
 
-export function IdeaTracker({ projectUuid, currentUserUuid }: IdeaTrackerProps) {
+export function IdeaTracker({ projectUuid }: IdeaTrackerProps) {
   const t = useTranslations("ideaTracker");
   const [activeTab, setActiveTab] = useState<"ideas" | "stats">("ideas");
-  const [refreshKey, setRefreshKey] = useState(0);
   const [isEmpty, setIsEmpty] = useState(true);
   const [showNewIdeaDialog, setShowNewIdeaDialog] = useState(false);
-
-  // Suppress unused variable warning — currentUserUuid will be used when detail panel is added
-  void currentUserUuid;
-
-  const handleIdeaCreated = () => {
-    setRefreshKey((k) => k + 1);
-  };
 
   return (
     <div className="flex h-full flex-col">
@@ -77,7 +68,6 @@ export function IdeaTracker({ projectUuid, currentUserUuid }: IdeaTrackerProps) 
       {/* Tab content */}
       {activeTab === "ideas" ? (
         <IdeaTrackerList
-          key={refreshKey}
           projectUuid={projectUuid}
           onNewIdea={() => setShowNewIdeaDialog(true)}
           onEmptyChange={setIsEmpty}
@@ -91,7 +81,7 @@ export function IdeaTracker({ projectUuid, currentUserUuid }: IdeaTrackerProps) 
         open={showNewIdeaDialog}
         onOpenChange={setShowNewIdeaDialog}
         projectUuid={projectUuid}
-        onCreated={handleIdeaCreated}
+        onCreated={() => {}}
       />
     </div>
   );

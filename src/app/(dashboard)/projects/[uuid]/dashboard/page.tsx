@@ -49,7 +49,7 @@ export default async function DashboardPage({ params }: PageProps) {
 
       {/* Idea Tracker */}
       <div className="min-h-0 flex-1">
-        <IdeaTracker projectUuid={projectUuid} currentUserUuid={auth.actorUuid} />
+        <IdeaTracker projectUuid={projectUuid} />
       </div>
     </div>
   );

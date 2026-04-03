@@ -12,11 +12,11 @@ import {
   DerivedIdeaStatus,
   BadgeHint,
 } from "@/services/idea.service";
-import { batchCommentCounts } from "@/services/comment.service";
+
 
 type RouteContext = { params: Promise<{ uuid: string }> };
 
-// The 5 tracker columns (closed is excluded from the board view)
+// The 4 tracker columns (closed is excluded from the board view)
 const TRACKER_STATUSES: DerivedIdeaStatus[] = [
   "todo",
   "in_progress",
@@ -45,23 +45,7 @@ export const GET = withErrorHandler<{ uuid: string }>(
       projectUuid
     );
 
-    // Batch fetch comment counts for all ideas
-    const ideaUuids = ideas.map((i) => i.uuid);
-    const commentCounts = await batchCommentCounts(
-      auth.companyUuid,
-      "idea",
-      ideaUuids
-    );
-
-    // Compute project-scoped sequential numbers (IDEA-1, IDEA-2, ...)
-    // Ideas sorted by createdAt desc from service; sort asc by createdAt for numbering
-    const sortedForNumbering = [...ideas].sort(
-      (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
-    );
-    const ideaNumberMap = new Map<string, number>();
-    sortedForNumbering.forEach((idea, idx) => {
-      ideaNumberMap.set(idea.uuid, idx + 1);
-    });
+    // Use DB auto-increment id as stable idea number (won't shift on delete)
 
     // Group ideas by derivedStatus and attach commentCount + ideaNumber
     const groups: Record<string, Array<{
@@ -72,8 +56,6 @@ export const GET = withErrorHandler<{ uuid: string }>(
       derivedStatus: DerivedIdeaStatus;
       badgeHint: BadgeHint;
       createdAt: string;
-      updatedAt: string;
-      commentCount: number;
     }>> = {};
     const counts: Record<string, number> = {};
 
@@ -89,14 +71,12 @@ export const GET = withErrorHandler<{ uuid: string }>(
 
       const formatted = {
         uuid: idea.uuid,
-        ideaNumber: ideaNumberMap.get(idea.uuid) || 0,
+        ideaNumber: idea.id,
         title: idea.title,
         status: idea.status,
         derivedStatus: ds,
         badgeHint: idea.badgeHint,
         createdAt: idea.createdAt.toISOString(),
-        updatedAt: idea.updatedAt.toISOString(),
-        commentCount: commentCounts[idea.uuid] || 0,
       };
 
       if (groups[ds]) {

@@ -7,6 +7,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
+import { useRealtimeEvent } from "@/contexts/realtime-context";
 import {
   Lightbulb,
   LayoutGrid,
@@ -87,6 +88,9 @@ export function IdeaTrackerStats({ projectUuid }: IdeaTrackerStatsProps) {
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
+
+  // Live refresh when ideas/tasks/proposals change
+  useRealtimeEvent(fetchStats);
 
   if (loading) {
     return (

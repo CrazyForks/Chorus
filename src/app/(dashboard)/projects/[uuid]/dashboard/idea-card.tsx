@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 export interface IdeaCardItem {
   uuid: string;
@@ -9,13 +9,7 @@ export interface IdeaCardItem {
   status: string;
   derivedStatus: string;
   badgeHint: string | null;
-  assignee: {
-    type: string;
-    uuid: string;
-    name: string;
-  } | null;
   createdAt: string;
-  commentCount: number;
 }
 
 interface IdeaRowProps {
@@ -49,17 +43,18 @@ const badgeHintColor: Record<string, string> = {
   closed: "text-[#888780]",           // Gray — closed
 };
 
-function formatShortDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
 export function IdeaCard({ idea, onClick }: IdeaRowProps) {
   const t = useTranslations("ideaTracker");
+  const locale = useLocale();
   const badgeKey = idea.badgeHint ? badgeHintI18n[idea.badgeHint] : null;
   const badgeColor = idea.badgeHint
     ? badgeHintColor[idea.badgeHint] || "text-[#888780]"
     : "text-[#888780]";
+
+  const formatShortDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString(locale, { month: "short", day: "numeric" });
+  };
 
   return (
     <div
