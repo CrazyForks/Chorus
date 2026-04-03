@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
-import { X, Loader2, Bot, User, Send, Trash2, ArrowRightLeft, Pencil, Check } from "lucide-react";
+import { X, Loader2, User, Trash2, ArrowRightLeft, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -23,43 +21,22 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import { usePanelUrl } from "@/hooks/use-panel-url";
-import { useRealtimeEvent, useRealtimeEntityEvent } from "@/contexts/realtime-context";
+import { useRealtimeEvent } from "@/contexts/realtime-context";
 import { BasicView } from "./basic-view";
 import { ElaborationView } from "./elaboration-view";
 import { ProposalView } from "./proposal-view";
 import { TaskDetailPanel } from "@/app/(dashboard)/projects/[uuid]/tasks/task-detail-panel";
 import { DocumentPanel } from "./document-panel";
-import { ContentWithMentions } from "@/components/mention-renderer";
-import { MentionEditor, type MentionEditorRef } from "@/components/mention-editor";
-import {
-  getIdeaCommentsAction,
-  createIdeaCommentAction,
-} from "@/app/(dashboard)/projects/[uuid]/ideas/[ideaUuid]/comment-actions";
-import { getIdeaActivitiesAction } from "@/app/(dashboard)/projects/[uuid]/ideas/[ideaUuid]/activity-actions";
+import { ActivityTimeline } from "./activity-timeline";
+import { CommentsSection } from "./comments-section";
+import { MoveIdeaDialog } from "./move-idea-dialog";
 import { deleteIdeaAction, updateIdeaAction } from "@/app/(dashboard)/projects/[uuid]/ideas/actions";
-import { getIdeaAction, getTaskAction, moveIdeaAction, getProjectsAndGroupsAction } from "./actions";
+import { getIdeaAction, getTaskAction } from "./actions";
 import { AssignIdeaModal } from "@/app/(dashboard)/projects/[uuid]/ideas/assign-idea-modal";
 import type { IdeaResponse } from "@/services/idea.service";
-import type { ActivityResponse } from "@/services/activity.service";
-import type { CommentResponse } from "@/services/comment.service";
 
-// Task shape needed by TaskDetailPanel (matches the tasks page interface)
+// Task shape needed by TaskDetailPanel
 interface TaskForPanel {
   uuid: string;
   title: string;
@@ -102,46 +79,10 @@ interface TaskForPanel {
 }
 
 import {
-  formatRelativeTime,
   derivePanelStatus,
   DERIVED_STATUS_COLORS as derivedStatusColors,
   DERIVED_STATUS_I18N_KEYS as derivedStatusI18nKeys,
-  type TranslateFn,
 } from "../utils";
-
-function formatActivityMessage(activity: ActivityResponse, t: TranslateFn): string {
-  const { action, actorName } = activity;
-
-  switch (action) {
-    case "created":
-    case "idea_created":
-      return t("activity.ideaCreated", { actor: actorName });
-    case "assigned":
-    case "idea_assigned":
-      return t("activity.ideaAssigned", { actor: actorName });
-    case "claimed":
-    case "idea_claimed":
-      return t("activity.ideaClaimed", { actor: actorName });
-    case "released":
-    case "idea_released":
-      return t("activity.ideaReleased", { actor: actorName });
-    case "status_changed":
-    case "idea_status_changed":
-      return t("activity.ideaStatusChanged", { actor: actorName });
-    case "elaboration_started":
-      return t("activity.elaborationStarted", { actor: actorName });
-    case "elaboration_answered":
-      return t("activity.elaborationAnswered", { actor: actorName });
-    case "elaboration_skipped":
-      return t("activity.elaborationSkipped", { actor: actorName });
-    case "elaboration_resolved":
-      return t("activity.elaborationResolved", { actor: actorName });
-    case "elaboration_followup":
-      return t("activity.elaborationFollowup", { actor: actorName });
-    default:
-      return t("activity.genericAction", { actor: actorName, action });
-  }
-}
 
 interface IdeaDetailPanelProps {
   ideaUuid: string;
@@ -160,22 +101,14 @@ export function IdeaDetailPanel({
   const tTracker = useTranslations("ideaTracker");
   const tStatus = useTranslations("status");
   const locale = useLocale();
+  const router = useRouter();
 
+  // Core idea state
   const [idea, setIdea] = useState<IdeaResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Activity & Comments state
-  const [activities, setActivities] = useState<ActivityResponse[]>([]);
-  const [isLoadingActivities, setIsLoadingActivities] = useState(true);
-  const [comments, setComments] = useState<CommentResponse[]>([]);
-  const [isLoadingComments, setIsLoadingComments] = useState(true);
-  const [comment, setComment] = useState("");
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const editorRef = useRef<MentionEditorRef>(null);
-  const router = useRouter();
-
-  // Footer state
+  // Footer/modal state
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -186,32 +119,24 @@ export function IdeaDetailPanel({
   const [isSaving, setIsSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
-  // Move to project state
+  // Move dialog state
   const [showMoveDialog, setShowMoveDialog] = useState(false);
-  const [moveGroups, setMoveGroups] = useState<{ uuid: string; name: string; projects: { uuid: string; name: string }[] }[]>([]);
-  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
-  const [selectedMoveProject, setSelectedMoveProject] = useState<{ uuid: string; name: string } | null>(null);
-  const [isMoving, setIsMoving] = useState(false);
-  const [moveError, setMoveError] = useState<string | null>(null);
 
-  // Task detail panel state
+  // Child panel state
   const [selectedTaskUuid, setSelectedTaskUuid] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<TaskForPanel | null>(null);
-
-  // Document panel state
   const [selectedDoc, setSelectedDoc] = useState<{ title: string; type: string; content: string } | null>(null);
 
-  // Track slide-in animation
+  // Slide-in animation
   const [hasAnimated, setHasAnimated] = useState(false);
   useEffect(() => {
     const timer = setTimeout(() => setHasAnimated(true), 300);
     return () => clearTimeout(timer);
   }, []);
 
-  // Use panel URL for URL state management
   usePanelUrl(`/projects/${projectUuid}/dashboard`, ideaUuid);
 
-  // Fetch single idea via server action (calls service layer directly)
+  // Fetch single idea
   const fetchIdea = useCallback(async () => {
     try {
       const result = await getIdeaAction(ideaUuid);
@@ -233,36 +158,9 @@ export function IdeaDetailPanel({
     fetchIdea();
   }, [fetchIdea]);
 
-  // Load activities & comments
-  useEffect(() => {
-    async function loadActivities() {
-      setIsLoadingActivities(true);
-      const result = await getIdeaActivitiesAction(ideaUuid);
-      setActivities(result.activities);
-      setIsLoadingActivities(false);
-    }
-    async function loadComments() {
-      setIsLoadingComments(true);
-      const result = await getIdeaCommentsAction(ideaUuid);
-      setComments(result.comments);
-      setIsLoadingComments(false);
-    }
-    loadActivities();
-    loadComments();
-  }, [ideaUuid]);
-
-  // Listen for SSE events to refresh data
   useRealtimeEvent(fetchIdea);
 
-  // Auto-refresh comments when another user adds a comment
-  useRealtimeEntityEvent("idea", ideaUuid, (event) => {
-    if (event.actorUuid === currentUserUuid) return;
-    getIdeaCommentsAction(ideaUuid).then((result) => {
-      setComments(result.comments);
-    });
-  });
-
-  // Fetch single task via server action when selected from the proposal view
+  // Fetch task when selected from proposal view
   useEffect(() => {
     if (!selectedTaskUuid) {
       setSelectedTask(null);
@@ -272,31 +170,6 @@ export function IdeaDetailPanel({
       if (result.success) setSelectedTask(result.data);
     }).catch((e) => console.error("Failed to load task details:", e));
   }, [selectedTaskUuid]);
-
-  const handleSubmitComment = async () => {
-    if (!comment.trim() || isSubmittingComment) return;
-
-    setIsSubmittingComment(true);
-    const result = await createIdeaCommentAction(ideaUuid, comment);
-    setIsSubmittingComment(false);
-
-    if (result.success && result.comment) {
-      setComments((prev) => [...prev, result.comment!]);
-      setComment("");
-      editorRef.current?.clear();
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!idea) return;
-    setIsDeleting(true);
-    const result = await deleteIdeaAction(idea.uuid, projectUuid);
-    setIsDeleting(false);
-    if (result.success) {
-      onClose();
-      router.refresh();
-    }
-  };
 
   // Reset edit state when idea changes
   useEffect(() => {
@@ -348,71 +221,15 @@ export function IdeaDetailPanel({
     }
   };
 
-  const handleOpenMoveDialog = async () => {
-    setShowMoveDialog(true);
-    setSelectedMoveProject(null);
-    setMoveError(null);
-    setIsLoadingProjects(true);
-    try {
-      const result = await getProjectsAndGroupsAction();
-      if (result.success) {
-        const { projects: allProjects, groups: allGroups } = result.data;
-        const projects = allProjects
-          .filter((p: { uuid: string }) => p.uuid !== projectUuid)
-          .map((p: { uuid: string; name: string; groupUuid: string | null }) => ({
-            uuid: p.uuid, name: p.name, groupUuid: p.groupUuid,
-          }));
-
-        const groupMap = new Map<string, string>();
-        for (const g of allGroups) {
-          groupMap.set(g.uuid, g.name);
-        }
-
-        const grouped = new Map<string, { uuid: string; name: string; projects: { uuid: string; name: string }[] }>();
-        const ungrouped: { uuid: string; name: string }[] = [];
-
-        for (const p of projects) {
-          if (p.groupUuid && groupMap.has(p.groupUuid)) {
-            if (!grouped.has(p.groupUuid)) {
-              grouped.set(p.groupUuid, { uuid: p.groupUuid, name: groupMap.get(p.groupUuid)!, projects: [] });
-            }
-            grouped.get(p.groupUuid)!.projects.push({ uuid: p.uuid, name: p.name });
-          } else {
-            ungrouped.push({ uuid: p.uuid, name: p.name });
-          }
-        }
-
-        const groups = [...grouped.values()];
-        if (ungrouped.length > 0) {
-          groups.push({ uuid: "ungrouped", name: t("ideas.ungrouped"), projects: ungrouped });
-        }
-        setMoveGroups(groups);
-      }
-    } catch (e) {
-      console.error("Failed to load projects for move dialog:", e);
-      setMoveGroups([]);
+  const handleDelete = async () => {
+    if (!idea) return;
+    setIsDeleting(true);
+    const result = await deleteIdeaAction(idea.uuid, projectUuid);
+    setIsDeleting(false);
+    if (result.success) {
+      onClose();
+      router.refresh();
     }
-    setIsLoadingProjects(false);
-  };
-
-  const handleMoveIdea = async () => {
-    if (!selectedMoveProject || isMoving || !idea) return;
-    setIsMoving(true);
-    setMoveError(null);
-
-    try {
-      const result = await moveIdeaAction(idea.uuid, selectedMoveProject.uuid);
-      if (result.success) {
-        setShowMoveDialog(false);
-        onClose();
-        router.refresh();
-      } else {
-        setMoveError(result.error || t("ideas.moveFailed"));
-      }
-    } catch {
-      setMoveError(t("ideas.moveFailed"));
-    }
-    setIsMoving(false);
   };
 
   const status = idea ? derivePanelStatus(idea.status, idea.elaborationStatus) : "todo";
@@ -477,7 +294,7 @@ export function IdeaDetailPanel({
                   variant="outline"
                   size="icon"
                   className="h-8 w-8 border-[#E5E0D8]"
-                  onClick={handleOpenMoveDialog}
+                  onClick={() => setShowMoveDialog(true)}
                   title={t("ideas.moveToProject")}
                 >
                   <ArrowRightLeft className="h-4 w-4 text-[#6B6B6B]" />
@@ -520,7 +337,6 @@ export function IdeaDetailPanel({
               </div>
             ) : idea ? (
               isEditing ? (
-                /* Edit Mode */
                 <div className="space-y-5">
                   {editError && (
                     <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
@@ -565,112 +381,12 @@ export function IdeaDetailPanel({
                   onDocClick={setSelectedDoc}
                 />
 
-                {/* Activity Section */}
-                <div className="mt-5">
-                  <Label className="text-[11px] font-medium uppercase tracking-wider text-[#9A9A9A]">
-                    {t("common.activity")}
-                  </Label>
-                  <div className="mt-2">
-                    {isLoadingActivities ? (
-                      <div className="flex items-center justify-center py-4">
-                        <Loader2 className="h-4 w-4 animate-spin text-[#9A9A9A]" />
-                      </div>
-                    ) : activities.length === 0 ? (
-                      <p className="text-sm text-[#9A9A9A] italic">{t("common.noActivity")}</p>
-                    ) : (
-                      activities.map((activity, idx) => (
-                        <div key={activity.uuid} className="flex items-stretch gap-2.5">
-                          {/* Timeline: hollow dot + connecting line */}
-                          <div className="flex flex-col items-center w-2 shrink-0">
-                            <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full border-[1.5px] border-[#D9D9D9] bg-white" />
-                            {idx < activities.length - 1 && (
-                              <div className="flex-1 w-px bg-[#E5E0D8] mt-1" />
-                            )}
-                          </div>
-                          <div className="flex-1 pb-3">
-                            <p className="text-[13px] text-[#2C2C2C]">
-                              {formatActivityMessage(activity, t)}
-                            </p>
-                            <p className="text-[11px] text-[#9A9A9A]">{formatRelativeTime(activity.createdAt, t, locale)}</p>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
+                <ActivityTimeline ideaUuid={ideaUuid} />
 
-                {/* Comments Section */}
-                <div className="mt-5">
-                  <Label className="text-[11px] font-medium uppercase tracking-wider text-[#9A9A9A]">
-                    {t("comments.title")}
-                  </Label>
-                  <div className="mt-2 space-y-3">
-                    {isLoadingComments ? (
-                      <div className="flex items-center justify-center py-4">
-                        <Loader2 className="h-4 w-4 animate-spin text-[#9A9A9A]" />
-                      </div>
-                    ) : comments.length === 0 ? (
-                      <p className="text-sm text-[#9A9A9A] italic">{t("comments.noComments")}</p>
-                    ) : (
-                      comments.map((c) => (
-                        <div key={c.uuid} className="flex gap-2.5">
-                          <Avatar className="h-6 w-6 shrink-0">
-                            <AvatarFallback className={c.author.type === "agent" ? "bg-[#C67A52] text-white" : "bg-[#E5E0D8] text-[#6B6B6B] text-[10px]"}>
-                              {c.author.type === "agent" ? (
-                                <Bot className="h-3 w-3" />
-                              ) : (
-                                c.author.name.charAt(0).toUpperCase()
-                              )}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className={`text-xs font-semibold ${c.author.type === "agent" ? "text-[#C67A52]" : "text-[#2C2C2C]"}`}>{c.author.name}</span>
-                              <span className="text-[11px] text-[#9A9A9A]">{formatRelativeTime(c.createdAt, t, locale)}</span>
-                            </div>
-                            <div className="mt-1 text-xs leading-relaxed text-[#2C2C2C]">
-                              <ContentWithMentions>{c.content}</ContentWithMentions>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-
-                  {/* Comment Input */}
-                  <Separator className="my-3 bg-[#F5F2EC]" />
-                  <div className="flex items-start gap-2.5">
-                    <Avatar className="mt-1.5 h-6 w-6">
-                      <AvatarFallback className="bg-[#C67A52] text-white text-[10px]">
-                        <User className="h-3 w-3" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <MentionEditor
-                        ref={editorRef}
-                        value={comment}
-                        onChange={setComment}
-                        onSubmit={handleSubmitComment}
-                        placeholder={t("comments.addComment")}
-                        className="border-none bg-[#FAF8F4] text-sm"
-                        disabled={isSubmittingComment}
-                      />
-                    </div>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="mt-1 h-7 w-7"
-                      disabled={!comment.trim() || isSubmittingComment}
-                      onClick={handleSubmitComment}
-                    >
-                      {isSubmittingComment ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin text-[#9A9A9A]" />
-                      ) : (
-                        <Send className="h-3.5 w-3.5 text-[#C67A52]" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
+                <CommentsSection
+                  ideaUuid={ideaUuid}
+                  currentUserUuid={currentUserUuid}
+                />
               </>
               )
             ) : null}
@@ -681,7 +397,6 @@ export function IdeaDetailPanel({
         {idea && !isLoading && (
           <div className="border-t border-[#F5F2EC] px-6 py-4">
             {isEditing ? (
-              /* Edit mode footer: Cancel + Save */
               <div className="flex items-center justify-end gap-3">
                 <Button
                   variant="outline"
@@ -707,7 +422,6 @@ export function IdeaDetailPanel({
                 </Button>
               </div>
             ) : (
-              /* Normal footer: Reassign + help + Delete */
               <div className="flex items-center justify-between gap-3">
                 {canAssign && (
                   <Button
@@ -769,80 +483,13 @@ export function IdeaDetailPanel({
       </div>
 
       {/* Move to Project Dialog */}
-      <Dialog open={showMoveDialog} onOpenChange={setShowMoveDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("ideas.moveIdeaTitle")}</DialogTitle>
-            <DialogDescription>
-              {t("ideas.moveIdeaDescription")}
-            </DialogDescription>
-          </DialogHeader>
-          {moveError && (
-            <p className="text-xs text-destructive">{moveError}</p>
-          )}
-          {isLoadingProjects ? (
-            <div className="flex items-center justify-center h-[320px] border border-[#E5E0D8] rounded-lg">
-              <Loader2 className="h-4 w-4 animate-spin text-[#9A9A9A]" />
-            </div>
-          ) : (
-            <Command className="border border-[#E5E0D8] rounded-lg" filter={(value, search, keywords) => {
-              const searchLower = search.toLowerCase();
-              if (value.toLowerCase().includes(searchLower)) return 1;
-              if (keywords?.some(k => k.toLowerCase().includes(searchLower))) return 1;
-              return 0;
-            }}>
-              <CommandInput placeholder={t("ideas.searchProjects")} />
-              <CommandList className="h-[280px]">
-                <CommandEmpty>{t("ideas.noProjectsFound")}</CommandEmpty>
-                {moveGroups.map((group) => (
-                  <CommandGroup key={group.uuid} heading={group.name}>
-                    {group.projects.map((p) => (
-                      <CommandItem
-                        key={p.uuid}
-                        value={p.name}
-                        keywords={[group.name]}
-                        onSelect={() => setSelectedMoveProject(p)}
-                        className={
-                          selectedMoveProject?.uuid === p.uuid
-                            ? "bg-[#C67A52] text-white data-[selected=true]:bg-[#B56A42] data-[selected=true]:text-white"
-                            : ""
-                        }
-                      >
-                        <Check className={`mr-2 h-4 w-4 ${selectedMoveProject?.uuid === p.uuid ? "opacity-100" : "opacity-0"}`} />
-                        {p.name}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                ))}
-              </CommandList>
-            </Command>
-          )}
-          <div className="flex justify-end gap-3 pt-2">
-            <Button
-              variant="outline"
-              className="border-[#E5E0D8]"
-              onClick={() => setShowMoveDialog(false)}
-              disabled={isMoving}
-            >
-              {t("common.cancel")}
-            </Button>
-            <Button
-              className="bg-[#C67A52] hover:bg-[#B56A42] text-white"
-              onClick={handleMoveIdea}
-              disabled={!selectedMoveProject || isMoving}
-            >
-              {isMoving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t("ideas.moving")}
-                </>
-              ) : (
-                t("ideas.moveToProject")
-              )}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <MoveIdeaDialog
+        open={showMoveDialog}
+        onOpenChange={setShowMoveDialog}
+        ideaUuid={ideaUuid}
+        projectUuid={projectUuid}
+        onMoved={onClose}
+      />
 
       {/* Assign Idea Modal */}
       {showAssignModal && idea && (
@@ -863,7 +510,7 @@ export function IdeaDetailPanel({
         />
       )}
 
-      {/* Task Detail Panel — slides in from right on top of idea panel */}
+      {/* Task Detail Panel */}
       {selectedTaskUuid && selectedTask && (
         <TaskDetailPanel
           task={selectedTask}
@@ -880,7 +527,7 @@ export function IdeaDetailPanel({
         />
       )}
 
-      {/* Document Panel — slides in from right on top of idea panel */}
+      {/* Document Panel */}
       {selectedDoc && (
         <DocumentPanel
           title={selectedDoc.title}
@@ -894,7 +541,7 @@ export function IdeaDetailPanel({
   );
 }
 
-// Route to the correct view based on the idea's raw status (lifecycle stage)
+// Route to the correct view based on the idea's raw status
 function PanelContent({
   idea,
   projectUuid,

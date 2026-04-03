@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -153,10 +153,13 @@ function ProposalContent({
   }, [isApproved, projectUuid, proposal.uuid]);
 
   // Map draft title → materialized task info for navigation + status
-  const draftTitleToTask = new Map<string, MaterializedTask>();
-  for (const mt of materializedTasks) {
-    draftTitleToTask.set(mt.title, mt);
-  }
+  const draftTitleToTask = useMemo(() => {
+    const map = new Map<string, MaterializedTask>();
+    for (const mt of materializedTasks) {
+      map.set(mt.title, mt);
+    }
+    return map;
+  }, [materializedTasks]);
 
   const toggleTask = (index: number) => {
     setExpandedTasks((prev) => {
@@ -168,31 +171,34 @@ function ProposalContent({
   };
 
   // Build DAG data — use real task status for approved proposals
-  const dagTasks: TaskDagTask[] = taskDrafts.map((td) => {
-    const mt = draftTitleToTask.get(td.title);
-    return {
-      uuid: mt?.uuid || td.uuid,
-      title: td.title,
-      status: mt?.status || "open",
-      priority: td.priority || "medium",
-    };
-  });
-  const dagEdges: TaskDagEdge[] = [];
-  for (const td of taskDrafts) {
-    if (td.dependsOnDraftUuids) {
-      for (const depUuid of td.dependsOnDraftUuids) {
-        // Resolve draft UUIDs to materialized UUIDs if available
-        const fromMt = draftTitleToTask.get(td.title);
-        const depDraft = taskDrafts.find((d) => d.uuid === depUuid);
-        const toMt = depDraft ? draftTitleToTask.get(depDraft.title) : undefined;
-        dagEdges.push({
-          from: fromMt?.uuid || td.uuid,
-          to: toMt?.uuid || depUuid,
-        });
+  const { dagTasks, dagEdges, dagHeight } = useMemo(() => {
+    const tasks: TaskDagTask[] = taskDrafts.map((td) => {
+      const mt = draftTitleToTask.get(td.title);
+      return {
+        uuid: mt?.uuid || td.uuid,
+        title: td.title,
+        status: mt?.status || "open",
+        priority: td.priority || "medium",
+      };
+    });
+    const edges: TaskDagEdge[] = [];
+    // Build a UUID lookup for O(1) dep resolution
+    const draftUuidMap = new Map(taskDrafts.map((d) => [d.uuid, d]));
+    for (const td of taskDrafts) {
+      if (td.dependsOnDraftUuids) {
+        for (const depUuid of td.dependsOnDraftUuids) {
+          const fromMt = draftTitleToTask.get(td.title);
+          const depDraft = draftUuidMap.get(depUuid);
+          const toMt = depDraft ? draftTitleToTask.get(depDraft.title) : undefined;
+          edges.push({
+            from: fromMt?.uuid || td.uuid,
+            to: toMt?.uuid || depUuid,
+          });
+        }
       }
     }
-  }
-  const dagHeight = Math.max(350, dagTasks.length * 90);
+    return { dagTasks: tasks, dagEdges: edges, dagHeight: Math.max(350, tasks.length * 90) };
+  }, [taskDrafts, draftTitleToTask]);
 
   // Count completed tasks (for progress display)
   const completedCount = isApproved
