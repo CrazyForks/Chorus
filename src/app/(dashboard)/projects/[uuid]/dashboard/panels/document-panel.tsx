@@ -8,18 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Streamdown } from "streamdown";
 import { code as codePlugin } from "@streamdown/code";
-
-const DOC_TYPE_I18N_KEYS: Record<string, string> = {
-  prd: "typePrd",
-  tech_design: "typeTechDesign",
-  adr: "typeAdr",
-  spec: "typeSpec",
-  guide: "typeGuide",
-};
-
-function normalizeNewlines(text: string): string {
-  return text.replace(/\\n/g, "\n");
-}
+import { normalizeNewlines, DOC_TYPE_I18N_KEYS } from "./utils";
 
 interface DocumentPanelProps {
   title: string;

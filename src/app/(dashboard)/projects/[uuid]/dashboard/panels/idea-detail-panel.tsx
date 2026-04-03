@@ -249,23 +249,16 @@ export function IdeaDetailPanel({
   // Use panel URL for URL state management
   usePanelUrl(`/projects/${projectUuid}/dashboard`, ideaUuid);
 
-  // Fetch idea details
+  // Fetch single idea by UUID
   const fetchIdea = useCallback(async () => {
     try {
-      const res = await fetch(
-        `/api/projects/${projectUuid}/ideas?pageSize=100`
-      );
+      const res = await fetch(`/api/ideas/${ideaUuid}`);
       const json = await res.json();
-      if (json.success) {
-        const found = json.data.find(
-          (i: IdeaResponse) => i.uuid === ideaUuid
-        );
-        if (found) {
-          setIdea(found);
-          setError(null);
-        } else {
-          setError(tTracker("panel.notFound"));
-        }
+      if (json.success && json.data) {
+        setIdea(json.data);
+        setError(null);
+      } else if (res.status === 404) {
+        setError(tTracker("panel.notFound"));
       } else {
         setError(tTracker("panel.loadFailed"));
       }
@@ -274,7 +267,7 @@ export function IdeaDetailPanel({
     } finally {
       setIsLoading(false);
     }
-  }, [ideaUuid, projectUuid, tTracker]);
+  }, [ideaUuid, tTracker]);
 
   useEffect(() => {
     setIsLoading(true);
@@ -310,24 +303,21 @@ export function IdeaDetailPanel({
     });
   });
 
-  // Fetch task details when a task is selected from the proposal view
+  // Fetch single task by UUID when selected from the proposal view
   useEffect(() => {
     if (!selectedTaskUuid) {
       setSelectedTask(null);
       return;
     }
-    fetch(`/api/projects/${projectUuid}/tasks?pageSize=200`)
+    fetch(`/api/tasks/${selectedTaskUuid}`)
       .then((res) => res.json())
       .then((json) => {
-        if (json.success) {
-          const found = (json.data || []).find(
-            (t: TaskForPanel) => t.uuid === selectedTaskUuid
-          );
-          if (found) setSelectedTask(found);
+        if (json.success && json.data) {
+          setSelectedTask(json.data);
         }
       })
       .catch(() => {});
-  }, [selectedTaskUuid, projectUuid]);
+  }, [selectedTaskUuid]);
 
   const handleSubmitComment = async () => {
     if (!comment.trim() || isSubmittingComment) return;

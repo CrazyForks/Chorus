@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Streamdown } from "streamdown";
 import { code as codePlugin } from "@streamdown/code";
 import { TaskDag, type TaskDagTask, type TaskDagEdge } from "@/components/task-dag";
+import { normalizeNewlines, DOC_TYPE_I18N_KEYS } from "./utils";
 import type { IdeaResponse } from "@/services/idea.service";
 
 interface AcceptanceCriteriaItem {
@@ -55,24 +56,9 @@ interface ProposalViewProps {
   onDocClick?: (doc: { title: string; type: string; content: string }) => void;
 }
 
-const DOC_TYPE_I18N_KEYS: Record<string, string> = {
-  prd: "typePrd",
-  tech_design: "typeTechDesign",
-  adr: "typeAdr",
-  spec: "typeSpec",
-  guide: "typeGuide",
-};
-
-/** Normalize escaped newlines from JSON into real newlines for markdown rendering */
-function normalizeNewlines(text: string): string {
-  return text.replace(/\\n/g, "\n");
-}
 
 export function ProposalView({ idea, projectUuid, onTaskClick, onDocClick }: ProposalViewProps) {
   const t = useTranslations("ideaTracker");
-  const tProposals = useTranslations("proposals");
-  const tTasks = useTranslations("tasks");
-  const tDocs = useTranslations("documents");
 
   const [proposals, setProposals] = useState<ProposalData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -127,10 +113,6 @@ export function ProposalView({ idea, projectUuid, onTaskClick, onDocClick }: Pro
           key={p.uuid}
           proposal={p}
           projectUuid={projectUuid}
-          t={t}
-          tProposals={tProposals}
-          tTasks={tTasks}
-          tDocs={tDocs}
           onTaskClick={onTaskClick}
           onDocClick={onDocClick}
         />
@@ -148,26 +130,19 @@ interface MaterializedTask {
 function ProposalContent({
   proposal,
   projectUuid,
-  t,
-  tProposals,
-  tTasks,
-  tDocs,
   onTaskClick,
   onDocClick,
 }: {
   proposal: ProposalData;
   projectUuid: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  t: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tProposals: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tTasks: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tDocs: any;
   onTaskClick?: (taskUuid: string) => void;
   onDocClick?: (doc: { title: string; type: string; content: string }) => void;
 }) {
+  const t = useTranslations("ideaTracker");
+  const tProposals = useTranslations("proposals");
+  const tTasks = useTranslations("tasks");
+  const tDocs = useTranslations("documents");
+
   const docDrafts = proposal.documentDrafts || [];
   const taskDrafts = proposal.taskDrafts || [];
   const [expandedTasks, setExpandedTasks] = useState<Set<number>>(new Set());

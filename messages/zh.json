@@ -1085,17 +1085,6 @@
       "viewProposal": "查看完整提案"
     }
   },
-  "panel": {
-    "verify": {
-      "noTasks": "暂无需要验证的任务",
-      "overallProgress": "总体进度"
-    },
-    "prdExpanded": {
-      "noDocuments": "暂无文档或任务",
-      "documents": "文档",
-      "taskDag": "任务依赖图"
-    }
-  },
   "search": {
     "placeholder": "搜索任务、想法、提案、文档...",
     "scopeGlobal": "全局",

@@ -1084,17 +1084,6 @@
       "viewProposal": "View Full Proposal"
     }
   },
-  "panel": {
-    "verify": {
-      "noTasks": "No tasks to verify",
-      "overallProgress": "Overall Progress"
-    },
-    "prdExpanded": {
-      "noDocuments": "No documents or tasks yet",
-      "documents": "Documents",
-      "taskDag": "Task Dependency Graph"
-    }
-  },
   "search": {
     "placeholder": "Search tasks, ideas, proposals, documents...",
     "scopeGlobal": "Global",
