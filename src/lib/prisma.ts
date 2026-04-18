@@ -22,8 +22,17 @@ const pool =
   globalForPrisma.pool ??
   new pg.Pool({
     connectionString,
+    max: 5,
+    idleTimeoutMillis: 10000,
     ...(process.env.DB_HOST ? { ssl: { rejectUnauthorized: false } } : {}),
   });
+
+// Silently evict broken connections (PGlite drops idle sockets after heavy transactions)
+if (!globalForPrisma.pool) {
+  pool.on("error", (err: Error) => {
+    logger.child({ module: "pg-pool" }).warn({ err: err.message }, "Idle connection evicted");
+  });
+}
 
 // Create adapter
 const adapter = new PrismaPg(pool);
