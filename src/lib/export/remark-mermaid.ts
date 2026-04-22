@@ -1,7 +1,6 @@
-import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
 
-interface MdastNode { type: string; children?: MdastNode[]; [key: string]: unknown }
+interface AstNode { type: string; children?: AstNode[]; [key: string]: unknown }
 
 let mermaidInitialized = false;
 
@@ -57,26 +56,25 @@ async function renderMermaidToPng(code: string): Promise<string | null> {
     } finally {
       document.body.removeChild(container);
     }
-  } catch (err) {
-    console.warn("Mermaid render failed:", err);
+  } catch {
     return null;
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const remarkMermaid: Plugin = () => {
-  return async (tree: any) => {
-    const mermaidNodes: { node: any; index: number; parent: any }[] = [];
+function remarkMermaid() {
+  return async (tree: AstNode) => {
+    const mermaidNodes: { node: AstNode; index: number; parent: AstNode }[] = [];
 
-    visit(tree, "code", (node: any, index, parent) => {
-      if (node.lang === "mermaid" && index !== undefined && parent) {
-        mermaidNodes.push({ node, index, parent });
+    visit(tree, "code", (node, index, parent) => {
+      const n = node as unknown as AstNode;
+      if (n.lang === "mermaid" && index !== undefined && parent) {
+        mermaidNodes.push({ node: n, index, parent: parent as unknown as AstNode });
       }
     });
 
     for (const { node, index, parent } of mermaidNodes) {
       const pngDataUrl = await renderMermaidToPng(node.value as string);
-      if (pngDataUrl) {
+      if (pngDataUrl && parent.children) {
         parent.children[index] = {
           type: "paragraph",
           children: [{ type: "image", url: pngDataUrl, alt: "Mermaid diagram" }],
@@ -84,6 +82,6 @@ const remarkMermaid: Plugin = () => {
       }
     }
   };
-};
+}
 
 export default remarkMermaid;
