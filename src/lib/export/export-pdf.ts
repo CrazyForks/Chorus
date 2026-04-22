@@ -84,8 +84,7 @@ export async function exportAsPdf(doc: ExportableDocument): Promise<Blob> {
           underline: true,
         },
         inlineCode: {
-          font: "Courier",
-          color: "#1f2328",
+          color: "#c7254e",
           fontSize: 9.5,
           bold: true,
         },
