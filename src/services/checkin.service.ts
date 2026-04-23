@@ -83,10 +83,8 @@ export async function buildCheckinResponse(auth: AuthContext): Promise<CheckinRe
     buildNotificationSummary(auth),
   ]);
 
-  // First-checkin notification to owner (fire-and-forget style, but await to surface errors)
   if (agent.ownerUuid) {
-    await notificationService.emitAgentCheckinIfFirst({
-      companyUuid: auth.companyUuid,
+    notificationService.emitAgentCheckin({
       agentUuid: agent.uuid,
       agentName: agent.name,
       ownerUuid: agent.ownerUuid,
